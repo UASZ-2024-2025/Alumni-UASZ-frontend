@@ -1,12 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 
 @Component({
   selector: 'app-connexion',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './connexion.html',
   styleUrl: './connexion.scss',
 })
@@ -22,6 +23,7 @@ export class Connexion {
   });
   protected readonly erreur = signal<string | null>(null);
   protected readonly chargement = signal(false);
+  protected readonly compteNonActive = signal(false);
 
   protected soumettre(): void {
     if (this.formulaire.invalid) {
@@ -29,6 +31,7 @@ export class Connexion {
       return;
     }
     this.erreur.set(null);
+    this.compteNonActive.set(false);
     this.chargement.set(true);
     const { email, password } = this.formulaire.getRawValue();
 
@@ -40,7 +43,13 @@ export class Connexion {
       },
       error: (e: ErreurApi) => {
         this.chargement.set(false);
-        this.erreur.set(e.message);
+        this.compteNonActive.set(e.statut === 403);
+        this.erreur.set(
+          messageErreur(e, {
+            401: 'Email ou mot de passe incorrect.',
+            403: "Votre compte n'est pas activé ou a été suspendu. Si vous venez de vous inscrire, confirmez votre email.",
+          }),
+        );
       },
     });
   }

@@ -6,6 +6,12 @@
     @if (erreur()) {
       <div class="alerte" role="alert">{{ erreur() }}</div>
     }
+    @if (compteNonActive()) {
+      <p class="lien">
+        <a routerLink="/renvoi-confirmation" [queryParams]="{ email: formulaire.controls.email.value }">
+          Renvoyer l'email de confirmation</a>
+      </p>
+    }
 
     <label>
       Email
@@ -26,5 +32,8 @@
     <button type="submit" [disabled]="chargement()">
       {{ chargement() ? 'Connexion…' : 'Se connecter' }}
     </button>
+
+    <p class="lien"><a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
+    <p class="lien">Pas encore de compte ? <a routerLink="/inscription">S'inscrire</a></p>
   </form>
 </main>

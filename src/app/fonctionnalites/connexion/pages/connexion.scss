@@ -11,3 +11,7 @@ button { padding: .7rem; border: 0; border-radius: 8px; background: #166534; col
 button:disabled { opacity: .6; cursor: wait; }
 .alerte { background: #fee2e2; color: #991b1b; padding: .6rem; border-radius: 8px; }
 .invalide { color: #b91c1c; }
+select { padding: .6rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+.succes { background: #dcfce7; color: #166534; padding: .6rem; border-radius: 8px; }
+.lien { text-align: center; font-size: .9rem; }
+.lien a { color: #166534; }
