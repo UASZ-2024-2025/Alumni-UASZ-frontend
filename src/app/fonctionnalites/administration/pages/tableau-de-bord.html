@@ -17,7 +17,7 @@
       }
     </dl>
     @if (stats().donnees?.updatedAt; as maj) {
-      <p class="maj">Mis à jour le {{ maj }}</p>
+      <p class="maj">Mis à jour le {{ maj | date: 'dd/MM/yyyy HH:mm' }}</p>
     }
   }
 </section>

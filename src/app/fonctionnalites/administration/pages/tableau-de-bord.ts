@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { AnalyticsReportsService } from '../../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../../api/generes/analyses-correspondances/api/dashboard.service';
@@ -18,7 +19,7 @@ const enChargement = <T>(): Etat<T> => ({ statut: 'chargement' });
 
 @Component({
   selector: 'app-tableau-de-bord',
-  imports: [GraphiqueBarres],
+  imports: [DatePipe, GraphiqueBarres],
   templateUrl: './tableau-de-bord.html',
   styleUrl: '../administration.scss',
 })
