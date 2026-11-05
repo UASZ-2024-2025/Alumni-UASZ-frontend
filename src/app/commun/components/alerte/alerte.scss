@@ -1,0 +1,11 @@
+:host { display: block; }
+
+.message {
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--rayon);
+  background: var(--erreur-fond);
+  color: var(--dg);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.message--succes { background: var(--succes-fond); color: var(--ok); }

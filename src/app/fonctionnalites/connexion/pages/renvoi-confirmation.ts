@@ -2,19 +2,19 @@ import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
+import { Alerte } from '../../../commun/components/alerte/alerte';
 import { CompteService } from '../services/compte.service';
-import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 @Component({
   selector: 'app-renvoi-confirmation',
-  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth],
-  styleUrl: './connexion.scss',
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte],
   template: `
     <app-mise-en-page-auth>
       <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
         <h1>Renvoyer l'email de confirmation</h1>
-        @if (erreur()) { <div class="alerte" role="alert">{{ erreur() }}</div> }
-        @if (succes()) { <div class="succes">{{ succes() }}</div> }
+        @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+        @if (succes()) { <app-alerte type="succes">{{ succes() }}</app-alerte> }
         <label>Email <input type="email" formControlName="email" autocomplete="username" /></label>
         @if (formulaire.controls.email.touched && formulaire.controls.email.invalid) {
           <small class="invalide">Saisissez un email valide.</small>

@@ -1,1 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
+   @use './styles/polices';
+   @use './styles/variables';
+   @use './styles/base';
+   @use './styles/formulaire';
+   @use './styles/boutons';
+   @use './styles/liens';

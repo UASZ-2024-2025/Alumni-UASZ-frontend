@@ -1,36 +1,34 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
+import { Alerte } from '../../../commun/components/alerte/alerte';
+import { OngletsAuth } from '../../../commun/components/onglets-auth/onglets-auth';
 import { CompteService } from '../services/compte.service';
-import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 const motsDePasseIdentiques: ValidatorFn = (g) =>
   g.get('password')?.value === g.get('confirmation')?.value ? null : { different: true };
 
 @Component({
   selector: 'app-inscription',
-  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive, MiseEnPageAuth],
-  styleUrl: './connexion.scss',
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth],
   template: `
     <app-mise-en-page-auth>
       @if (emailInscrit(); as email) {
         <section class="carte">
           <h1>Vérifiez votre email</h1>
-          <div class="succes">Votre compte est créé. Un email de confirmation a été envoyé à {{ email }}.</div>
+          <app-alerte type="succes">Votre compte est créé. Un email de confirmation a été envoyé à {{ email }}.</app-alerte>
           <p class="lien">Pas reçu ?
             <a routerLink="/renvoi-confirmation" [queryParams]="{ email }">Renvoyer l'email</a></p>
           <p class="lien"><a routerLink="/connexion">Retour à la connexion</a></p>
         </section>
       } @else {
         <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
-          <nav class="onglets" aria-label="Authentification">
-            <a routerLink="/connexion" routerLinkActive="actif">Connexion</a>
-            <a routerLink="/inscription" routerLinkActive="actif">Inscription</a>
-          </nav>
+          <app-onglets-auth />
           <h1>Créer un compte</h1>
-          @if (erreur()) { <div class="alerte" role="alert">{{ erreur() }}</div> }
+          @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
 
           <div class="deux-colonnes">
             <label>Nom <input formControlName="lastName" autocomplete="family-name" /></label>

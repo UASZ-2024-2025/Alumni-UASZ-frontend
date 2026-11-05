@@ -1,25 +1,5 @@
-// Charte graphique UASZ (reprise de la maquette).
-// Les variables sont posées sur :host : le formulaire projeté (<ng-content>) les hérite.
-:host {
-  --g9: #073d27;
-  --g8: #0b5d3b;
-  --g7: #13734b;
-  --g1: #e4f0e9;
-  --g0: #f3f8f5;
-  --bd: #e1eae5;
-  --sf: #fff;
-  --tx: #14231b;
-  --mu: #5b6b62;
-  --ac: #c8a23a;
-  --dg: #b3261e;
-  --ok: #1e7a46;
-  --police: 'Public Sans', system-ui, sans-serif;
-  --police-titre: Fraunces, Georgia, serif;
-
-  display: block;
-  color: var(--tx);
-  font: 15px/1.5 var(--police);
-}
+// Styles propres à la mise en page ; couleurs et polices viennent de src/styles/_variables.scss.
+:host { display: block; }
 
 .auth {
   display: grid;
@@ -29,7 +9,6 @@
   background: var(--sf);
 }
 
-// ---------- Logo ----------
 .logo {
   display: flex;
   align-items: center;
@@ -38,11 +17,7 @@
   font-weight: 700;
   line-height: 1.1;
 
-  small {
-    display: block;
-    font: 400 10px var(--police);
-    opacity: 0.8;
-  }
+  small { display: block; font: 400 10px var(--police); opacity: 0.8; }
   svg circle { fill: #fff; stroke-width: 2; }
   svg path { fill: var(--g8); }
 }
@@ -50,7 +25,6 @@
 .logo--fonce { color: var(--g8); svg circle { stroke: var(--g8); } }
 .logo-mobile { display: none; margin-bottom: 1.5rem; }
 
-// ---------- Hero (colonne gauche) ----------
 .hero {
   display: flex;
   flex-direction: column;
@@ -62,15 +36,8 @@
     radial-gradient(circle at 0 100%, rgba(255, 255, 255, 0.14), transparent 45%),
     linear-gradient(160deg, var(--g9), var(--g7));
 
-  h2 {
-    margin: 0;
-    font: 700 38px/1.2 var(--police-titre);
-  }
-  p {
-    margin: 12px 0 0;
-    max-width: 380px;
-    opacity: 0.85;
-  }
+  h2 { margin: 0; font: 700 38px/1.2 var(--police-titre); }
+  p { margin: 12px 0 0; max-width: 380px; opacity: 0.85; }
 }
 .chips {
   display: flex;
@@ -88,7 +55,6 @@
 }
 .copyright { color: #bfe0cd; font-size: 13px; }
 
-// ---------- Zone formulaire (colonne droite) ----------
 .af {
   display: flex;
   flex-direction: column;

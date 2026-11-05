@@ -1,16 +1,17 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
+import { Alerte } from '../../../commun/components/alerte/alerte';
+import { OngletsAuth } from '../../../commun/components/onglets-auth/onglets-auth';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
-import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 @Component({
   selector: 'app-connexion',
-  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive, MiseEnPageAuth],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth],
   templateUrl: './connexion.html',
-  styleUrl: './connexion.scss',
 })
 export class Connexion {
   private readonly fb = inject(NonNullableFormBuilder);

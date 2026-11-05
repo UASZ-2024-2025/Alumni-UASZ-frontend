@@ -1,14 +1,11 @@
 <app-mise-en-page-auth>
   <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
-    <nav class="onglets" aria-label="Authentification">
-      <a routerLink="/connexion" routerLinkActive="actif">Connexion</a>
-      <a routerLink="/inscription" routerLinkActive="actif">Inscription</a>
-    </nav>
+    <app-onglets-auth />
     <h1>Alumni UASZ</h1>
     <p class="sous-titre">Connectez-vous à votre espace</p>
 
     @if (erreur()) {
-      <div class="alerte" role="alert">{{ erreur() }}</div>
+      <app-alerte>{{ erreur() }}</app-alerte>
     }
     @if (compteNonActive()) {
       <p class="lien">

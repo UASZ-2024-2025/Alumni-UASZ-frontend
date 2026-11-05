@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-/** Écran d'authentification de la maquette : bandeau « hero » à gauche, formulaire à droite. */
+/** Écran d'authentification : bandeau « hero » à gauche, formulaire projeté à droite. */
 @Component({
   selector: 'app-mise-en-page-auth',
   templateUrl: './mise-en-page-auth.html',

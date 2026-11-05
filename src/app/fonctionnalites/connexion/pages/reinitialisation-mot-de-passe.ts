@@ -2,28 +2,28 @@ import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
+import { Alerte } from '../../../commun/components/alerte/alerte';
 import { CompteService } from '../services/compte.service';
-import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 const identiques: ValidatorFn = (g) =>
   g.get('newPassword')?.value === g.get('confirmation')?.value ? null : { different: true };
 
 @Component({
   selector: 'app-reinitialisation-mot-de-passe',
-  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth],
-  styleUrl: './connexion.scss',
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte],
   template: `
     <app-mise-en-page-auth>
       @if (reussi()) {
         <section class="carte">
           <h1>Mot de passe modifié</h1>
-          <div class="succes">Votre mot de passe a été réinitialisé.</div>
+          <app-alerte type="succes">Votre mot de passe a été réinitialisé.</app-alerte>
           <p class="lien"><a routerLink="/connexion">Se connecter</a></p>
         </section>
       } @else {
         <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
           <h1>Nouveau mot de passe</h1>
-          @if (erreur()) { <div class="alerte" role="alert">{{ erreur() }}</div> }
+          @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
           @if (lienInvalide()) {
             <p class="lien"><a routerLink="/mot-de-passe-oublie">Demander un nouveau lien</a></p>
           }
