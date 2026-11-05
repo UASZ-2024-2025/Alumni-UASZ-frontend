@@ -1,0 +1,9 @@
+.lien {
+  margin: 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--mu);
+
+  a { color: var(--g8); font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
+}
+.sous-titre { margin: -0.4rem 0 0.4rem; color: var(--mu); }

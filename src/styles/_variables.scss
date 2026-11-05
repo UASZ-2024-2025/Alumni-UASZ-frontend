@@ -1,0 +1,27 @@
+// Charte graphique UASZ : seule source des couleurs, polices et arrondis.
+:root {
+  // Verts UASZ
+  --g9: #073d27;
+  --g8: #0b5d3b;
+  --g7: #13734b;
+  --g1: #e4f0e9;
+  --g0: #f3f8f5;
+  // Neutres
+  --sf: #fff;
+  --tx: #14231b;
+  --mu: #5b6b62;
+  --bd: #e1eae5;
+  --bord-champ: #cfdcd5;
+  // Accent et états
+  --ac: #c8a23a;
+  --dg: #b3261e;
+  --ok: #1e7a46;
+  --erreur-fond: #fde4e2;
+  --succes-fond: #dcf3e4;
+  // Typographie
+  --police: 'Public Sans', system-ui, sans-serif;
+  --police-titre: Fraunces, Georgia, serif;
+  // Formes
+  --rayon: 10px;
+  --ombre-bouton: 0 4px 12px -4px rgba(11, 93, 59, 0.5);
+}

@@ -1,0 +1,20 @@
+// Bouton principal : classe .btn, ou n'importe quel <button> d'une .carte.
+.btn,
+.carte button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 18px;
+  border: 1px solid var(--g8);
+  border-radius: var(--rayon);
+  background: var(--g8);
+  color: #fff;
+  font: 600 0.875rem var(--police);
+  cursor: pointer;
+  box-shadow: var(--ombre-bouton);
+  transition: 0.15s;
+
+  &:hover:not(:disabled) { background: var(--g9); transform: translateY(-1px); }
+  &:disabled { opacity: 0.6; cursor: wait; box-shadow: none; }
+}
