@@ -1,0 +1,9 @@
+<nav class="pagination" aria-label="Pagination">
+  <button type="button" class="btn btn--auto btn--secondaire" [disabled]="page() <= 0" (click)="changement.emit(page() - 1)">
+    Précédent
+  </button>
+  <span>Page {{ page() + 1 }} / {{ nbPages() }}</span>
+  <button type="button" class="btn btn--auto btn--secondaire" [disabled]="page() + 1 >= nbPages()" (click)="changement.emit(page() + 1)">
+    Suivant
+  </button>
+</nav>

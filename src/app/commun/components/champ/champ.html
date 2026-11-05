@@ -1,0 +1,26 @@
+<div class="champ">
+  <label [attr.for]="id">{{ libelle() }}@if (requis()) { <span aria-hidden="true"> *</span> }</label>
+  @switch (type()) {
+    @case ('textarea') {
+      <textarea [id]="id" [rows]="lignes()" [value]="valeur()" [placeholder]="placeholder()" [disabled]="desactive()"
+        [attr.aria-invalid]="erreur() ? true : null" [attr.aria-describedby]="erreur() ? id + '-err' : null"
+        (input)="saisie($any($event.target).value)" (blur)="contact()"></textarea>
+    }
+    @case ('select') {
+      <select [id]="id" [disabled]="desactive()" [attr.aria-invalid]="erreur() ? true : null"
+        (change)="saisie($any($event.target).value)" (blur)="contact()">
+        @for (o of options(); track o.valeur) {
+          <option [value]="o.valeur" [selected]="o.valeur === valeur()">{{ o.libelle }}</option>
+        }
+      </select>
+    }
+    @default {
+      <input [id]="id" [type]="type()" [value]="valeur()" [placeholder]="placeholder()" [disabled]="desactive()"
+        [attr.aria-invalid]="erreur() ? true : null" [attr.aria-describedby]="erreur() ? id + '-err' : null"
+        (input)="saisie($any($event.target).value)" (blur)="contact()" />
+    }
+  }
+  @if (erreur(); as message) {
+    <span class="erreur" [id]="id + '-err'">{{ message }}</span>
+  }
+</div>

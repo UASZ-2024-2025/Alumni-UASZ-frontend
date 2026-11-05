@@ -23,7 +23,7 @@ describe('GraphiqueBarres', () => {
 
   it('affiche une barre accessible par ligne, bornée à 100 %', () => {
     const el = creer([{ libelle: 'Génie Logiciel 2023', valeur: 130, detail: '29/40 insérés' }]);
-    const barre = el.querySelector('[role="img"]')!;
+    const barre = el.querySelector('figure[aria-label]')!;
     expect(barre.getAttribute('aria-label')).toBe('Génie Logiciel 2023 : 130 %');
     expect((barre.firstElementChild as HTMLElement).style.width).toBe('100%');
     expect(el.textContent).toContain('29/40 insérés');
@@ -31,9 +31,20 @@ describe('GraphiqueBarres', () => {
 
   it("affiche la barre d'offre uniquement si `secondaire` est fourni", () => {
     const sans = creer([{ libelle: 'SQL', valeur: 70 }]);
-    expect(sans.querySelectorAll('[role="img"]').length).toBe(1);
+    expect(sans.querySelectorAll('figure[aria-label]').length).toBe(1);
 
     const avec = creer([{ libelle: 'SQL', valeur: 70, secondaire: 40 }]);
-    expect(avec.querySelectorAll('[role="img"]').length).toBe(2);
+    expect(avec.querySelectorAll('figure[aria-label]').length).toBe(2);
+  });
+
+  it('accepte une autre unité et un autre maximum', () => {
+    const f = TestBed.createComponent(GraphiqueBarres);
+    f.componentRef.setInput('lignes', [{ libelle: 'Stages', valeur: 50 }]);
+    f.componentRef.setInput('max', 200);
+    f.componentRef.setInput('unite', 'offres');
+    f.detectChanges();
+    const barre = (f.nativeElement as HTMLElement).querySelector('figure[aria-label]')!;
+    expect(barre.getAttribute('aria-label')).toBe('Stages : 50 offres');
+    expect((barre.firstElementChild as HTMLElement).style.width).toBe('25%');
   });
 });

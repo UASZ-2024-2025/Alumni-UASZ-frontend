@@ -1,0 +1,12 @@
+.badge {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 99px;
+  background: var(--g1);
+  color: var(--g8);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge--ok { background: var(--succes-fond); color: var(--ok); }
+.badge--attention { background: var(--attention-fond); color: var(--wa); }
+.badge--erreur { background: var(--erreur-fond); color: var(--dg); }

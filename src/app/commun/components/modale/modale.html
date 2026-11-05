@@ -1,0 +1,11 @@
+@if (ouvert()) {
+  <div class="fond" (click)="$event.target === $event.currentTarget && fermer.emit()" (keydown.escape)="fermer.emit(); $event.stopPropagation()">
+    <dialog class="boite" open aria-modal="true" aria-labelledby="modale-titre">
+      <header>
+        <h2 id="modale-titre">{{ titre() }}</h2>
+        <button type="button" class="croix" aria-label="Fermer" (click)="fermer.emit()">×</button>
+      </header>
+      <div class="corps"><ng-content /></div>
+    </dialog>
+  </div>
+}

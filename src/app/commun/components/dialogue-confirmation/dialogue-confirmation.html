@@ -1,0 +1,13 @@
+@if (service.demande(); as d) {
+  <div class="fond" (click)="$event.target === $event.currentTarget && d.resoudre(false)" (keydown.escape)="d.resoudre(false)">
+    <div class="boite" role="alertdialog" aria-modal="true" aria-labelledby="dlg-titre" aria-describedby="dlg-msg"
+      tabindex="-1">
+      <h2 id="dlg-titre">{{ d.titre }}</h2>
+      <p id="dlg-msg">{{ d.message }}</p>
+      <div class="actions">
+        <button type="button" class="btn btn--auto btn--secondaire" (click)="d.resoudre(false)">Annuler</button>
+        <button type="button" class="btn btn--auto" [class.btn--danger]="d.danger" (click)="d.resoudre(true)">{{ d.libelleConfirmer }}</button>
+      </div>
+    </div>
+  </div>
+}

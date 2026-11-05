@@ -1,0 +1,25 @@
+.fond { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(7, 61, 39, 0.5); }
+.boite {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 32px);
+  border-radius: 16px;
+  background: var(--sf);
+  box-shadow: var(--ombre-carte);
+}
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--bd); }
+h2 { margin: 0; font: 700 1.25rem/1.2 var(--police-titre); }
+.croix { width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--mu); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.croix:hover { background: var(--g0); color: var(--tx); }
+.corps { padding: 20px 22px 22px; overflow-x: hidden; overflow-y: auto; }
+@media (max-width: 800px) {
+  .fond { align-items: end; padding: 0; }
+  .boite { width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; }
+}
