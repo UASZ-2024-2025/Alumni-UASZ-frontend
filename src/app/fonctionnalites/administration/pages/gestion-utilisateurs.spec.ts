@@ -5,6 +5,8 @@ import { UsersService } from '../../../api/generes/utilisateurs/api/users.servic
 import { User } from '../../../api/generes/utilisateurs/model/user';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
+import { ConfirmationService } from '../../../commun/services/confirmation.service';
+import { ToastService } from '../../../commun/services/toast.service';
 import { GestionUtilisateurs } from './gestion-utilisateurs';
 
 const awa: User = { id: '1', firstName: 'Awa', lastName: 'Diop', email: 'awa@uasz.sn', role: 'ALUMNI', status: 'ACTIF' };
@@ -16,6 +18,8 @@ describe('GestionUtilisateurs', () => {
   let api: { listUsers: ReturnType<typeof vi.fn>; updateUserStatus: ReturnType<typeof vi.fn>; deleteUser: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<GestionUtilisateurs>;
   let el: HTMLElement;
+  let confirmation: { demander: ReturnType<typeof vi.fn> };
+  let toast: { succes: ReturnType<typeof vi.fn> };
 
   const monter = () => {
     fixture = TestBed.createComponent(GestionUtilisateurs);
@@ -25,6 +29,7 @@ describe('GestionUtilisateurs', () => {
   const bouton = (nom: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
   const cliquer = (b: HTMLButtonElement) => { b.click(); fixture.detectChanges(); };
+  const cliquerEtAttendre = async (b: HTMLButtonElement) => { b.click(); await fixture.whenStable(); fixture.detectChanges(); };
 
   beforeEach(() => {
     api = {
@@ -32,13 +37,16 @@ describe('GestionUtilisateurs', () => {
       updateUserStatus: vi.fn(),
       deleteUser: vi.fn(() => of(null)),
     };
+    confirmation = { demander: vi.fn(() => Promise.resolve(true)) };
+    toast = { succes: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
+        { provide: ConfirmationService, useValue: confirmation },
+        { provide: ToastService, useValue: toast },
         { provide: UsersService, useValue: api },
         { provide: AuthentificationService, useValue: { utilisateur: signal({ id: '5' }) } },
       ],
     });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   afterEach(() => vi.restoreAllMocks());
@@ -52,7 +60,7 @@ describe('GestionUtilisateurs', () => {
   it('affiche un message quand la liste est vide', () => {
     api.listUsers.mockReturnValue(of(page([])));
     monter();
-    expect(el.textContent).toContain('Aucun utilisateur pour ces filtres');
+    expect(el.textContent).toContain('Aucun résultat pour ces filtres');
   });
 
   it('affiche le message du 403 et permet de réessayer', () => {
@@ -72,6 +80,21 @@ describe('GestionUtilisateurs', () => {
     expect(api.listUsers).toHaveBeenLastCalledWith('ALUMNI', undefined, 0, 20);
   });
 
+  it('affiche les rôles et statuts en français', () => {
+    monter();
+    expect(el.textContent).toContain('En attente');
+    expect(el.textContent).toContain('Administrateur');
+    expect(el.textContent).not.toContain('EN_ATTENTE');
+  });
+
+  it('filtre par statut avec les puces', () => {
+    monter();
+    const puce = [...el.querySelectorAll<HTMLButtonElement>('.puce')].find((b) => b.textContent!.trim() === 'Suspendu')!;
+    cliquer(puce);
+    expect(api.listUsers).toHaveBeenLastCalledWith(undefined, 'SUSPENDU', 0, 20);
+    expect(puce.getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('pagine : Suivant charge la page 1 et se désactive sur la dernière page', () => {
     api.listUsers.mockReturnValue(of(page([awa], 25)));
     monter();
@@ -82,21 +105,21 @@ describe('GestionUtilisateurs', () => {
     expect(suivant().disabled).toBe(true);
   });
 
-  it('suspend après confirmation et remplace la ligne sans recharger', () => {
+  it('suspend après confirmation et remplace la ligne sans recharger', async () => {
     api.updateUserStatus.mockReturnValue(of({ ...awa, status: 'SUSPENDU' }));
     monter();
-    cliquer(bouton('Suspendre Awa Diop'));
+    await cliquerEtAttendre(bouton('Suspendre Awa Diop'));
     expect(api.updateUserStatus).toHaveBeenCalledWith('1', { status: 'SUSPENDU' });
     expect(api.listUsers).toHaveBeenCalledTimes(1);
-    expect(el.textContent).toContain('Awa Diop est suspendu.');
+    expect(toast.succes).toHaveBeenCalledWith('Awa Diop est suspendu.');
     expect(bouton('Réactiver Awa Diop')).toBeTruthy();
   });
 
-  it("n'appelle pas l'API si la confirmation est refusée", () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+  it("n'appelle pas l'API si la confirmation est refusée", async () => {
+    confirmation.demander.mockResolvedValue(false);
     monter();
-    cliquer(bouton('Suspendre Awa Diop'));
-    cliquer(bouton('Supprimer Awa Diop'));
+    await cliquerEtAttendre(bouton('Suspendre Awa Diop'));
+    await cliquerEtAttendre(bouton('Supprimer Awa Diop'));
     expect(api.updateUserStatus).not.toHaveBeenCalled();
     expect(api.deleteUser).not.toHaveBeenCalled();
   });
@@ -108,19 +131,19 @@ describe('GestionUtilisateurs', () => {
     expect(api.updateUserStatus).toHaveBeenCalledWith('3', { status: 'ACTIF' });
   });
 
-  it('supprime puis recharge la liste', () => {
+  it('supprime puis recharge la liste', async () => {
     monter();
-    cliquer(bouton('Supprimer Awa Diop'));
+    await cliquerEtAttendre(bouton('Supprimer Awa Diop'));
     expect(api.deleteUser).toHaveBeenCalledWith('1');
     expect(api.listUsers).toHaveBeenCalledTimes(2);
   });
 
-  it("recule d'une page quand on supprime le dernier élément d'une page", () => {
+  it("recule d'une page quand on supprime le dernier élément d'une page", async () => {
     api.listUsers.mockReturnValue(of(page([awa], 21)));
     monter();
     cliquer([...el.querySelectorAll('button')].find((b) => b.textContent!.trim() === 'Suivant')!);
     api.listUsers.mockClear();
-    cliquer(bouton('Supprimer Awa Diop'));
+    await cliquerEtAttendre(bouton('Supprimer Awa Diop'));
     expect(api.listUsers).toHaveBeenCalledWith(undefined, undefined, 0, 20);
   });
 
@@ -133,10 +156,10 @@ describe('GestionUtilisateurs', () => {
     expect(api.deleteUser).not.toHaveBeenCalled();
   });
 
-  it('affiche un message et recharge sur un 404', () => {
+  it('affiche un message et recharge sur un 404', async () => {
     api.deleteUser.mockReturnValue(throwError(() => new ErreurApi(404, 'USER_NOT_FOUND', 'x')));
     monter();
-    cliquer(bouton('Supprimer Awa Diop'));
+    await cliquerEtAttendre(bouton('Supprimer Awa Diop'));
     expect(el.querySelector('[role="alert"]')!.textContent).toContain("n'existe plus");
     expect(api.listUsers).toHaveBeenCalledTimes(2);
   });

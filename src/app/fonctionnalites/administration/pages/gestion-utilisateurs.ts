@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
@@ -5,16 +6,30 @@ import { User } from '../../../api/generes/utilisateurs/model/user';
 import { UserStatus } from '../../../api/generes/utilisateurs/model/userStatus';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
+import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Badge } from '../../../commun/components/badge/badge';
+import { Carte } from '../../../commun/components/carte/carte';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { Pagination } from '../../../commun/components/pagination/pagination';
+import { Spinner } from '../../../commun/components/spinner/spinner';
+import { ConfirmationService } from '../../../commun/services/confirmation.service';
+import { ToastService } from '../../../commun/services/toast.service';
+import { Avatar } from '../../../commun/components/avatar/avatar';
 import { messageErreur } from '../erreurs';
+import { libelleRole, libelleStatut, tonStatut } from '../libelles';
 
 @Component({
   selector: 'app-gestion-utilisateurs',
   templateUrl: './gestion-utilisateurs.html',
+  imports: [DatePipe, Alerte, Avatar, Badge, Bouton, Carte, EtatVide, Pagination, Spinner],
   styleUrl: '../administration.scss',
 })
 export class GestionUtilisateurs {
   private readonly api = inject(UsersService);
   private readonly auth = inject(AuthentificationService);
+  private readonly toast = inject(ToastService);
+  private readonly confirmation = inject(ConfirmationService);
 
   protected readonly roles = Object.values(RoleName);
   protected readonly statuts = Object.values(UserStatus);
@@ -27,8 +42,11 @@ export class GestionUtilisateurs {
   protected readonly statut = signal<UserStatus | undefined>(undefined);
   protected readonly chargement = signal(false);
   protected readonly erreur = signal<string | null>(null);
-  protected readonly succes = signal<string | null>(null);
   protected readonly enCours = signal<string | null>(null);
+
+  protected readonly tonStatut = tonStatut;
+  protected readonly libelleRole = libelleRole;
+  protected readonly libelleStatut = libelleStatut;
 
   protected readonly nbPages = computed(() => Math.max(1, Math.ceil(this.total() / this.taille)));
 
@@ -82,20 +100,31 @@ export class GestionUtilisateurs {
     this.changerStatut(u, UserStatus.Actif, `${this.nomComplet(u)} est activé.`);
   }
 
-  protected suspendre(u: User): void {
+  protected async suspendre(u: User): Promise<void> {
     if (this.estMoi(u)) return;
-    if (!window.confirm(`Suspendre ${this.nomComplet(u)} ?`)) return;
+    const accepte = await this.confirmation.demander({
+      titre: 'Suspendre le compte',
+      message: `Suspendre ${this.nomComplet(u)} ?`,
+      libelleConfirmer: 'Suspendre',
+    });
+    if (!accepte) return;
     this.changerStatut(u, UserStatus.Suspendu, `${this.nomComplet(u)} est suspendu.`);
   }
 
-  protected supprimer(u: User): void {
+  protected async supprimer(u: User): Promise<void> {
     if (!u.id || this.estMoi(u)) return;
-    if (!window.confirm(`Supprimer ${this.nomComplet(u)} ? Cette action est irréversible.`)) return;
+    const accepte = await this.confirmation.demander({
+      titre: 'Supprimer le compte',
+      message: `Supprimer ${this.nomComplet(u)} ? Cette action est irréversible.`,
+      libelleConfirmer: 'Supprimer',
+      danger: true,
+    });
+    if (!accepte) return;
     this.demarrer(u.id);
     this.api.deleteUser(u.id).subscribe({
       next: () => {
         this.enCours.set(null);
-        this.succes.set(`${this.nomComplet(u)} est supprimé.`);
+        this.toast.succes(`${this.nomComplet(u)} est supprimé.`);
         // dernière ligne d'une page > 0 : on recule d'une page
         if (this.utilisateurs().length === 1 && this.page() > 0) this.page.update((p) => p - 1);
         this.charger();
@@ -110,7 +139,7 @@ export class GestionUtilisateurs {
     this.api.updateUserStatus(u.id, { status }).subscribe({
       next: (maj) => {
         this.enCours.set(null);
-        this.succes.set(message);
+        this.toast.succes(message);
         this.utilisateurs.update((liste) => liste.map((x) => (x.id === maj.id ? maj : x)));
       },
       error: (e) => this.echec(e),
@@ -119,7 +148,6 @@ export class GestionUtilisateurs {
 
   private demarrer(id: string): void {
     this.enCours.set(id);
-    this.succes.set(null);
     this.erreur.set(null);
   }
 

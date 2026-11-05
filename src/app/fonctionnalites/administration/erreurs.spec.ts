@@ -24,6 +24,6 @@ describe('messageErreur', () => {
   });
 
   it("gère une erreur qui n'est pas une ErreurApi", () => {
-    expect(messageErreur(new Error('boom'))).toBe('Une erreur inattendue est survenue.');
+    expect(messageErreur(new Error('boom'))).toBe('Une erreur est survenue.');
   });
 });

@@ -1,95 +1,86 @@
-<h1>Gestion des utilisateurs</h1>
+<div class="entete-page">
+  <h1>Gestion des utilisateurs</h1>
+  <p class="total" aria-live="polite">{{ total() }} utilisateur(s)</p>
+</div>
 
-<div class="filtres">
-  <label>
+<div class="filtres filtres--barre">
+  <label class="champ">
     Rôle
     <select #filtreRole (change)="filtrerRole(filtreRole.value)">
       <option value="">Tous</option>
       @for (r of roles; track r) {
-        <option [value]="r">{{ r }}</option>
+        <option [value]="r">{{ libelleRole(r) }}</option>
       }
     </select>
   </label>
-  <label>
-    Statut
-    <select #filtreStatut (change)="filtrerStatut(filtreStatut.value)">
-      <option value="">Tous</option>
-      @for (s of statuts; track s) {
-        <option [value]="s">{{ s }}</option>
-      }
-    </select>
-  </label>
+  <fieldset class="puces" aria-label="Filtrer par statut">
+    <button type="button" class="puce" [attr.aria-pressed]="!statut()" (click)="filtrerStatut('')">Tous</button>
+    @for (s of statuts; track s) {
+      <button type="button" class="puce" [attr.aria-pressed]="statut() === s" (click)="filtrerStatut(s)">{{ libelleStatut(s) }}</button>
+    }
+  </fieldset>
 </div>
 
-@if (succes(); as message) {
-  <p class="succes" role="status">{{ message }}</p>
-}
 @if (erreur(); as message) {
-  <p class="alerte" role="alert">
-    {{ message }} <button type="button" class="secondaire" (click)="charger()">Réessayer</button>
-  </p>
+  <app-alerte>
+    {{ message }} <app-bouton variante="secondaire" [petit]="true" (clic)="charger()">Réessayer</app-bouton>
+  </app-alerte>
 }
 
 <div [attr.aria-busy]="chargement()">
   @if (chargement() && utilisateurs().length === 0) {
-    <p>Chargement…</p>
+    <app-spinner libelle="Chargement des utilisateurs…" />
   } @else if (!erreur() && utilisateurs().length === 0) {
-    <p class="vide">Aucun utilisateur pour ces filtres.</p>
+    <app-etat-vide titre="Aucun utilisateur">Aucun résultat pour ces filtres.</app-etat-vide>
   } @else if (utilisateurs().length > 0) {
-    <table>
-      <caption>{{ total() }} utilisateur(s)</caption>
+    <app-carte>
+    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
+      <caption class="cache">Liste des utilisateurs</caption>
       <thead>
         <tr>
-          <th scope="col">Nom</th>
-          <th scope="col">Email</th>
+          <th scope="col">Utilisateur</th>
           <th scope="col">Rôle</th>
           <th scope="col">Statut</th>
+          <th scope="col">Inscrit le</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
         @for (u of utilisateurs(); track u.id) {
           <tr>
-            <td>{{ nomComplet(u) }}</td>
-            <td>{{ u.email }}</td>
-            <td>{{ u.role }}</td>
-            <td><span [class]="'badge ' + u.status">{{ u.status }}</span></td>
-            <td class="actions">
+            <td class="identite">
+              <app-avatar [nom]="nomComplet(u)" />
+              <span class="identite-texte">
+                <strong>{{ nomComplet(u) }}</strong>
+                <small>{{ u.email }}</small>
+              </span>
+            </td>
+            <td data-label="Rôle">{{ libelleRole(u.role) }}</td>
+            <td data-label="Statut"><app-badge [ton]="tonStatut(u.status)">{{ libelleStatut(u.status) }}</app-badge></td>
+            <td data-label="Inscrit le">{{ u.createdAt ? (u.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td class="cellule-actions"><div class="actions">
               @if (u.status !== 'ACTIF') {
-                <button type="button" [disabled]="enCours() === u.id"
-                  [attr.aria-label]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)"
-                  (click)="activer(u)">
+                <app-bouton [petit]="true" [desactive]="enCours() === u.id" [libelleAria]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)" (clic)="activer(u)">
                   {{ u.status === 'SUSPENDU' ? 'Réactiver' : 'Activer' }}
-                </button>
+                </app-bouton>
               }
               @if (u.status === 'ACTIF') {
-                <button type="button" class="secondaire"
-                  [disabled]="enCours() === u.id || estMoi(u)"
-                  [attr.title]="estMoi(u) ? 'Action impossible sur votre propre compte' : null"
-                  [attr.aria-label]="'Suspendre ' + nomComplet(u)" (click)="suspendre(u)">
+                <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
+                  [libelleAria]="'Suspendre ' + nomComplet(u)" (clic)="suspendre(u)">
                   Suspendre
-                </button>
+                </app-bouton>
               }
-              <button type="button" class="danger" [disabled]="enCours() === u.id || estMoi(u)"
-                [attr.title]="estMoi(u) ? 'Action impossible sur votre propre compte' : null"
-                [attr.aria-label]="'Supprimer ' + nomComplet(u)" (click)="supprimer(u)">
+              <app-bouton variante="danger" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
+                [libelleAria]="'Supprimer ' + nomComplet(u)" (clic)="supprimer(u)">
                 Supprimer
-              </button>
-            </td>
+              </app-bouton>
+            </div></td>
           </tr>
         }
       </tbody>
-    </table>
+    </table></div>
+    </app-carte>
 
-    <div class="pagination">
-      <button type="button" class="secondaire" [disabled]="page() === 0" (click)="aller(page() - 1)">
-        Précédent
-      </button>
-      <span>Page {{ page() + 1 }} / {{ nbPages() }}</span>
-      <button type="button" class="secondaire" [disabled]="page() + 1 >= nbPages()"
-        (click)="aller(page() + 1)">
-        Suivant
-      </button>
-    </div>
+    <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="aller($event)" />
   }
 </div>

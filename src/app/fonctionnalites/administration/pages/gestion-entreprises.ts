@@ -1,18 +1,29 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CompaniesService } from '../../../api/generes/alumni/api/companies.service';
 import { Company } from '../../../api/generes/alumni/model/company';
+import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Avatar } from '../../../commun/components/avatar/avatar';
+import { Carte } from '../../../commun/components/carte/carte';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
+import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { Modale } from '../../../commun/components/modale/modale';
+import { Pagination } from '../../../commun/components/pagination/pagination';
+import { Spinner } from '../../../commun/components/spinner/spinner';
+import { ToastService } from '../../../commun/services/toast.service';
 import { messageErreur } from '../erreurs';
 
 @Component({
   selector: 'app-gestion-entreprises',
-  imports: [ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule, Alerte, Avatar, Bouton, Carte, Champ, EtatVide, Modale, Pagination, Spinner],
   templateUrl: './gestion-entreprises.html',
   styleUrl: '../administration.scss',
 })
 export class GestionEntreprises {
   private readonly api = inject(CompaniesService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly toast = inject(ToastService);
 
   protected readonly taille = 20;
   protected readonly entreprises = signal<Company[]>([]);
@@ -22,9 +33,16 @@ export class GestionEntreprises {
   protected readonly partenaire = signal<boolean | undefined>(undefined);
   protected readonly chargement = signal(false);
   protected readonly erreur = signal<string | null>(null);
-  protected readonly succes = signal<string | null>(null);
+  protected readonly optionsPartenaire: OptionChamp[] = [
+    { valeur: '', libelle: 'Toutes' },
+    { valeur: 'oui', libelle: 'Partenaires' },
+    { valeur: 'non', libelle: 'Non partenaires' },
+  ];
+  protected texteRecherche = '';
+  protected choixPartenaire = '';
   protected readonly enCours = signal<string | null>(null);
   protected readonly enEdition = signal<Company | null>(null);
+  protected readonly formulaireOuvert = signal(false);
   protected readonly envoi = signal(false);
 
   protected readonly nbPages = computed(() => Math.max(1, Math.ceil(this.total() / this.taille)));
@@ -77,13 +95,12 @@ export class GestionEntreprises {
   protected basculerPartenaire(c: Company, estPartenaire: boolean): void {
     if (!c.id) return;
     this.enCours.set(c.id);
-    this.succes.set(null);
     this.erreur.set(null);
     this.api.updateCompany(c.id, { isPartner: estPartenaire }).subscribe({
       next: (maj) => {
         this.enCours.set(null);
         this.entreprises.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
-        this.succes.set(`${maj.name} ${estPartenaire ? 'est' : "n'est plus"} partenaire.`);
+        this.toast.succes(`${maj.name} ${estPartenaire ? 'est' : "n'est plus"} partenaire.`);
       },
       error: (e) => {
         this.enCours.set(null);
@@ -92,8 +109,16 @@ export class GestionEntreprises {
     });
   }
 
+  protected ajouter(): void {
+    this.erreur.set(null);
+    this.formulaire.reset();
+    this.formulaireOuvert.set(true);
+  }
+
   protected modifier(c: Company): void {
+    this.erreur.set(null);
     this.enEdition.set(c);
+    this.formulaireOuvert.set(true);
     this.formulaire.reset({
       name: c.name ?? '',
       sector: c.sector ?? '',
@@ -106,6 +131,7 @@ export class GestionEntreprises {
   }
 
   protected annuler(): void {
+    this.formulaireOuvert.set(false);
     this.enEdition.set(null);
     this.formulaire.reset();
   }
@@ -126,7 +152,6 @@ export class GestionEntreprises {
     };
     const edition = this.enEdition();
     this.envoi.set(true);
-    this.succes.set(null);
     this.erreur.set(null);
     const appel = edition?.id
       ? this.api.updateCompany(edition.id, donnees)
@@ -134,7 +159,7 @@ export class GestionEntreprises {
     appel.subscribe({
       next: (c) => {
         this.envoi.set(false);
-        this.succes.set(`${c.name} est ${edition ? 'modifiée' : 'créée'}.`);
+        this.toast.succes(`${c.name} est ${edition ? 'modifiée' : 'créée'}.`);
         this.annuler();
         this.charger();
       },

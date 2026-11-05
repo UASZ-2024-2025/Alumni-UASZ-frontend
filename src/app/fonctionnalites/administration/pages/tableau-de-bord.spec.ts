@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AnalyticsReportsService } from '../../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../../api/generes/analyses-correspondances/api/dashboard.service';
+import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { TableauDeBord } from './tableau-de-bord';
 
@@ -38,13 +39,14 @@ describe('TableauDeBord', () => {
       providers: [
         { provide: DashboardService, useValue: dashboard },
         { provide: AnalyticsReportsService, useValue: rapports },
+        { provide: UsersService, useValue: { listUsers: vi.fn(() => of({ content: [], totalElements: 5 })) } },
       ],
     });
   });
 
   it('affiche les 6 indicateurs', () => {
     const el = monter();
-    expect(el.querySelectorAll('.kpi').length).toBe(6);
+    expect(el.querySelectorAll('app-carte-stat').length).toBe(6);
     expect(el.textContent).toContain('1450');
     expect(el.textContent).toContain('68.4 %');
     expect(el.textContent).toContain("Offres d'emploi publiées");
@@ -52,7 +54,7 @@ describe('TableauDeBord', () => {
 
   it('remplace les valeurs absentes par un tiret', () => {
     dashboard.getDashboardStats.mockReturnValue(of({}));
-    expect(monter().querySelector('.kpi dd')!.textContent!.trim()).toBe('—');
+    expect(monter().querySelector('app-carte-stat b')!.textContent!.trim()).toBe('—');
   });
 
   it("garde les graphiques quand seuls les indicateurs échouent", () => {
@@ -71,6 +73,21 @@ describe('TableauDeBord', () => {
     (el.querySelector('select') as HTMLSelectElement).value = 'Réseaux';
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
     expect(rapports.getInsertionReport).toHaveBeenLastCalledWith(2023, 'Réseaux');
+  });
+
+  it('affiche les répartitions et le taux global en anneaux', () => {
+    const el = monter();
+    expect(el.querySelectorAll('app-graphique-anneau').length).toBe(3);
+    expect(el.textContent).toContain('Administrateur');
+    expect(el.textContent).toContain('En attente');
+    expect(el.querySelector('app-graphique-colonnes')).toBeTruthy();
+  });
+
+  it("garde le reste du tableau de bord quand les répartitions échouent", () => {
+    TestBed.overrideProvider(UsersService, { useValue: { listUsers: vi.fn(() => throwError(() => new ErreurApi(500, 'X', 'Panne comptes'))) } });
+    const el = monter();
+    expect(el.textContent).toContain('Panne comptes');
+    expect(el.querySelectorAll('app-carte-stat').length).toBe(6);
   });
 
   it("affiche un état vide quand il n'y a aucune donnée", () => {
