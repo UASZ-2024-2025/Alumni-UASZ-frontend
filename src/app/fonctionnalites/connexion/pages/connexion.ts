@@ -1,13 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
+import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 @Component({
   selector: 'app-connexion',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive, MiseEnPageAuth],
   templateUrl: './connexion.html',
   styleUrl: './connexion.scss',
 })

@@ -1,0 +1,105 @@
+// Charte graphique UASZ (reprise de la maquette).
+// Les variables sont posées sur :host : le formulaire projeté (<ng-content>) les hérite.
+:host {
+  --g9: #073d27;
+  --g8: #0b5d3b;
+  --g7: #13734b;
+  --g1: #e4f0e9;
+  --g0: #f3f8f5;
+  --bd: #e1eae5;
+  --sf: #fff;
+  --tx: #14231b;
+  --mu: #5b6b62;
+  --ac: #c8a23a;
+  --dg: #b3261e;
+  --ok: #1e7a46;
+  --police: 'Public Sans', system-ui, sans-serif;
+  --police-titre: Fraunces, Georgia, serif;
+
+  display: block;
+  color: var(--tx);
+  font: 15px/1.5 var(--police);
+}
+
+.auth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--sf);
+}
+
+// ---------- Logo ----------
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--police-titre);
+  font-weight: 700;
+  line-height: 1.1;
+
+  small {
+    display: block;
+    font: 400 10px var(--police);
+    opacity: 0.8;
+  }
+  svg circle { fill: #fff; stroke-width: 2; }
+  svg path { fill: var(--g8); }
+}
+.logo--clair { color: #fff; svg circle { stroke: var(--ac); } }
+.logo--fonce { color: var(--g8); svg circle { stroke: var(--g8); } }
+.logo-mobile { display: none; margin-bottom: 1.5rem; }
+
+// ---------- Hero (colonne gauche) ----------
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(200, 162, 58, 0.4), transparent 40%),
+    radial-gradient(circle at 0 100%, rgba(255, 255, 255, 0.14), transparent 45%),
+    linear-gradient(160deg, var(--g9), var(--g7));
+
+  h2 {
+    margin: 0;
+    font: 700 38px/1.2 var(--police-titre);
+  }
+  p {
+    margin: 12px 0 0;
+    max-width: 380px;
+    opacity: 0.85;
+  }
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  span {
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 12px;
+  }
+}
+.copyright { color: #bfe0cd; font-size: 13px; }
+
+// ---------- Zone formulaire (colonne droite) ----------
+.af {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+  background: var(--sf);
+}
+
+@media (max-width: 820px) {
+  .auth { display: block; }
+  .hero { display: none; }
+  .af { min-height: 100dvh; padding: 28px 20px; }
+  .logo-mobile { display: flex; width: min(420px, 100%); margin-inline: auto; }
+}

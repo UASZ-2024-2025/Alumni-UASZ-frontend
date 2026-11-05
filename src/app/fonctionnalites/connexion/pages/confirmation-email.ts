@@ -2,13 +2,14 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { CompteService } from '../services/compte.service';
+import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 @Component({
   selector: 'app-confirmation-email',
-  imports: [RouterLink],
+  imports: [RouterLink, MiseEnPageAuth],
   styleUrl: './connexion.scss',
   template: `
-    <main class="page"><section class="carte">
+    <app-mise-en-page-auth><section class="carte">
       <h1>Confirmation de l'email</h1>
       @switch (etat()) {
         @case ('chargement') { <p>Vérification en cours…</p> }
@@ -21,7 +22,7 @@ import { CompteService } from '../services/compte.service';
           <p class="lien"><a routerLink="/renvoi-confirmation">Renvoyer l'email de confirmation</a></p>
         }
       }
-    </section></main>
+    </section></app-mise-en-page-auth>
   `,
 })
 export class ConfirmationEmail implements OnInit {

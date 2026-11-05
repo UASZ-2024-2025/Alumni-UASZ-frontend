@@ -1,19 +1,20 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { CompteService } from '../services/compte.service';
+import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 const motsDePasseIdentiques: ValidatorFn = (g) =>
   g.get('password')?.value === g.get('confirmation')?.value ? null : { different: true };
 
 @Component({
   selector: 'app-inscription',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive, MiseEnPageAuth],
   styleUrl: './connexion.scss',
   template: `
-    <main class="page">
+    <app-mise-en-page-auth>
       @if (emailInscrit(); as email) {
         <section class="carte">
           <h1>Vérifiez votre email</h1>
@@ -24,11 +25,17 @@ const motsDePasseIdentiques: ValidatorFn = (g) =>
         </section>
       } @else {
         <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
+          <nav class="onglets" aria-label="Authentification">
+            <a routerLink="/connexion" routerLinkActive="actif">Connexion</a>
+            <a routerLink="/inscription" routerLinkActive="actif">Inscription</a>
+          </nav>
           <h1>Créer un compte</h1>
           @if (erreur()) { <div class="alerte" role="alert">{{ erreur() }}</div> }
 
-          <label>Nom <input formControlName="lastName" autocomplete="family-name" /></label>
-          <label>Prénom <input formControlName="firstName" autocomplete="given-name" /></label>
+          <div class="deux-colonnes">
+            <label>Nom <input formControlName="lastName" autocomplete="family-name" /></label>
+            <label>Prénom <input formControlName="firstName" autocomplete="given-name" /></label>
+          </div>
           <label>Email <input type="email" formControlName="email" autocomplete="username" /></label>
           @if (formulaire.controls.email.touched && formulaire.controls.email.invalid) {
             <small class="invalide">Saisissez un email valide.</small>
@@ -54,7 +61,7 @@ const motsDePasseIdentiques: ValidatorFn = (g) =>
           <p class="lien">Déjà inscrit ? <a routerLink="/connexion">Se connecter</a></p>
         </form>
       }
-    </main>
+    </app-mise-en-page-auth>
   `,
 })
 export class Inscription {

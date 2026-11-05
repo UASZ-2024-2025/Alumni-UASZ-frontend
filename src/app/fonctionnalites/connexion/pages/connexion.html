@@ -1,5 +1,9 @@
-<main class="page">
+<app-mise-en-page-auth>
   <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
+    <nav class="onglets" aria-label="Authentification">
+      <a routerLink="/connexion" routerLinkActive="actif">Connexion</a>
+      <a routerLink="/inscription" routerLinkActive="actif">Inscription</a>
+    </nav>
     <h1>Alumni UASZ</h1>
     <p class="sous-titre">Connectez-vous à votre espace</p>
 
@@ -36,4 +40,4 @@
     <p class="lien"><a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
     <p class="lien">Pas encore de compte ? <a routerLink="/inscription">S'inscrire</a></p>
   </form>
-</main>
+</app-mise-en-page-auth>

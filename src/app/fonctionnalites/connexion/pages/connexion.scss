@@ -1,17 +1,92 @@
-.page { min-height: 100vh; display: grid; place-items: center; background: #f1f5f9; }
+// Styles du formulaire d'authentification (partagés par toutes les pages du dossier).
+// Les variables --g*, --tx, --mu… viennent de <app-mise-en-page-auth>.
+
 .carte {
-  width: min(380px, 92vw); display: flex; flex-direction: column; gap: .75rem;
-  background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 24px #0001;
+  width: min(420px, 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
-h1 { margin: 0; font-size: 1.5rem; }
-.sous-titre { margin: 0 0 .5rem; color: #64748b; }
-label { display: flex; flex-direction: column; gap: .25rem; font-size: .9rem; }
-input { padding: .6rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
-button { padding: .7rem; border: 0; border-radius: 8px; background: #166534; color: #fff; font-size: 1rem; cursor: pointer; }
-button:disabled { opacity: .6; cursor: wait; }
-.alerte { background: #fee2e2; color: #991b1b; padding: .6rem; border-radius: 8px; }
-.invalide { color: #b91c1c; }
-select { padding: .6rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
-.succes { background: #dcfce7; color: #166534; padding: .6rem; border-radius: 8px; }
-.lien { text-align: center; font-size: .9rem; }
-.lien a { color: #166534; }
+
+h1 { margin: 0; font: 700 1.625rem/1.2 var(--police-titre); color: var(--tx); }
+.sous-titre { margin: -0.4rem 0 0.4rem; color: var(--mu); }
+
+// ---------- Onglets Connexion / Inscription ----------
+.onglets {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid var(--bd);
+  overflow-x: auto;
+
+  a {
+    padding: 8px 14px;
+    border-bottom: 3px solid transparent;
+    color: var(--mu);
+    text-decoration: none;
+    white-space: nowrap;
+
+    &.actif { border-color: var(--g8); color: var(--g8); font-weight: 600; }
+  }
+}
+
+// ---------- Champs ----------
+.deux-colonnes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8125rem; font-weight: 600; }
+input,
+select {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #cfdcd5;
+  border-radius: 10px;
+  background: var(--sf);
+  color: var(--tx);
+  font: 400 0.9375rem/1.5 var(--police);
+
+  &:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
+}
+.invalide { margin-top: -0.5rem; color: var(--dg); font-size: 0.8125rem; }
+
+// ---------- Bouton principal ----------
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 18px;
+  border: 1px solid var(--g8);
+  border-radius: 10px;
+  background: var(--g8);
+  color: #fff;
+  font: 600 0.875rem var(--police);
+  cursor: pointer;
+  box-shadow: 0 4px 12px -4px rgba(11, 93, 59, 0.5);
+  transition: 0.15s;
+
+  &:hover:not(:disabled) { background: var(--g9); transform: translateY(-1px); }
+  &:disabled { opacity: 0.6; cursor: wait; box-shadow: none; }
+}
+:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+
+// ---------- Messages ----------
+.alerte,
+.succes { padding: 0.65rem 0.8rem; border-radius: 10px; font-size: 0.875rem; font-weight: 500; }
+.alerte { background: #fde4e2; color: var(--dg); }
+.succes { background: #dcf3e4; color: var(--ok); }
+
+// ---------- Liens ----------
+.lien {
+  margin: 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--mu);
+
+  a { color: var(--g8); font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
+}

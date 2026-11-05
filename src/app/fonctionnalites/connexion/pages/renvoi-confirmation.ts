@@ -3,13 +3,14 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { CompteService } from '../services/compte.service';
+import { MiseEnPageAuth } from '../composants/mise-en-page-auth/mise-en-page-auth';
 
 @Component({
   selector: 'app-renvoi-confirmation',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth],
   styleUrl: './connexion.scss',
   template: `
-    <main class="page">
+    <app-mise-en-page-auth>
       <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
         <h1>Renvoyer l'email de confirmation</h1>
         @if (erreur()) { <div class="alerte" role="alert">{{ erreur() }}</div> }
@@ -21,7 +22,7 @@ import { CompteService } from '../services/compte.service';
         <button type="submit" [disabled]="chargement()">Renvoyer</button>
         <p class="lien"><a routerLink="/connexion">Retour à la connexion</a></p>
       </form>
-    </main>
+    </app-mise-en-page-auth>
   `,
 })
 export class RenvoiConfirmation {
