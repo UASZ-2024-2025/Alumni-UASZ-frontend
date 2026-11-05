@@ -1,0 +1,109 @@
+<h1>Entreprises partenaires</h1>
+
+<form class="filtres" (submit)="$event.preventDefault(); rechercher(recherche.value, filtre.value)">
+  <label>
+    Recherche
+    <input #recherche type="search" placeholder="Nom de l'entreprise" />
+  </label>
+  <label>
+    Partenaire
+    <select #filtre>
+      <option value="">Toutes</option>
+      <option value="oui">Partenaires</option>
+      <option value="non">Non partenaires</option>
+    </select>
+  </label>
+  <button type="submit">Rechercher</button>
+</form>
+
+@if (succes(); as message) {
+  <p class="succes" role="status">{{ message }}</p>
+}
+@if (erreur(); as message) {
+  <p class="alerte" role="alert">{{ message }}</p>
+}
+
+<div [attr.aria-busy]="chargement()">
+  @if (chargement() && entreprises().length === 0) {
+    <p>Chargement…</p>
+  } @else if (!erreur() && entreprises().length === 0) {
+    <p class="vide">Aucune entreprise pour ces critères.</p>
+  } @else if (entreprises().length > 0) {
+    <table>
+      <caption>{{ total() }} entreprise(s)</caption>
+      <thead>
+        <tr>
+          <th scope="col">Nom</th>
+          <th scope="col">Secteur</th>
+          <th scope="col">Contact</th>
+          <th scope="col">Partenaire</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of entreprises(); track c.id) {
+          <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.sector }}</td>
+            <td>{{ c.contactEmail }}</td>
+            <td>
+              <input #partenaire type="checkbox" [checked]="c.isPartner" [disabled]="enCours() === c.id"
+                [attr.aria-label]="'Partenaire : ' + c.name"
+                (change)="basculerPartenaire(c, partenaire.checked)" />
+            </td>
+            <td class="actions">
+              <button type="button" class="secondaire" [attr.aria-label]="'Modifier ' + c.name"
+                (click)="modifier(c)">Modifier</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="pagination">
+      <button type="button" class="secondaire" [disabled]="page() === 0" (click)="aller(page() - 1)">
+        Précédent
+      </button>
+      <span>Page {{ page() + 1 }} / {{ nbPages() }}</span>
+      <button type="button" class="secondaire" [disabled]="page() + 1 >= nbPages()"
+        (click)="aller(page() + 1)">
+        Suivant
+      </button>
+    </div>
+  }
+</div>
+
+<h2>{{ enEdition() ? "Modifier l'entreprise" : 'Ajouter une entreprise' }}</h2>
+<form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+  <label>
+    Nom *
+    <input formControlName="name" required />
+    @if (formulaire.controls.name.touched && formulaire.controls.name.invalid) {
+      <span class="erreur-champ">Le nom est obligatoire.</span>
+    }
+  </label>
+  <label>
+    Secteur *
+    <input formControlName="sector" required />
+    @if (formulaire.controls.sector.touched && formulaire.controls.sector.invalid) {
+      <span class="erreur-champ">Le secteur est obligatoire.</span>
+    }
+  </label>
+  <label>
+    Email de contact *
+    <input type="email" formControlName="contactEmail" required />
+    @if (formulaire.controls.contactEmail.touched && formulaire.controls.contactEmail.invalid) {
+      <span class="erreur-champ">Un email valide est obligatoire.</span>
+    }
+  </label>
+  <label>Site web <input formControlName="website" /></label>
+  <label>Téléphone <input formControlName="contactPhone" /></label>
+  <label>Adresse <input formControlName="address" /></label>
+  <label class="pleine">Description <textarea formControlName="description" rows="3"></textarea></label>
+  <div class="pleine">
+    <button type="submit" [disabled]="envoi()">{{ enEdition() ? 'Enregistrer' : 'Ajouter' }}</button>
+    @if (enEdition()) {
+      <button type="button" class="secondaire" (click)="annuler()">Annuler</button>
+    }
+  </div>
+</form>

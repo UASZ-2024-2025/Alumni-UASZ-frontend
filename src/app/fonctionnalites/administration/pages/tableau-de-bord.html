@@ -1,0 +1,82 @@
+<h1>Tableau de bord</h1>
+
+<section aria-labelledby="titre-kpi">
+  <h2 id="titre-kpi">Indicateurs clés</h2>
+  @if (stats().statut === 'erreur') {
+    <p class="alerte" role="alert">
+      {{ stats().message }}
+      <button type="button" class="secondaire" (click)="chargerStats()">Réessayer</button>
+    </p>
+  } @else {
+    <dl class="kpis" [attr.aria-busy]="stats().statut === 'chargement'">
+      @for (k of kpis(); track k.libelle) {
+        <div class="kpi">
+          <dt>{{ k.libelle }}</dt>
+          <dd>{{ k.valeur ?? '—' }}{{ k.valeur !== undefined ? k.suffixe : '' }}</dd>
+        </div>
+      }
+    </dl>
+    @if (stats().donnees?.updatedAt; as maj) {
+      <p class="maj">Mis à jour le {{ maj }}</p>
+    }
+  }
+</section>
+
+<section aria-labelledby="titre-insertion">
+  <h2 id="titre-insertion">Rapport d'insertion</h2>
+  <form class="filtres" (submit)="$event.preventDefault(); chargerInsertion(annee.value, specialite.value)">
+    <label>
+      Promotion (année)
+      <input #annee type="number" min="2000" max="2100" />
+    </label>
+    <label>
+      Spécialité
+      <select #specialite>
+        <option value="">Toutes</option>
+        @for (s of specialites(); track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </label>
+    <button type="submit">Filtrer</button>
+  </form>
+
+  @switch (insertion().statut) {
+    @case ('chargement') { <p aria-busy="true">Chargement…</p> }
+    @case ('erreur') {
+      <p class="alerte" role="alert">
+        {{ insertion().message }}
+        <button type="button" class="secondaire" (click)="chargerInsertion(annee.value, specialite.value)">Réessayer</button>
+      </p>
+    }
+    @default {
+      @if (lignesInsertion().length === 0) {
+        <p class="vide">Aucune donnée d'insertion pour ces critères.</p>
+      } @else {
+        <p>Taux global : <strong>{{ insertion().donnees?.overallInsertionRate }} %</strong></p>
+        <app-graphique-barres [lignes]="lignesInsertion()" />
+      }
+    }
+  }
+</section>
+
+<section aria-labelledby="titre-competences">
+  <h2 id="titre-competences">Écart de compétences</h2>
+  @switch (competences().statut) {
+    @case ('chargement') { <p aria-busy="true">Chargement…</p> }
+    @case ('erreur') {
+      <p class="alerte" role="alert">
+        {{ competences().message }}
+        <button type="button" class="secondaire" (click)="chargerCompetences()">Réessayer</button>
+      </p>
+    }
+    @default {
+      @if (lignesCompetences().length === 0) {
+        <p class="vide">Aucune donnée de compétences.</p>
+      } @else {
+        <p class="maj">Vert : demande du marché · orange : compétences des diplômés</p>
+        <app-graphique-barres [lignes]="lignesCompetences()" />
+      }
+    }
+  }
+</section>
