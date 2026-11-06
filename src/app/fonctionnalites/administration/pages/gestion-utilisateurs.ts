@@ -17,7 +17,7 @@ import { ConfirmationService } from '../../../commun/services/confirmation.servi
 import { ToastService } from '../../../commun/services/toast.service';
 import { Avatar } from '../../../commun/components/avatar/avatar';
 import { messageErreur } from '../erreurs';
-import { libelleRole, libelleStatut, tonStatut } from '../libelles';
+import { libelleRole, libelleStatut, tonStatut } from '../../../commun/utilitaires/libelles';
 
 @Component({
   selector: 'app-gestion-utilisateurs',

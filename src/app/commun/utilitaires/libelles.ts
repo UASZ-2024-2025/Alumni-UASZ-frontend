@@ -1,4 +1,4 @@
-import { TonBadge } from '../../commun/components/badge/badge';
+import { TonBadge } from '../components/badge/badge';
 
 /** Libellés français des valeurs d'énumération renvoyées par l'API ; une valeur inconnue s'affiche telle quelle. */
 const ROLES: Record<string, string> = {

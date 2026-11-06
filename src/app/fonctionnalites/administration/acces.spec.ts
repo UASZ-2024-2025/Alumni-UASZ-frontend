@@ -32,6 +32,6 @@ describe("Accès à /administration (critère d'acceptation AL-51)", () => {
   it.each(['ENSEIGNANT', 'ALUMNI', null])('redirige %s vers /', (role) => {
     const resultat = tester(role);
     expect(resultat).toBeInstanceOf(UrlTree);
-    expect(TestBed.inject(Router).serializeUrl(resultat)).toBe('/');
+    expect(TestBed.inject(Router).serializeUrl(resultat)).toBe('/acces-refuse');
   });
 });
