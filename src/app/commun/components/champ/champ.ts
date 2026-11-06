@@ -18,7 +18,7 @@ export class Champ implements ControlValueAccessor {
   private static prochainId = 0;
 
   readonly libelle = input.required<string>();
-  readonly type = input<'text' | 'email' | 'password' | 'search' | 'tel' | 'textarea' | 'select'>('text');
+  readonly type = input<'text' | 'email' | 'password' | 'search' | 'tel' | 'date' | 'number' | 'textarea' | 'select'>('text');
   readonly options = input<OptionChamp[]>([]);
   readonly placeholder = input('');
   readonly erreur = input<string | null>(null);
