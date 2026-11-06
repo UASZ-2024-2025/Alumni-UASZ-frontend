@@ -1,0 +1,6 @@
+<div class="onglets" role="tablist">
+  @for (o of onglets(); track o.cle; let i = $index) {
+    <button type="button" role="tab" [attr.aria-selected]="o.cle === actif()" [tabindex]="o.cle === actif() ? 0 : -1"
+      (click)="actif.set(o.cle)" (keydown)="naviguer($event, i)">{{ o.libelle }}</button>
+  }
+</div>

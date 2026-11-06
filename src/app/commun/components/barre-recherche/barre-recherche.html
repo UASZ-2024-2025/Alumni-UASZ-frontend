@@ -1,0 +1,7 @@
+<form class="barre" role="search" (submit)="$event.preventDefault()">
+  <div class="recherche">
+    <app-champ [libelle]="libelle()" type="search" [placeholder]="placeholder()" [ngModel]="valeur" name="recherche" (ngModelChange)="saisie($event)" />
+  </div>
+  <ng-content />
+  <app-bouton variante="secondaire" (clic)="effacer()">Réinitialiser</app-bouton>
+</form>
