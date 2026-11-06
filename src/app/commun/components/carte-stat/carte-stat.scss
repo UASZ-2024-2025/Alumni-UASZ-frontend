@@ -1,0 +1,22 @@
+:host { display: block; }
+
+.stat {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: 20px 20px 20px 24px;
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  background: var(--sf);
+  box-shadow: var(--ombre-carte);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: linear-gradient(var(--g7), var(--ac));
+  }
+}
+b { display: block; font: 700 2rem/1.2 var(--police-titre); color: var(--g8); }
+span { color: var(--mu); font-size: 0.8125rem; }

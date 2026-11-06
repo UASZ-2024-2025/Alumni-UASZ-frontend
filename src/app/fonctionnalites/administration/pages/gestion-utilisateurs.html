@@ -1,0 +1,86 @@
+<div class="entete-page">
+  <h1>Gestion des utilisateurs</h1>
+  <p class="total" aria-live="polite">{{ total() }} utilisateur(s)</p>
+</div>
+
+<div class="filtres filtres--barre">
+  <label class="champ">
+    Rôle
+    <select #filtreRole (change)="filtrerRole(filtreRole.value)">
+      <option value="">Tous</option>
+      @for (r of roles; track r) {
+        <option [value]="r">{{ libelleRole(r) }}</option>
+      }
+    </select>
+  </label>
+  <fieldset class="puces" aria-label="Filtrer par statut">
+    <button type="button" class="puce" [attr.aria-pressed]="!statut()" (click)="filtrerStatut('')">Tous</button>
+    @for (s of statuts; track s) {
+      <button type="button" class="puce" [attr.aria-pressed]="statut() === s" (click)="filtrerStatut(s)">{{ libelleStatut(s) }}</button>
+    }
+  </fieldset>
+</div>
+
+@if (erreur(); as message) {
+  <app-alerte>
+    {{ message }} <app-bouton variante="secondaire" [petit]="true" (clic)="charger()">Réessayer</app-bouton>
+  </app-alerte>
+}
+
+<div [attr.aria-busy]="chargement()">
+  @if (chargement() && utilisateurs().length === 0) {
+    <app-spinner libelle="Chargement des utilisateurs…" />
+  } @else if (!erreur() && utilisateurs().length === 0) {
+    <app-etat-vide titre="Aucun utilisateur">Aucun résultat pour ces filtres.</app-etat-vide>
+  } @else if (utilisateurs().length > 0) {
+    <app-carte>
+    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
+      <caption class="cache">Liste des utilisateurs</caption>
+      <thead>
+        <tr>
+          <th scope="col">Utilisateur</th>
+          <th scope="col">Rôle</th>
+          <th scope="col">Statut</th>
+          <th scope="col">Inscrit le</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of utilisateurs(); track u.id) {
+          <tr>
+            <td class="identite">
+              <app-avatar [nom]="nomComplet(u)" />
+              <span class="identite-texte">
+                <strong>{{ nomComplet(u) }}</strong>
+                <small>{{ u.email }}</small>
+              </span>
+            </td>
+            <td data-label="Rôle">{{ libelleRole(u.role) }}</td>
+            <td data-label="Statut"><app-badge [ton]="tonStatut(u.status)">{{ libelleStatut(u.status) }}</app-badge></td>
+            <td data-label="Inscrit le">{{ u.createdAt ? (u.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td class="cellule-actions"><div class="actions">
+              @if (u.status !== 'ACTIF') {
+                <app-bouton [petit]="true" [desactive]="enCours() === u.id" [libelleAria]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)" (clic)="activer(u)">
+                  {{ u.status === 'SUSPENDU' ? 'Réactiver' : 'Activer' }}
+                </app-bouton>
+              }
+              @if (u.status === 'ACTIF') {
+                <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
+                  [libelleAria]="'Suspendre ' + nomComplet(u)" (clic)="suspendre(u)">
+                  Suspendre
+                </app-bouton>
+              }
+              <app-bouton variante="danger" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
+                [libelleAria]="'Supprimer ' + nomComplet(u)" (clic)="supprimer(u)">
+                Supprimer
+              </app-bouton>
+            </div></td>
+          </tr>
+        }
+      </tbody>
+    </table></div>
+    </app-carte>
+
+    <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="aller($event)" />
+  }
+</div>

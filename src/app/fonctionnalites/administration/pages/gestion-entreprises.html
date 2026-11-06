@@ -1,0 +1,96 @@
+<div class="entete-page">
+  <div>
+    <h1>Entreprises partenaires</h1>
+    <p class="total" aria-live="polite">{{ total() }} entreprise(s)</p>
+  </div>
+  <app-bouton (clic)="ajouter()">Ajouter une entreprise</app-bouton>
+</div>
+
+<form class="filtres filtres--barre" (submit)="$event.preventDefault(); rechercher(texteRecherche, choixPartenaire)">
+  <app-champ libelle="Recherche" type="search" placeholder="Nom de l'entreprise" name="recherche" [(ngModel)]="texteRecherche" />
+  <app-champ libelle="Partenaire" type="select" [options]="optionsPartenaire" name="partenaire" [(ngModel)]="choixPartenaire" />
+  <app-bouton type="submit">Rechercher</app-bouton>
+</form>
+
+@if (!formulaireOuvert() && erreur(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+}
+
+<div [attr.aria-busy]="chargement()">
+  @if (chargement() && entreprises().length === 0) {
+    <app-spinner libelle="Chargement des entreprises…" />
+  } @else if (!erreur() && entreprises().length === 0) {
+    <app-etat-vide titre="Aucune entreprise">Aucun résultat pour ces critères.</app-etat-vide>
+  } @else if (entreprises().length > 0) {
+    <app-carte>
+    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
+      <caption class="cache">Liste des entreprises</caption>
+      <thead>
+        <tr>
+          <th scope="col">Entreprise</th>
+          <th scope="col">Secteur</th>
+          <th scope="col">Contact</th>
+          <th scope="col">Partenaire</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of entreprises(); track c.id) {
+          <tr>
+            <td class="identite">
+              <app-avatar [nom]="c.name ?? ''" />
+              <span class="identite-texte">
+                <strong>{{ c.name }}</strong>
+                @if (c.website) { <small>{{ c.website }}</small> }
+              </span>
+            </td>
+            <td data-label="Secteur">{{ c.sector || '—' }}</td>
+            <td data-label="Contact">
+              <span class="identite-texte">
+                <span>{{ c.contactEmail || '—' }}</span>
+                @if (c.contactPhone) { <small>{{ c.contactPhone }}</small> }
+              </span>
+            </td>
+            <td data-label="Partenaire">
+              <label class="interrupteur">
+                <input #partenaire type="checkbox" [checked]="c.isPartner" [disabled]="enCours() === c.id"
+                  [attr.aria-label]="'Partenaire : ' + c.name"
+                  (change)="basculerPartenaire(c, partenaire.checked)" />
+                <span>{{ c.isPartner ? 'Partenaire' : 'Non partenaire' }}</span>
+              </label>
+            </td>
+            <td class="cellule-actions"><div class="actions">
+              <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Modifier ' + c.name"
+                (clic)="modifier(c)">Modifier</app-bouton>
+            </div></td>
+          </tr>
+        }
+      </tbody>
+    </table></div>
+    </app-carte>
+
+    <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="aller($event)" />
+  }
+</div>
+
+<app-modale [ouvert]="formulaireOuvert()" [titre]="enEdition() ? 'Modifier l’entreprise' : 'Ajouter une entreprise'" (fermer)="annuler()">
+<form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+  <app-champ libelle="Nom" [requis]="true" formControlName="name"
+    [erreur]="formulaire.controls.name.touched && formulaire.controls.name.invalid ? 'Le nom est obligatoire.' : null" />
+  <app-champ libelle="Secteur" [requis]="true" formControlName="sector"
+    [erreur]="formulaire.controls.sector.touched && formulaire.controls.sector.invalid ? 'Le secteur est obligatoire.' : null" />
+  <app-champ libelle="Email de contact" type="email" [requis]="true" formControlName="contactEmail"
+    [erreur]="formulaire.controls.contactEmail.touched && formulaire.controls.contactEmail.invalid ? 'Un email valide est obligatoire.' : null" />
+  <app-champ libelle="Site web" formControlName="website" />
+  <app-champ libelle="Téléphone" type="tel" formControlName="contactPhone" />
+  <app-champ libelle="Adresse" formControlName="address" />
+  <app-champ class="pleine" libelle="Description" type="textarea" formControlName="description" />
+  @if (erreur(); as message) {
+    <app-alerte class="pleine">{{ message }}</app-alerte>
+  }
+  <div class="pleine pied">
+    <app-bouton variante="secondaire" (clic)="annuler()">Annuler</app-bouton>
+    <app-bouton type="submit" [chargement]="envoi()">{{ enEdition() ? 'Enregistrer' : 'Ajouter' }}</app-bouton>
+  </div>
+</form>
+</app-modale>

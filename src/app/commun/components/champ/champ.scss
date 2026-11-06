@@ -1,0 +1,10 @@
+:host { display: block; min-width: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+.champ { display: flex; flex-direction: column; gap: 0.3rem; }
+label { font-size: 0.8125rem; font-weight: 600; }
+input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--bord-champ); border-radius: var(--rayon); background: var(--sf); color: var(--tx); font: 400 0.9375rem/1.5 var(--police); }
+input, select { height: 2.75rem; }
+input:focus, select:focus, textarea:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
+[aria-invalid='true'] { border-color: var(--dg); }
+:disabled { background: var(--g0); color: var(--mu); }
+.erreur { color: var(--dg); font-size: 0.8125rem; }

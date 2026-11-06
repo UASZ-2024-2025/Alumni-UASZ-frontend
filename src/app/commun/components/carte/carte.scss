@@ -1,0 +1,10 @@
+:host { display: block; }
+
+.carte-base {
+  padding: 20px;
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  background: var(--sf);
+  box-shadow: var(--ombre-carte);
+}
+h2 { margin: 0 0 0.75rem; font: 700 1.25rem/1.2 var(--police-titre); }

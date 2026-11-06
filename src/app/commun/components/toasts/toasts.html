@@ -1,0 +1,8 @@
+<div class="zone" aria-live="polite">
+  @for (t of service.toasts(); track t.id) {
+    <div class="toast toast--{{ t.type }}" [attr.role]="t.type === 'erreur' ? 'alert' : 'status'">
+      <span>{{ t.message }}</span>
+      <button type="button" aria-label="Fermer la notification" (click)="service.fermer(t.id)">×</button>
+    </div>
+  }
+</div>

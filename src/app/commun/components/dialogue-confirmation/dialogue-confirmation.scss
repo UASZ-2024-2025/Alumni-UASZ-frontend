@@ -1,0 +1,5 @@
+.fond { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(7, 61, 39, 0.5); }
+.boite { width: min(420px, 100%); padding: 22px; border-radius: 16px; background: var(--sf); box-shadow: var(--ombre-carte); }
+h2 { margin: 0 0 8px; font: 700 1.25rem/1.2 var(--police-titre); }
+p { margin: 0 0 18px; color: var(--mu); }
+.actions { display: flex; justify-content: flex-end; gap: 8px; }

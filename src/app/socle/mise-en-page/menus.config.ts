@@ -12,5 +12,5 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
   ETUDIANT: [{ libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Mes candidatures', chemin: '/candidatures' }, { libelle: 'Correspondances', chemin: '/correspondances' }, ...commun],
   ENSEIGNANT: [{ libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Statistiques', chemin: '/statistiques' }, ...commun],
   ENTREPRISE: [{ libelle: 'Mes offres', chemin: '/offres-emploi' }, { libelle: 'Candidatures reçues', chemin: '/candidatures' }, ...commun],
-  ADMINISTRATEUR: [{ libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Entreprises', chemin: '/entreprises' }, { libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Statistiques', chemin: '/statistiques' }, ...commun],
+  ADMINISTRATEUR: [{ libelle: 'Administration', chemin: '/administration' }, { libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Entreprises', chemin: '/entreprises' }, { libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Statistiques', chemin: '/statistiques' }, ...commun],
 };

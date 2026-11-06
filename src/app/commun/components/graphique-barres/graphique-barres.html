@@ -1,0 +1,21 @@
+<ul>
+  @for (l of lignes(); track l.libelle) {
+    <li class="ligne">
+      <span>{{ l.libelle }}</span>
+      <div>
+        <figure class="piste" [attr.aria-label]="(l.libelle + ' : ' + l.valeur + ' ' + unite()).trim()">
+          <div class="barre" [style.width.%]="largeur(l.valeur)"></div>
+        </figure>
+        @if (l.secondaire !== undefined) {
+          <figure class="piste" [attr.aria-label]="(l.libelle + ' (offre) : ' + l.secondaire + ' ' + unite()).trim()">
+            <div class="barre secondaire" [style.width.%]="largeur(l.secondaire)"></div>
+          </figure>
+        }
+        <span class="detail">{{ l.valeur }} {{ unite() }}
+          @if (l.secondaire !== undefined) { · offre {{ l.secondaire }} {{ unite() }} }
+          @if (l.detail) { · {{ l.detail }} }
+        </span>
+      </div>
+    </li>
+  }
+</ul>

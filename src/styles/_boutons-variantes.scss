@@ -1,0 +1,7 @@
+// Variantes du bouton .btn (voir _boutons.scss) : <button class="btn btn--auto btn--secondaire btn--petit">.
+.btn {
+  &.btn--auto { width: auto; }
+  &.btn--petit { padding: 5px 10px; font-size: 0.75rem; }
+  &.btn--secondaire { background: transparent; color: var(--g8); box-shadow: none; &:hover:not(:disabled) { background: var(--g1); } }
+  &.btn--danger { background: var(--dg); border-color: var(--dg); &:hover:not(:disabled) { background: var(--dg); filter: brightness(0.9); } }
+}

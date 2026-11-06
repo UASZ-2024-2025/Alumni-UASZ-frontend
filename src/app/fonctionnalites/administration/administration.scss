@@ -1,0 +1,54 @@
+// Mise en page propre à l'administration. Couleurs, polices, boutons, champs, tableaux et cartes
+// viennent de src/styles/ et de commun/components/ (charte UASZ d'Ablaye).
+:host { display: block; }
+
+h1 { margin: 0; font: 700 1.625rem/1.2 var(--police-titre); }
+.entete-page { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1rem; }
+.cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.sous-menu { display: flex; gap: 4px; margin-bottom: 1.25rem; border-bottom: 1px solid var(--bd); overflow-x: auto; }
+.sous-menu a { padding: 8px 14px; color: var(--mu); text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; }
+.sous-menu a.actif { border-bottom-color: var(--g8); color: var(--g8); font-weight: 600; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 0 0 .5rem; padding: 0; list-style: none; }
+.deux-cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-top: 14px; }
+.maj { margin: .5rem 0; color: var(--mu); font-size: .8125rem; }
+.vide { padding: .6rem .9rem; border-radius: var(--rayon); background: var(--g0); color: var(--mu); }
+
+app-alerte { margin: .75rem 0; }
+td input[type='checkbox'] { accent-color: var(--g8); }
+
+.formulaire { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: .75rem; }
+.formulaire .pleine { grid-column: 1 / -1; }
+div.pleine { display: flex; gap: .5rem; }
+.pied { position: sticky; bottom: -22px; margin: 0 -22px -22px; padding: 12px 22px; border-top: 1px solid var(--bd); background: var(--sf); justify-content: flex-end; }
+
+.total { margin: 2px 0 0; color: var(--mu); font-size: 0.875rem; }
+.filtres--barre { align-items: end; }
+.puces { margin: 0; padding: 0 0 2px; border: 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.puce { padding: 6px 14px; border: 1px solid var(--bord-champ); border-radius: 99px; background: var(--sf); color: var(--tx); font: inherit; font-size: 0.8125rem; cursor: pointer; }
+.puce[aria-pressed='true'] { border-color: var(--g8); background: var(--g8); color: var(--sf); }
+.puce:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+
+.identite { display: flex; align-items: center; gap: 0.75rem; }
+.identite-texte { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.identite-texte small { color: var(--mu); overflow-wrap: anywhere; }
+td { vertical-align: middle; }
+
+.interrupteur { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; cursor: pointer; }
+.interrupteur input { appearance: none; position: relative; width: 36px; height: 20px; margin: 0; border-radius: 99px; background: var(--bord-champ); cursor: inherit; transition: background 0.15s; }
+.interrupteur input::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--sf); transition: transform 0.15s; }
+.interrupteur input:checked { background: var(--g8); }
+.interrupteur input:checked::after { transform: translateX(16px); }
+.interrupteur input:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+.interrupteur input:disabled { opacity: 0.5; }
+
+.graphiques { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 14px; margin-top: 14px; }
+.filtres app-bouton, .filtres .btn { align-self: end; }
+@media (max-width: 600px) {
+  h1 { font-size: 1.375rem; }
+  .filtres app-champ, .filtres .champ { flex: 1 1 100%; }
+  .entete-page > app-bouton { width: 100%; }
+}
+.sous-titre { margin: 1rem 0 .5rem; color: var(--mu); font: 600 .8125rem var(--police); text-transform: uppercase; letter-spacing: .04em; }
+:host > h1 { margin-bottom: 1rem; }

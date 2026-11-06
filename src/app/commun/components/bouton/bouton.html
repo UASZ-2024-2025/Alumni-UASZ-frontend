@@ -1,0 +1,4 @@
+<button [attr.type]="type()" [class]="classes()" [disabled]="desactive() || chargement()" [attr.aria-busy]="chargement()" [attr.aria-label]="libelleAria()" (click)="clic.emit($event)">
+  @if (chargement()) { <span class="roue" aria-hidden="true"></span> }
+  <ng-content />
+</button>

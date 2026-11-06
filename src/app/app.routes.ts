@@ -23,6 +23,15 @@ export const routes: Routes = [
         data: { roles: ['ADMINISTRATEUR'] },
         loadComponent: () => import('./fonctionnalites/accueil/accueil').then((m) => m.Accueil),
       },
+      {
+        path: 'administration',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMINISTRATEUR'] },
+        loadChildren: () =>
+          import('./fonctionnalites/administration/administration.routes').then(
+            (m) => m.ADMINISTRATION_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -1,0 +1,15 @@
+<div class="anneau-conteneur">
+  <figure class="anneau" [attr.aria-label]="resume()" [style.background]="fond()">
+    <span class="centre">{{ centre() ?? total() }}</span>
+  </figure>
+  <ul class="legende">
+    @for (l of lignes(); track l.libelle) {
+      <li>
+        <i class="pastille" [style.background]="l.couleur"></i>
+        <span class="nom">{{ l.libelle }}</span>
+        <b>{{ l.valeur }}</b>
+        <span class="pct">{{ l.pourcentage }} %</span>
+      </li>
+    }
+  </ul>
+</div>
