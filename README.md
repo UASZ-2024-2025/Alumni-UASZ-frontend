@@ -154,6 +154,8 @@ Pour afficher un lien de menu, l'ajouter dans `menus.config.ts` pour les rôles 
 - Composants standalone, signals pour l'état local, `@if` et `@for` dans les templates.
 - Les erreurs d'un `subscribe` sont des `ErreurApi` : afficher `e.message`.
 
+Pour ajouter une fonctionnalité pas à pas : [`docs/ajouter-une-fonctionnalite.md`](docs/ajouter-une-fonctionnalite.md).
+
 ### Fichiers à ne pas modifier
 
 | Catégorie | Fichiers | Pourquoi |
