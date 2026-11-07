@@ -16,7 +16,7 @@ import { GraphiqueBarres, LigneGraphique } from '../../../commun/components/grap
 import { ColonneGraphique, GraphiqueColonnes } from '../../../commun/components/graphique-colonnes/graphique-colonnes';
 import { GraphiqueAnneau, SegmentAnneau } from '../../../commun/components/graphique-anneau/graphique-anneau';
 import { messageErreur } from '../erreurs';
-import { libelleRole, libelleStatut } from '../libelles';
+import { libelleRole, libelleStatut } from '../../../commun/utilitaires/libelles';
 
 /** État de chargement d'un bloc ; chaque bloc est indépendant des autres. */
 interface Etat<T> {

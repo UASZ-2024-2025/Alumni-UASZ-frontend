@@ -5,5 +5,5 @@ import { AuthentificationService } from '../authentification/services/authentifi
 export const roleGuard: CanActivateFn = (route) => {
   const role = inject(AuthentificationService).role();
   const autorises = (route.data['roles'] as string[] | undefined) ?? [];
-  return role && autorises.includes(role) ? true : inject(Router).createUrlTree(['/']);
+  return role && autorises.includes(role) ? true : inject(Router).createUrlTree(['/acces-refuse']);
 };
