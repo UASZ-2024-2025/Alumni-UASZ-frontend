@@ -50,3 +50,13 @@ describe('Champ', () => {
     expect(fixture.nativeElement.querySelector('input').disabled).toBe(true);
   });
 });
+
+describe('Champ de type date', () => {
+  it('affiche un champ natif de type date', () => {
+    const f = TestBed.createComponent(Champ);
+    f.componentRef.setInput('libelle', 'Début');
+    f.componentRef.setInput('type', 'date');
+    f.detectChanges();
+    expect((f.nativeElement as HTMLElement).querySelector('input')!.type).toBe('date');
+  });
+});
