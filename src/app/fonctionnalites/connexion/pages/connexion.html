@@ -1,10 +1,24 @@
 <main class="page">
-  <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
+  <form class="carte formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
     <h1>Alumni UASZ</h1>
     <p class="sous-titre">Connectez-vous à votre espace</p>
 
-    @if (erreur()) {
-      <div class="alerte" role="alert">{{ erreur() }}</div>
+    @if (info === 'mot-de-passe-modifie') {
+      <div class="succes" role="status">Mot de passe modifié. Reconnectez-vous avec le nouveau.</div>
+    }
+    @if (info === 'session-expiree') {
+      <div class="info" role="status">Votre session a expiré. Reconnectez-vous.</div>
+    }
+    @if (erreur(); as e) {
+      <div class="alerte" role="alert">
+        {{ e.message }}
+        @if (e.code === 'ACCOUNT_NOT_ACTIVATED') {
+          <br />
+          <a routerLink="/confirmation-email" [queryParams]="{ email: formulaire.controls.email.value }">
+            Renvoyer l'email de confirmation
+          </a>
+        }
+      </div>
     }
 
     <label>
@@ -23,8 +37,13 @@
       <small class="invalide">Le mot de passe est obligatoire.</small>
     }
 
-    <button type="submit" [disabled]="chargement()">
+    <button class="btn" type="submit" [disabled]="chargement()">
       {{ chargement() ? 'Connexion…' : 'Se connecter' }}
     </button>
+
+    <div class="liens">
+      <a routerLink="/mot-de-passe-oublie">Mot de passe oublié ?</a>
+      <a routerLink="/inscription">Créer un compte</a>
+    </div>
   </form>
 </main>
