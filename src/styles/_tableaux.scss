@@ -1,0 +1,40 @@
+// Tableau de la maquette : <div class="tableau-conteneur"><table class="tableau">…</table></div>
+.tableau-conteneur { overflow-x: auto; container-type: inline-size; }
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  caption { padding-bottom: 0.5rem; text-align: left; color: var(--mu); }
+  th {
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--g1);
+    background: var(--g0);
+    color: var(--mu);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+  td { padding: 10px; border-bottom: 1px solid var(--bd); white-space: nowrap; }
+  tbody tr:hover td { background: var(--g0); }
+  .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+}
+
+// Variante « cartes » : sous 640 px de large, chaque ligne devient une carte empilée
+// (le libellé de colonne vient de l'attribut data-label de la cellule).
+@container (max-width: 640px) {
+  .tableau--cartes {
+    thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    &, tbody, tr, td { display: block; }
+    tr { margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--bd); border-radius: var(--rayon); }
+    tbody tr:hover td { background: none; }
+    td { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 6px 0; border-bottom: 1px dashed var(--bd); white-space: normal; text-align: right; }
+    td::before { content: attr(data-label); flex: none; color: var(--mu); font-size: 0.75rem; font-weight: 600; text-align: left; }
+    td.identite { justify-content: flex-start; padding-bottom: 10px; text-align: left; }
+    td.identite::before, td.cellule-actions::before { content: none; }
+    td:last-child { border-bottom: 0; }
+    td.cellule-actions .actions { width: 100%; }
+    td.cellule-actions .actions > * { flex: 1; }
+  }
+}

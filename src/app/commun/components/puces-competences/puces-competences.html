@@ -1,0 +1,19 @@
+<div class="puces">
+  <label [attr.for]="id">{{ libelle() }}</label>
+  <ul>
+    @for (c of valeur(); track c) {
+      <li>
+        {{ c }}
+        @if (!lectureSeule() && !desactive()) {
+          <button type="button" [attr.aria-label]="'Retirer ' + c" (click)="retirer(c)">×</button>
+        }
+      </li>
+    } @empty {
+      <li class="vide">Aucune compétence</li>
+    }
+  </ul>
+  @if (!lectureSeule()) {
+    <input #champ [id]="id" type="text" placeholder="Ajouter une compétence, puis Entrée" [disabled]="desactive()"
+      (keydown.enter)="ajouter($event, champ)" (blur)="contact()" />
+  }
+</div>

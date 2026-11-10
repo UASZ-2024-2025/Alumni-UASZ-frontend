@@ -77,8 +77,8 @@ Le jeton d'accès du mock expire après 20 secondes et le refresh token est à u
 
 ```
 alumni-frontend/
-├── contrats-api/            Contrats OpenAPI (propriété de l'équipe back)
-├── scripts/                 generate-api.js, mock-api.js
+├── contrat/                 Contrats OpenAPI (propriété de l'équipe back)
+├── scripts/                 mock-api.js
 ├── src/
 │   ├── environments/        URLs d'API par environnement
 │   └── app/
@@ -154,6 +154,8 @@ Pour afficher un lien de menu, l'ajouter dans `menus.config.ts` pour les rôles 
 - Composants standalone, signals pour l'état local, `@if` et `@for` dans les templates.
 - Les erreurs d'un `subscribe` sont des `ErreurApi` : afficher `e.message`.
 
+Pour ajouter une fonctionnalité pas à pas : [`docs/ajouter-une-fonctionnalite.md`](docs/ajouter-une-fonctionnalite.md).
+
 ### Fichiers à ne pas modifier
 
 | Catégorie | Fichiers | Pourquoi |
@@ -161,13 +163,13 @@ Pour afficher un lien de menu, l'ajouter dans `menus.config.ts` pour les rôles 
 | Interdits | `src/app/api/generes/**`, contrats YAML, `package-lock.json` | Générés ou propriété d'une autre équipe. Corriger le contrat et régénérer |
 | Réservés au référent socle | `app.config.ts`, intercepteurs, `utilitaires-api.ts`, `authentification.service.ts`, `jeton.service.ts`, gardes, `session.model.ts`, `erreur-api.model.ts`, `coquille-principale.ts`, page de connexion | Une régression casse l'authentification de toute l'application |
 | Ajout autorisé d'une ligne | `app.routes.ts`, `menus.config.ts`, `environment*.ts` | Ajouter la route, les liens ou l'URL de sa fonctionnalité sans toucher à celles des autres |
-| Temporaires | `fonctionnalites/accueil/accueil.ts`, route `test-admin` | À supprimer quand les vraies pages existent |
+| Temporaire | `fonctionnalites/accueil/accueil.ts` | Page d'essai des appels protégés, à remplacer par la vraie page d'accueil |
 
 ### Git
 
 - Une branche par fonctionnalité : `feature/offres-emploi`, `feature/messagerie`, etc.
-- Pull Request obligatoire vers `main`.
-- Relecture du référent obligatoire pour `socle/`, `app.config.ts` et `api/generes/` (voir `.github/CODEOWNERS`).
+- Pull Request obligatoire vers `develop` (jamais directement sur `develop` ni `main`).
+- Relecture du référent obligatoire pour `socle/`, `app.config.ts` et `api/generes/` (le fichier `.github/CODEOWNERS` reste à créer par le propriétaire du dépôt).
 - Messages de commit : `feat:`, `fix:`, `docs:`, `test:`, `refactor:`.
 
 ## 8. Client API généré
@@ -298,8 +300,10 @@ La première analyse échouera probablement au Quality Gate : la règle par déf
 | Socle d'authentification (jeton, service, intercepteurs, gardes) | Code écrit, validation en cours |
 | Page de connexion et layout avec menus par rôle | Code écrit, validation en cours |
 | Mock du back pour les tests | Fait |
-| Tests unitaires du socle, intégration SonarQube | À faire |
-| Fonctionnalités métier | À faire |
+| Tests unitaires et SonarQube | Fait (suite Vitest, analyse locale) |
+| Administration (tableau de bord, utilisateurs, entreprises partenaires) | Fait (AL-51) |
+| Squelettes des fonctionnalités, pages 403 et 404, composants communs | Fait, voir `docs/ajouter-une-fonctionnalite.md` |
+| Autres fonctionnalités métier | À faire (AL-48, AL-49, AL-50) |
 
 ### Fonctionnalités à développer
 
@@ -318,5 +322,5 @@ Les rôles associés à chaque fonctionnalité sont des propositions à confirme
 
 - Le rôle `ENTREPRISE` n'existe pas dans le `RoleName` généré depuis `user-service.yaml` (seulement `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ADMINISTRATEUR`). Il est géré côté frontend. À confirmer avec l'équipe back.
 - Seul le client `utilisateurs` est configuré. Les quatre autres services restent à brancher.
-- Le dossier des contrats doit porter le même nom partout (`contrats-api/`), y compris dans `scripts/generate-api.js`.
+- Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités).
 - Le back doit autoriser CORS pour `http://localhost:4200` pour les tests en local.

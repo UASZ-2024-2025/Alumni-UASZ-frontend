@@ -1,0 +1,17 @@
+:host { display: block; }
+
+nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--bd);
+  overflow-x: auto;
+}
+a {
+  padding: 8px 14px;
+  border-bottom: 3px solid transparent;
+  color: var(--mu);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &.actif { border-color: var(--g8); color: var(--g8); font-weight: 600; }
+}

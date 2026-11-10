@@ -1,0 +1,33 @@
+@if (chargement()) {
+  <app-spinner />
+} @else if (lignes().length === 0) {
+  <app-etat-vide [titre]="messageVide()" />
+} @else {
+  <div class="tableau-conteneur">
+    <table class="tableau tableau--cartes">
+      <caption class="cache">{{ legende() }}</caption>
+      <thead>
+        <tr>
+          @for (c of colonnes(); track c.cle) {
+            <th scope="col">{{ c.libelle }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (ligne of lignes(); track $index) {
+          <tr>
+            @for (c of colonnes(); track c.cle) {
+              <td [attr.data-label]="c.libelle">
+                @if (cellule(); as modele) {
+                  <ng-container [ngTemplateOutlet]="modele" [ngTemplateOutletContext]="{ $implicit: ligne, cle: c.cle }" />
+                } @else {
+                  {{ valeur(ligne, c.cle) }}
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

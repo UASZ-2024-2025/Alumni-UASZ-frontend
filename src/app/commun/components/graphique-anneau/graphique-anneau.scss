@@ -1,0 +1,10 @@
+:host { display: block; }
+.anneau-conteneur { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+.anneau { margin: 0; position: relative; flex: none; width: 140px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; }
+.anneau::before { content: ''; position: absolute; inset: 22px; border-radius: 50%; background: var(--sf); }
+.centre { position: relative; font: 700 1.5rem/1 var(--police-titre); color: var(--g9); }
+.legende { flex: 1 1 10rem; min-width: 0; margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; font-size: 0.875rem; }
+.legende li { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 0.5rem; }
+.pastille { width: 10px; height: 10px; border-radius: 3px; }
+.nom { min-width: 0; overflow-wrap: anywhere; }
+.pct { min-width: 3em; color: var(--mu); text-align: right; font-size: 0.8125rem; }

@@ -1,0 +1,124 @@
+<h1>Tableau de bord administrateur</h1>
+
+<section aria-labelledby="titre-kpi">
+  <h2 id="titre-kpi" class="cache">Indicateurs clés</h2>
+  @if (stats().statut === 'erreur') {
+    <app-alerte>
+      {{ stats().message }}
+      <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerStats()">Réessayer</button>
+    </app-alerte>
+  } @else {
+    <ul class="kpis" [attr.aria-busy]="stats().statut === 'chargement'">
+      @for (k of kpis(); track k.libelle) {
+        <li>
+          <app-carte-stat [libelle]="k.libelle" [valeur]="k.valeur !== undefined ? k.valeur + (k.suffixe ?? '') : undefined" />
+        </li>
+      }
+    </ul>
+    @if (stats().donnees?.updatedAt; as maj) {
+      <p class="maj">Mis à jour le {{ maj | date: 'dd/MM/yyyy HH:mm' }}</p>
+    }
+  }
+</section>
+
+<div class="graphiques">
+  <app-carte titre="Comptes par rôle">
+    @switch (parRole().statut) {
+      @case ('chargement') { <p aria-busy="true">Chargement…</p> }
+      @case ('erreur') {
+        <app-alerte>
+          {{ parRole().message }}
+          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerRepartitions()">Réessayer</button>
+        </app-alerte>
+      }
+      @default { <app-graphique-anneau [segments]="parRole().donnees ?? []" /> }
+    }
+  </app-carte>
+
+  <app-carte titre="Comptes par statut">
+    @switch (parStatut().statut) {
+      @case ('chargement') { <p aria-busy="true">Chargement…</p> }
+      @case ('erreur') {
+        <app-alerte>
+          {{ parStatut().message }}
+          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerRepartitions()">Réessayer</button>
+        </app-alerte>
+      }
+      @default { <app-graphique-anneau [segments]="parStatut().donnees ?? []" /> }
+    }
+  </app-carte>
+
+  <app-carte titre="Taux d'insertion global">
+    @if (stats().statut === 'ok') {
+      <app-graphique-anneau [segments]="jaugeInsertion()" [centre]="(stats().donnees?.insertionRate ?? 0) + ' %'" />
+    } @else if (stats().statut === 'chargement') {
+      <p aria-busy="true">Chargement…</p>
+    } @else {
+      <p class="vide">Indicateur indisponible.</p>
+    }
+  </app-carte>
+</div>
+
+<div class="deux-cartes">
+  <app-carte titre="Rapport d'insertion">
+    <form class="filtres" (submit)="$event.preventDefault(); chargerInsertion(annee.value, specialite.value)">
+      <label class="champ">
+        Promotion (année)
+        <input #annee type="number" min="2000" max="2100" />
+      </label>
+      <label class="champ">
+        Spécialité
+        <select #specialite>
+          <option value="">Toutes</option>
+          @for (s of specialites(); track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </label>
+      <button type="submit" class="btn btn--auto">Filtrer</button>
+    </form>
+
+    @switch (insertion().statut) {
+      @case ('chargement') { <p aria-busy="true">Chargement…</p> }
+      @case ('erreur') {
+        <app-alerte>
+          {{ insertion().message }}
+          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerInsertion(annee.value, specialite.value)">Réessayer</button>
+        </app-alerte>
+      }
+      @default {
+        @if (lignesInsertion().length === 0) {
+          <p class="vide">Aucune donnée d'insertion pour ces critères.</p>
+        } @else {
+          <p>Taux global : <strong>{{ insertion().donnees?.overallInsertionRate }} %</strong></p>
+          @if (colonnesInsertion().length > 1) {
+            <h3 class="sous-titre">Par promotion</h3>
+            <app-graphique-colonnes [colonnes]="colonnesInsertion()" />
+            <h3 class="sous-titre">Par promotion et spécialité</h3>
+          }
+          <app-graphique-barres [lignes]="lignesInsertion()" />
+        }
+      }
+    }
+  </app-carte>
+
+  <app-carte titre="Écart de compétences">
+    @switch (competences().statut) {
+      @case ('chargement') { <p aria-busy="true">Chargement…</p> }
+      @case ('erreur') {
+        <app-alerte>
+          {{ competences().message }}
+          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerCompetences()">Réessayer</button>
+        </app-alerte>
+      }
+      @default {
+        @if (lignesCompetences().length === 0) {
+          <p class="vide">Aucune donnée de compétences.</p>
+        } @else {
+          <p class="maj">Vert : demande du marché · doré : compétences des diplômés</p>
+          <app-graphique-barres [lignes]="lignesCompetences()" />
+        }
+      }
+    }
+  </app-carte>
+</div>

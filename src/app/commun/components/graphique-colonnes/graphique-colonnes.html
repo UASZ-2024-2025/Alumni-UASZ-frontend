@@ -1,0 +1,11 @@
+<ul class="colonnes">
+  @for (c of colonnes(); track c.libelle) {
+    <li>
+      <span class="valeur">{{ c.valeur }} %</span>
+      <figure class="piste" [attr.aria-label]="c.libelle + ' : ' + c.valeur + ' %'">
+        <div class="barre" [style.height.%]="borner(c.valeur)"></div>
+      </figure>
+      <span class="libelle">{{ c.libelle }}</span>
+    </li>
+  }
+</ul>

@@ -1,14 +1,17 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
+import { Alerte } from '../../../commun/components/alerte/alerte';
+import { OngletsAuth } from '../../../commun/components/onglets-auth/onglets-auth';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 
 @Component({
   selector: 'app-connexion',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth],
   templateUrl: './connexion.html',
-  styleUrl: './connexion.scss',
 })
 export class Connexion {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -22,6 +25,7 @@ export class Connexion {
   });
   protected readonly erreur = signal<string | null>(null);
   protected readonly chargement = signal(false);
+  protected readonly compteNonActive = signal(false);
 
   protected soumettre(): void {
     if (this.formulaire.invalid) {
@@ -29,6 +33,7 @@ export class Connexion {
       return;
     }
     this.erreur.set(null);
+    this.compteNonActive.set(false);
     this.chargement.set(true);
     const { email, password } = this.formulaire.getRawValue();
 
@@ -40,7 +45,13 @@ export class Connexion {
       },
       error: (e: ErreurApi) => {
         this.chargement.set(false);
-        this.erreur.set(e.message);
+        this.compteNonActive.set(e.statut === 403);
+        this.erreur.set(
+          messageErreur(e, {
+            401: 'Email ou mot de passe incorrect.',
+            403: "Votre compte n'est pas activé ou a été suspendu. Si vous venez de vous inscrire, confirmez votre email.",
+          }),
+        );
       },
     });
   }

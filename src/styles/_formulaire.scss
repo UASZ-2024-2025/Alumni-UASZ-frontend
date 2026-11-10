@@ -1,0 +1,32 @@
+// Carte de formulaire (pages d'authentification) et ses champs.
+.carte {
+  width: min(420px, 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  h1 { margin: 0; font: 700 1.625rem/1.2 var(--police-titre); }
+  label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8125rem; font-weight: 600; }
+  input,
+  select {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--bord-champ);
+    border-radius: var(--rayon);
+    background: var(--sf);
+    color: var(--tx);
+    font: 400 0.9375rem/1.5 var(--police);
+
+    &:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
+  }
+  .invalide { margin-top: -0.5rem; color: var(--dg); font-size: 0.8125rem; }
+}
+
+.deux-colonnes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
