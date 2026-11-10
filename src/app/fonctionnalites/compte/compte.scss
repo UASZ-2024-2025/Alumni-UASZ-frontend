@@ -1,0 +1,10 @@
+// Mise en page propre aux pages du compte. Couleurs, champs et boutons viennent de src/styles/ et de commun/.
+:host { display: block; max-width: 600px; }
+h1 { margin: 0 0 1rem; font: 700 1.625rem/1.2 var(--police-titre); }
+.aide { margin: 0 0 1rem; color: var(--mu); font-size: 0.875rem; }
+.formulaire { display: grid; gap: 0.9rem; }
+.deux { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.invalide { margin-top: -0.5rem; color: var(--dg); font-size: 0.8125rem; }
+.pied { display: flex; justify-content: flex-end; }
+app-alerte { display: block; }
+@media (max-width: 520px) { .deux { grid-template-columns: 1fr; } }

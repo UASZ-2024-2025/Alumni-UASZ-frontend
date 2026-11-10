@@ -26,6 +26,7 @@ export class Connexion {
   protected readonly erreur = signal<string | null>(null);
   protected readonly chargement = signal(false);
   protected readonly compteNonActive = signal(false);
+  protected readonly info = this.route.snapshot.queryParamMap.get('info');
 
   protected soumettre(): void {
     if (this.formulaire.invalid) {

@@ -1,6 +1,9 @@
 <div class="entete-page">
-  <h1>Gestion des utilisateurs</h1>
-  <p class="total" aria-live="polite">{{ total() }} utilisateur(s)</p>
+  <div>
+    <h1>Gestion des utilisateurs</h1>
+    <p class="total" aria-live="polite">{{ total() }} utilisateur(s)</p>
+  </div>
+  <app-bouton (clic)="ouvrirCreation()">Créer un utilisateur</app-bouton>
 </div>
 
 <div class="filtres filtres--barre">
@@ -70,6 +73,10 @@
                   Suspendre
                 </app-bouton>
               }
+              <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id"
+                [libelleAria]="'Modifier ' + nomComplet(u)" (clic)="ouvrirEdition(u)">
+                Modifier
+              </app-bouton>
               <app-bouton variante="danger" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
                 [libelleAria]="'Supprimer ' + nomComplet(u)" (clic)="supprimer(u)">
                 Supprimer
@@ -84,3 +91,30 @@
     <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="aller($event)" />
   }
 </div>
+
+<app-modale [ouvert]="formulaireOuvert()" [titre]="enEdition() ? 'Modifier l’utilisateur' : 'Créer un utilisateur'" (fermer)="annuler()">
+<form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+  @if (!enEdition()) {
+    <p class="pleine total">Le compte est créé « en attente » : l’utilisateur reçoit un email pour choisir son mot de passe.</p>
+  }
+  <app-champ libelle="Prénom" [requis]="true" formControlName="firstName"
+    [erreur]="invalide('firstName') ? 'Le prénom est obligatoire.' : null" />
+  <app-champ libelle="Nom" [requis]="true" formControlName="lastName"
+    [erreur]="invalide('lastName') ? 'Le nom est obligatoire.' : null" />
+  <app-champ libelle="Email" type="email" [requis]="true" formControlName="email"
+    [erreur]="invalide('email') ? 'Un email valide est obligatoire.' : null" />
+  <app-champ libelle="Téléphone" type="tel" formControlName="phone" />
+  @if (!enEdition()) {
+    <app-champ libelle="Rôle" type="select" [options]="optionsRole" formControlName="role" />
+  } @else {
+    <p class="pleine total">Le rôle n’est pas modifiable : le contrat du user-service n’expose pas cette opération.</p>
+  }
+  @if (erreurFormulaire(); as message) {
+    <app-alerte class="pleine">{{ message }}</app-alerte>
+  }
+  <div class="pleine pied">
+    <app-bouton variante="secondaire" (clic)="annuler()">Annuler</app-bouton>
+    <app-bouton type="submit" [chargement]="envoi()">{{ enEdition() ? 'Enregistrer' : 'Créer' }}</app-bouton>
+  </div>
+</form>
+</app-modale>

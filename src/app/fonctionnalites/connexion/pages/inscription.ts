@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } 
 import { RouterLink } from '@angular/router';
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MESSAGE_POLITIQUE_MDP, validateurPolitiqueMotDePasse } from '../../../commun/utilitaires/mot-de-passe';
 import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { OngletsAuth } from '../../../commun/components/onglets-auth/onglets-auth';
@@ -43,10 +44,10 @@ const motsDePasseIdentiques: ValidatorFn = (g) =>
               @for (r of roles; track r.valeur) { <option [value]="r.valeur">{{ r.libelle }}</option> }
             </select>
           </label>
-          <label>Mot de passe (8 caractères minimum)
+          <label>Mot de passe
             <input type="password" formControlName="password" autocomplete="new-password" /></label>
           @if (formulaire.controls.password.touched && formulaire.controls.password.invalid) {
-            <small class="invalide">Au moins 8 caractères.</small>
+            <small class="invalide">{{ politique }}</small>
           }
           <label>Confirmer le mot de passe
             <input type="password" formControlName="confirmation" autocomplete="new-password" /></label>
@@ -70,6 +71,7 @@ export class Inscription {
     { valeur: RoleName.Etudiant, libelle: 'Étudiant' },
     { valeur: RoleName.Alumni, libelle: 'Alumni (ancien étudiant)' },
     { valeur: RoleName.Enseignant, libelle: 'Enseignant' },
+    { valeur: RoleName.Entreprise, libelle: 'Entreprise' },
   ];
   protected readonly formulaire = this.fb.group(
     {
@@ -77,7 +79,7 @@ export class Inscription {
       firstName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       role: [RoleName.Etudiant as RoleName, Validators.required],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, validateurPolitiqueMotDePasse]],
       confirmation: ['', Validators.required],
     },
     { validators: motsDePasseIdentiques },
@@ -85,6 +87,7 @@ export class Inscription {
   protected readonly erreur = signal<string | null>(null);
   protected readonly chargement = signal(false);
   protected readonly emailInscrit = signal<string | null>(null);
+  protected readonly politique = MESSAGE_POLITIQUE_MDP;
 
   protected soumettre(): void {
     if (this.formulaire.invalid) {

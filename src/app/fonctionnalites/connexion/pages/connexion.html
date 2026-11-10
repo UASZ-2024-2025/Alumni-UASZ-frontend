@@ -4,6 +4,13 @@
     <h1>Alumni UASZ</h1>
     <p class="sous-titre">Connectez-vous à votre espace</p>
 
+    @if (info === 'mot-de-passe-modifie') {
+      <app-alerte type="succes">Mot de passe modifié. Reconnectez-vous avec le nouveau.</app-alerte>
+    }
+    @if (info === 'session-expiree') {
+      <app-alerte>Votre session a expiré. Reconnectez-vous.</app-alerte>
+    }
+
     @if (erreur()) {
       <app-alerte>{{ erreur() }}</app-alerte>
     }
