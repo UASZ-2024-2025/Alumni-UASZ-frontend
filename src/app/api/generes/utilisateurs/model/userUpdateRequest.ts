@@ -9,13 +9,20 @@
  */
 
 
-import { Gender } from './gender';
-
 export interface UserUpdateRequest { 
     lastName?: string;
     firstName?: string;
     email?: string;
     phone?: string;
-    gender?: Gender;
+    gender?: UserUpdateRequest.GenderEnum;
     birthDate?: string;
 }
+export namespace UserUpdateRequest {
+    export const GenderEnum = {
+        Male: 'MALE',
+        Female: 'FEMALE',
+    } as const;
+    export type GenderEnum = typeof GenderEnum[keyof typeof GenderEnum];
+}
+
+

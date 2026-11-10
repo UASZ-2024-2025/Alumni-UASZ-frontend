@@ -2,25 +2,15 @@ import { RoleApplicatif } from '../authentification/modeles/session.model';
 
 export interface ElementMenu { libelle: string; chemin: string; }
 
-/**
- * Menu de la démo d'authentification : uniquement des pages qui existent.
- * Ajouter ici les entrées métier (offres, étudiants, messagerie…) au fur et à mesure que leurs pages sont créées.
- */
 const commun: ElementMenu[] = [
-  { libelle: 'Tableau de bord', chemin: '/' },
-  { libelle: 'Mon profil', chemin: '/profil' },
-  { libelle: 'Mot de passe', chemin: '/mot-de-passe' },
-];
-
-const admin: ElementMenu[] = [
-  { libelle: 'Utilisateurs', chemin: '/administration/utilisateurs' },
-  { libelle: 'Rôles', chemin: '/administration/roles' },
+  { libelle: 'Messagerie', chemin: '/messagerie' },
+  { libelle: 'Notifications', chemin: '/notifications' },
 ];
 
 export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
-  ALUMNI: [...commun],
-  ETUDIANT: [...commun],
-  ENSEIGNANT: [...commun],
-  ENTREPRISE: [...commun],
-  ADMINISTRATEUR: [...commun, ...admin],
+  ALUMNI: [{ libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Étudiants', chemin: '/etudiants' }, ...commun],
+  ETUDIANT: [{ libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Mes candidatures', chemin: '/candidatures' }, { libelle: 'Correspondances', chemin: '/correspondances' }, ...commun],
+  ENSEIGNANT: [{ libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Statistiques', chemin: '/statistiques' }, ...commun],
+  ENTREPRISE: [{ libelle: 'Mes offres', chemin: '/offres-emploi' }, { libelle: 'Candidatures reçues', chemin: '/candidatures' }, ...commun],
+  ADMINISTRATEUR: [{ libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Entreprises', chemin: '/entreprises' }, { libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Statistiques', chemin: '/statistiques' }, ...commun],
 };

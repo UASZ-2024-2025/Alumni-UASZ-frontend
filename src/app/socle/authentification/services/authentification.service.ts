@@ -1,13 +1,9 @@
-import { HttpContext } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { finalize, map, Observable, shareReplay, switchMap, tap, throwError } from 'rxjs';
+import { finalize, map, Observable, shareReplay, tap, throwError } from 'rxjs';
 import { AuthService as AuthApi } from '../../../api/generes/utilisateurs/api/auth.service';
 import { AuthResponse } from '../../../api/generes/utilisateurs/model/authResponse';
-import { MessageResponse } from '../../../api/generes/utilisateurs/model/messageResponse';
-import { User } from '../../../api/generes/utilisateurs/model/user';
-import { JETON_IMPOSE, SANS_RENOUVELLEMENT } from '../../intercepteurs-http/contexte-http';
-import { RoleApplicatif, Session } from '../modeles/session.model';
+import { Session, RoleApplicatif } from '../modeles/session.model';
 import { JetonService } from '../stockage/jeton.service';
 
 @Injectable({ providedIn: 'root' })
@@ -21,7 +17,6 @@ export class AuthentificationService {
   readonly estConnecte = computed(() => this._session() !== null);
   readonly utilisateur = computed(() => this._session()?.utilisateur ?? null);
   readonly role = computed(() => this._session()?.utilisateur.role as RoleApplicatif | undefined);
-  readonly estAdministrateur = computed(() => this.role() === 'ADMINISTRATEUR');
 
   // partage un seul refresh entre plusieurs requêtes 401 simultanées
   private refreshEnCours$?: Observable<Session>;
@@ -52,52 +47,22 @@ export class AuthentificationService {
     return this.refreshEnCours$;
   }
 
-  /**
-   * Efface la session locale tout de suite (l'écran ne dépend pas du réseau), puis révoque le refresh
-   * token côté serveur en meilleur effort. Le jeton d'accès est passé explicitement : la session locale
-   * n'existe plus au moment de l'appel. S'il est expiré, on en obtient un nouveau d'abord, sinon le
-   * logout recevrait un 401 et le refresh token resterait valide côté serveur.
-   */
   deconnecter(): void {
-    const s = this._session();
+    const refreshToken = this._session()?.refreshToken;
+    if (refreshToken) {
+      // meilleur effort : on ignore l'échec, la session locale est effacée dans tous les cas
+      this.api.logoutUser({ refreshToken }).subscribe({ error: () => {} });
+    }
     this.terminerSessionLocale();
-    if (!s) return;
-
-    const contexte = (jeton: string) =>
-      new HttpContext().set(JETON_IMPOSE, jeton).set(SANS_RENOUVELLEMENT, true);
-    const logout = (access: string, refresh: string) =>
-      this.api.logoutUser({ refreshToken: refresh }, 'body', false, { context: contexte(access) });
-
-    const accessValide = s.expireLe - Date.now() > 5_000;
-    const requete$ = accessValide
-      ? logout(s.accessToken, s.refreshToken)
-      : this.api
-          .refreshToken({ refreshToken: s.refreshToken })
-          .pipe(switchMap((r) => logout(r.accessToken!, r.refreshToken!)));
-
-    requete$.subscribe({ error: () => {} });
   }
 
-  /** Changement de mot de passe : le back révoque toutes les sessions, on repasse donc par la connexion. */
-  changerMotDePasse(currentPassword: string, newPassword: string): Observable<MessageResponse> {
-    return this.api
-      .changePassword({ currentPassword, newPassword })
-      .pipe(tap(() => this.terminerSessionLocale('mot-de-passe-modifie')));
-  }
-
-  /** Met à jour l'utilisateur affiché (ex. : après modification du profil). */
-  mettreAJourUtilisateur(utilisateur: User): void {
-    const s = this._session();
-    if (s) this.sauvegarder({ ...s, utilisateur });
-  }
-
-  terminerSessionLocale(info?: 'session-expiree' | 'mot-de-passe-modifie'): void {
+  terminerSessionLocale(): void {
     this.jetons.effacer();
     this._session.set(null);
-    this.router.navigate(['/connexion'], info ? { queryParams: { info } } : {});
+    this.router.navigate(['/connexion']);
   }
 
-  private versSession(r: AuthResponse, utilisateurParDefaut?: User): Session {
+  private versSession(r: AuthResponse, utilisateurParDefaut?: Session['utilisateur']): Session {
     return {
       accessToken: r.accessToken!,
       refreshToken: r.refreshToken!,

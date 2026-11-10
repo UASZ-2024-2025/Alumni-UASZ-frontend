@@ -7,9 +7,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Gender } from './gender';
 import { RoleName } from './roleName';
 import { UserStatus } from './userStatus';
+
 
 export interface User { 
     id?: string;
@@ -20,6 +20,15 @@ export interface User {
     status?: UserStatus;
     createdAt?: string;
     phone?: string;
-    gender?: Gender;
+    gender?: User.GenderEnum;
     birthDate?: string;
 }
+export namespace User {
+    export const GenderEnum = {
+        Male: 'MALE',
+        Female: 'FEMALE',
+    } as const;
+    export type GenderEnum = typeof GenderEnum[keyof typeof GenderEnum];
+}
+
+
