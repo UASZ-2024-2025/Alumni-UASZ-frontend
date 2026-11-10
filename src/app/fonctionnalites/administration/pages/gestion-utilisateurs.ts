@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
 import { User } from '../../../api/generes/utilisateurs/model/user';
@@ -10,6 +11,8 @@ import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Badge } from '../../../commun/components/badge/badge';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
+import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
+import { Modale } from '../../../commun/components/modale/modale';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { Spinner } from '../../../commun/components/spinner/spinner';
@@ -22,7 +25,7 @@ import { libelleRole, libelleStatut, tonStatut } from '../../../commun/utilitair
 @Component({
   selector: 'app-gestion-utilisateurs',
   templateUrl: './gestion-utilisateurs.html',
-  imports: [DatePipe, Alerte, Avatar, Badge, Bouton, Carte, EtatVide, Pagination, Spinner],
+  imports: [DatePipe, ReactiveFormsModule, Alerte, Avatar, Badge, Bouton, Carte, Champ, EtatVide, Modale, Pagination, Spinner],
   styleUrl: '../administration.scss',
 })
 export class GestionUtilisateurs {
@@ -30,6 +33,7 @@ export class GestionUtilisateurs {
   private readonly auth = inject(AuthentificationService);
   private readonly toast = inject(ToastService);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly fb = inject(NonNullableFormBuilder);
 
   protected readonly roles = Object.values(RoleName);
   protected readonly statuts = Object.values(UserStatus);
@@ -43,6 +47,19 @@ export class GestionUtilisateurs {
   protected readonly chargement = signal(false);
   protected readonly erreur = signal<string | null>(null);
   protected readonly enCours = signal<string | null>(null);
+
+  protected readonly formulaireOuvert = signal(false);
+  protected readonly enEdition = signal<User | null>(null);
+  protected readonly envoi = signal(false);
+  protected readonly erreurFormulaire = signal<string | null>(null);
+  protected readonly optionsRole: OptionChamp[] = this.roles.map((r) => ({ valeur: r, libelle: libelleRole(r) }));
+  protected readonly formulaire = this.fb.group({
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phone: [''],
+    role: [RoleName.Etudiant as RoleName],
+  });
 
   protected readonly tonStatut = tonStatut;
   protected readonly libelleRole = libelleRole;
@@ -130,6 +147,78 @@ export class GestionUtilisateurs {
         this.charger();
       },
       error: (e) => this.echec(e),
+    });
+  }
+
+  protected ouvrirCreation(): void {
+    this.erreurFormulaire.set(null);
+    this.enEdition.set(null);
+    this.formulaire.reset({ firstName: '', lastName: '', email: '', phone: '', role: RoleName.Etudiant });
+    this.formulaireOuvert.set(true);
+  }
+
+  protected ouvrirEdition(u: User): void {
+    this.erreurFormulaire.set(null);
+    this.enEdition.set(u);
+    this.formulaire.reset({
+      firstName: u.firstName ?? '',
+      lastName: u.lastName ?? '',
+      email: u.email ?? '',
+      phone: u.phone ?? '',
+      role: u.role ?? RoleName.Etudiant,
+    });
+    this.formulaireOuvert.set(true);
+  }
+
+  protected annuler(): void {
+    this.formulaireOuvert.set(false);
+    this.enEdition.set(null);
+  }
+
+  protected invalide(champ: 'firstName' | 'lastName' | 'email'): boolean {
+    const c = this.formulaire.controls[champ];
+    return c.touched && c.invalid;
+  }
+
+  protected enregistrer(): void {
+    if (this.formulaire.invalid) {
+      this.formulaire.markAllAsTouched();
+      return;
+    }
+    const v = this.formulaire.getRawValue();
+    const firstName = v.firstName.trim();
+    const lastName = v.lastName.trim();
+    const email = v.email.trim();
+    const phone = v.phone.trim() || undefined;
+    const edition = this.enEdition();
+
+    this.envoi.set(true);
+    this.erreurFormulaire.set(null);
+    // le rôle n'est pas modifiable (le contrat ne l'expose pas) ; l'email n'est envoyé que s'il change
+    const appel$ = edition?.id
+      ? this.api.updateUser(edition.id, { firstName, lastName, email: email !== edition.email ? email : undefined, phone })
+      : this.api.createUser({ firstName, lastName, email, phone, role: v.role });
+
+    appel$.subscribe({
+      next: (u) => {
+        this.envoi.set(false);
+        if (edition) {
+          this.utilisateurs.update((liste) => liste.map((x) => (x.id === u.id ? u : x)));
+          if (this.estMoi(u)) this.auth.mettreAJourUtilisateur(u);
+          this.toast.succes(`${this.nomComplet(u)} est modifié.`);
+        } else {
+          this.toast.succes(`Compte créé. Une invitation a été envoyée à ${u.email}.`);
+          this.page.set(0);
+          this.charger();
+        }
+        this.annuler();
+      },
+      error: (e) => {
+        this.envoi.set(false);
+        this.erreurFormulaire.set(
+          messageErreur(e, { 409: 'Cette adresse email est déjà utilisée.', 404: "Cet utilisateur n'existe plus." }),
+        );
+      },
     });
   }
 

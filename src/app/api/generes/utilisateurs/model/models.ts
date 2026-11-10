@@ -16,3 +16,6 @@ export * from './userPagedResponse';
 export * from './userStatus';
 export * from './userStatusUpdateRequest';
 export * from './userUpdateRequest';
+export * from './changePasswordRequest';
+export * from './gender';
+export * from './userCreateRequest';

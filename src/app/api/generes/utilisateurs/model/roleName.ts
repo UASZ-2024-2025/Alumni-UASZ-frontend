@@ -13,7 +13,7 @@ export const RoleName = {
     Alumni: 'ALUMNI',
     Etudiant: 'ETUDIANT',
     Enseignant: 'ENSEIGNANT',
+    Entreprise: 'ENTREPRISE',
     Administrateur: 'ADMINISTRATEUR',
 } as const;
 export type RoleName = typeof RoleName[keyof typeof RoleName];
-

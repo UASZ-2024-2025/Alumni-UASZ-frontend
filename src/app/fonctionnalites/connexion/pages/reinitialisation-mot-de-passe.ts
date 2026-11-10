@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { MESSAGE_POLITIQUE_MDP, validateurPolitiqueMotDePasse } from '../../../commun/utilitaires/mot-de-passe';
 import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { CompteService } from '../services/compte.service';
@@ -27,10 +28,10 @@ const identiques: ValidatorFn = (g) =>
           @if (lienInvalide()) {
             <p class="lien"><a routerLink="/mot-de-passe-oublie">Demander un nouveau lien</a></p>
           }
-          <label>Nouveau mot de passe (8 caractères minimum)
+          <label>Nouveau mot de passe
             <input type="password" formControlName="newPassword" autocomplete="new-password" /></label>
           @if (formulaire.controls.newPassword.touched && formulaire.controls.newPassword.invalid) {
-            <small class="invalide">Au moins 8 caractères.</small>
+            <small class="invalide">{{ politique }}</small>
           }
           <label>Confirmer
             <input type="password" formControlName="confirmation" autocomplete="new-password" /></label>
@@ -50,7 +51,7 @@ export class ReinitialisationMotDePasse {
 
   protected readonly formulaire = this.fb.group(
     {
-      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      newPassword: ['', [Validators.required, validateurPolitiqueMotDePasse]],
       confirmation: ['', Validators.required],
     },
     { validators: identiques },
@@ -61,6 +62,7 @@ export class ReinitialisationMotDePasse {
   protected readonly lienInvalide = signal(!this.token);
   protected readonly chargement = signal(false);
   protected readonly reussi = signal(false);
+  protected readonly politique = MESSAGE_POLITIQUE_MDP;
 
   protected soumettre(): void {
     if (!this.token) return;

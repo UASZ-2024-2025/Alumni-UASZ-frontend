@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { CONNEXION_ROUTES } from './fonctionnalites/connexion/connexion.routes';
+import { COMPTE_ROUTES } from './fonctionnalites/compte/compte.routes';
 import { PROFILS_ROUTES } from './fonctionnalites/profils/profils.routes';
 import { OFFRES_EMPLOI_ROUTES } from './fonctionnalites/offres-emploi/offres-emploi.routes';
 import { MESSAGERIE_ROUTES } from './fonctionnalites/messagerie/messagerie.routes';
@@ -20,6 +21,7 @@ export const routes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./fonctionnalites/accueil/accueil').then((m) => m.Accueil),
       },
+      ...COMPTE_ROUTES,
       ...PROFILS_ROUTES,
       ...OFFRES_EMPLOI_ROUTES,
       ...MESSAGERIE_ROUTES,
