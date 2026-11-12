@@ -1,4 +1,5 @@
 ## Alumni UASZ – Frontend
+## A lire avant de coder svp 
 
 Interface web de la plateforme Alumni de l'Université Assane Seck de Ziguinchor (UASZ). Elle consomme cinq services back décrits par des contrats OpenAPI et propose des espaces adaptés à cinq rôles : `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ENTREPRISE`, `ADMINISTRATEUR`.
 
