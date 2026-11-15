@@ -22,6 +22,40 @@ export const routes: Routes = [
         loadComponent: () => import('./fonctionnalites/accueil/accueil').then((m) => m.Accueil),
       },
       ...COMPTE_ROUTES,
+
+      {
+        path: 'mon-espace',
+        canActivate: [roleGuard],
+        data: { roles: ['ETUDIANT'] },
+        loadChildren: () =>
+          import('./fonctionnalites/profil-etudiant/profil-etudiant.routes').then(
+            (m) => m.PROFIL_ETUDIANT_ROUTES,
+          ),
+      },
+
+      // --- Annuaire, profil Alumni, promotions ---
+      {
+        path: 'annuaire',
+        loadChildren: () =>
+          import('./fonctionnalites/annuaire/annuaire.routes').then((m) => m.ANNUAIRE_ROUTES),
+      },
+      {
+        path: 'espace-alumni',
+        canActivate: [roleGuard],
+        data: { roles: ['ALUMNI'] },
+        loadChildren: () =>
+          import('./fonctionnalites/profil-alumni/profil-alumni.routes').then(
+            (m) => m.PROFIL_ALUMNI_ROUTES,
+          ),
+      },
+      {
+        path: 'promotions',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMINISTRATEUR'] },
+        loadChildren: () =>
+          import('./fonctionnalites/promotions/promotions.routes').then((m) => m.PROMOTIONS_ROUTES),
+      },
+
       ...PROFILS_ROUTES,
       ...OFFRES_EMPLOI_ROUTES,
       ...MESSAGERIE_ROUTES,

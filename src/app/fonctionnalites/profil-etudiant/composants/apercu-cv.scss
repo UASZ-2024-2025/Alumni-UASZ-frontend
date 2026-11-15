@@ -1,0 +1,56 @@
+:host { display: block; }
+
+// Feuille A4 en proportion (210 x 297), qui rétrécit avec son conteneur.
+.feuille {
+  --accent: #1d4f91;
+  --police-cv: Helvetica, Arial, sans-serif;
+  aspect-ratio: 210 / 297;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+  background: #fff;
+  color: #1e1e1e;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px -12px rgba(7, 61, 39, 0.35);
+  font: 400 0.8125rem/1.45 var(--police-cv);
+  container-type: inline-size;
+}
+
+.feuille[data-modele='UASZ_VERT'] { --accent: #0b5d3b; }
+.feuille[data-modele='CLASSIC'] { --accent: #1e1e1e; --police-cv: 'Times New Roman', Times, serif; }
+
+header {
+  padding: 1.1rem 1.25rem 0.9rem;
+  background: var(--accent);
+  color: #fff;
+
+  h2 { margin: 0; font: 700 1.5em/1.2 var(--police-cv); }
+  .titre { margin: 0.2rem 0 0; font-size: 1.05em; }
+  .contact { margin: 0.35rem 0 0; font-size: 0.85em; opacity: 0.95; }
+}
+
+.feuille[data-modele='CLASSIC'] header {
+  background: transparent;
+  color: #1e1e1e;
+  border-bottom: 2px solid #1e1e1e;
+  .titre { font-style: italic; }
+}
+
+section { padding: 0 1.25rem; }
+
+h3 {
+  margin: 1rem 0 0.4rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid var(--accent);
+  color: var(--accent);
+  font: 700 0.85em var(--police-cv);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bloc { margin-bottom: 0.6rem; }
+.intitule { margin: 0; font-weight: 700; }
+.periode { margin: 0; font-style: italic; font-size: 0.9em; }
+.texte { margin: 0; white-space: pre-line; }
+p { overflow-wrap: anywhere; }

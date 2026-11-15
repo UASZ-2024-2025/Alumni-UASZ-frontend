@@ -1,0 +1,88 @@
+<div class="page page--etroite">
+  <div class="entete">
+    <div>
+      <h1>Promotions</h1>
+      <p>Gérez les promotions académiques et consultez leurs diplômés.</p>
+    </div>
+  </div>
+
+  @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+  @if (succes()) { <app-alerte type="succes">{{ succes() }}</app-alerte> }
+
+  <form [formGroup]="formulaire" (ngSubmit)="creer()" novalidate>
+    <section class="fiche">
+      <h2>Ajouter une promotion</h2>
+      <div class="grille">
+        <label>
+          Année académique
+          <input type="number" formControlName="academicYear" placeholder="Ex. 2026" />
+          @if (formulaire.controls.academicYear.touched && formulaire.controls.academicYear.invalid) {
+            <span class="invalide">Saisissez une année entre 2000 et 2100.</span>
+          }
+        </label>
+        <label>
+          Spécialité
+          <input type="text" formControlName="specialty" list="specialites-promo" placeholder="Ex. Génie Logiciel" />
+          <datalist id="specialites-promo">
+            @for (s of specialites; track s) { <option [value]="s"></option> }
+          </datalist>
+          @if (formulaire.controls.specialty.touched && formulaire.controls.specialty.invalid) {
+            <span class="invalide">La spécialité est obligatoire.</span>
+          }
+        </label>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-prim" [disabled]="ajout()">{{ ajout() ? 'Ajout…' : 'Ajouter la promotion' }}</button>
+      </div>
+    </section>
+  </form>
+
+  <section class="fiche">
+    <h2>Promotions ({{ promotions().length }})</h2>
+    @if (chargement()) {
+      <p class="chargement">Chargement…</p>
+    } @else if (promotions().length === 0) {
+      <p class="aide">Aucune promotion pour le moment.</p>
+    } @else {
+      <table class="tableau">
+        <caption class="cache">Liste des promotions</caption>
+        <thead>
+          <tr><th scope="col">Année</th><th scope="col">Spécialité</th><th scope="col" class="num">Diplômés</th><th scope="col"><span class="cache">Actions</span></th></tr>
+        </thead>
+        <tbody>
+          @for (p of promotions(); track p.id) {
+            <tr>
+              <td>{{ p.academicYear }}</td>
+              <td>{{ p.specialty }}</td>
+              <td class="num">{{ p.graduateCount ?? 0 }}</td>
+              <td>
+                <button type="button" class="btn-sec" (click)="basculerDiplomes(p)" [attr.aria-expanded]="ouverte() === p.id">
+                  {{ ouverte() === p.id ? 'Masquer' : 'Voir les diplômés' }}
+                </button>
+              </td>
+            </tr>
+            @if (ouverte() === p.id) {
+              <tr>
+                <td colspan="4">
+                  @if (chargementDiplomes()) {
+                    <p class="aide">Chargement des diplômés…</p>
+                  } @else if (erreurDiplomes()) {
+                    <app-alerte>{{ erreurDiplomes() }}</app-alerte>
+                  } @else if (diplomes().length === 0) {
+                    <p class="aide">Aucun diplômé enregistré pour cette promotion.</p>
+                  } @else {
+                    <ul class="liste-lignes">
+                      @for (d of diplomes(); track d.id) {
+                        <li><a [routerLink]="['/annuaire', 'etudiants', d.id]">{{ nomComplet(d) }}</a><small>{{ d.specialty }}</small></li>
+                      }
+                    </ul>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</div>
