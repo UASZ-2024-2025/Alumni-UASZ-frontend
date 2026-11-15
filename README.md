@@ -173,6 +173,20 @@ Pour ajouter une fonctionnalité pas à pas : [`docs/ajouter-une-fonctionnalite.
 - Relecture du référent obligatoire pour `socle/`, `app.config.ts` et `api/generes/` (le fichier `.github/CODEOWNERS` reste à créer par le propriétaire du dépôt).
 - Messages de commit : `feat:`, `fix:`, `docs:`, `test:`, `refactor:`.
 
+### Intégration continue (GitHub Actions)
+
+Chaque PR vers `develop` ou `main` lance deux workflows (`.github/workflows/`) :
+
+| Workflow | Check | Rôle |
+|---|---|---|
+| `ci.yml` | `Build et tests frontend` | `npm ci`, `npm run build`, `ng test --watch=false` |
+| `ci.yml` | `CI success` | récapitulatif : échoue si le build ou un test échoue |
+| `pr-title.yml` | `Titre de PR (Conventional Commits)` | le titre doit suivre `type(scope): description` |
+
+Avant de pousser, lancer en local : `npm run build` puis `npx ng test --watch=false`.
+
+Protection de branche (admin, **Settings → Rules**) : exiger `CI success` et `Titre de PR (Conventional Commits)`, et n'autoriser que le **squash merge** avec le titre de la PR comme message. Une PR rouge ne peut alors pas être fusionnée. La CI du backend suit les mêmes règles (dépôt `uasz-alumni-backend`).
+
 ## 8. Client API généré
 
 Les cinq clients sont générés depuis `contrats-api/` vers `src/app/api/generes/` :
@@ -291,7 +305,7 @@ Résultats : http://localhost:9000/dashboard?id=alumni-frontend
 
 La première analyse échouera probablement au Quality Gate : la règle par défaut exige 80 % de couverture sur le nouveau code, et tant que les tests n'existent pas, la couverture est de 0 %. Les fichiers à tester en priorité sont ceux du socle : service d'authentification, intercepteurs et gardes.
 
-À terme, l'analyse doit être lancée automatiquement sur chaque Pull Request via GitHub Actions.
+Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir [Intégration continue](#intégration-continue-github-actions)). L'analyse SonarQube, elle, reste locale.
 
 ## 10. État d'avancement
 
