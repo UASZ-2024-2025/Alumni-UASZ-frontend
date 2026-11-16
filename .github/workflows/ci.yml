@@ -1,0 +1,56 @@
+# CI du frontend (AL-13) : installation, build de production et tests Vitest,
+# puis un job récapitulatif « CI success ».
+#
+# Même nom de check obligatoire que dans uasz-alumni-backend : dans la protection
+# de branche, on exige « CI success » et « Titre de PR (Conventional Commits) ».
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+# Une nouvelle poussée sur la même PR annule le run précédent.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build et tests frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # Angular 21 demande Node ^20.19 || ^22.12 || ^24
+          cache: npm
+      # npm ci : installation stricte depuis package-lock.json (échoue s'il n'est pas à jour).
+      - name: Installation
+        run: npm ci
+      # Build de production : une erreur de compilation TypeScript ou de template fait échouer le job.
+      - name: Build
+        run: npm run build
+      # Tests Vitest en une passe (sans mode watch) : un test rouge fait échouer le job.
+      - name: Tests
+        run: npx ng test --watch=false
+
+  # Check obligatoire de la protection de branche. if: always() le fait tourner
+  # même quand le build échoue, pour que le check ne reste jamais « en attente ».
+  ci-success:
+    name: CI success
+    if: always()
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echec si un job a echoue ou a ete annule
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "Au moins un job a echoue ou a ete annule."
+          exit 1
+      - run: echo "CI verte"
