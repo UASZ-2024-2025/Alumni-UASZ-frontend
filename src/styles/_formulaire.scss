@@ -30,3 +30,9 @@
 
   @media (max-width: 480px) { grid-template-columns: 1fr; }
 }
+
+.deux-colonnes input { width: 100%; box-sizing: border-box; }
+
+@media (max-width: 480px) {
+  .deux-colonnes { grid-template-columns: 1fr; }
+}
