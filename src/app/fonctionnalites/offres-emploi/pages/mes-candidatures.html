@@ -1,0 +1,90 @@
+<div class="entete-page">
+  <h1>Mes candidatures</h1>
+</div>
+
+<app-onglets [onglets]="onglets()" [(actif)]="onglet" />
+
+@if (onglet() === 'candidatures') {
+  <form class="filtres" (submit)="$event.preventDefault()">
+    <app-champ libelle="Statut" type="select" [options]="optionsStatut" name="statut"
+      [(ngModel)]="choixStatut" (ngModelChange)="filtrer($event)" />
+  </form>
+
+  @if (candidatures.erreur(); as message) {
+    <app-alerte>{{ message }}</app-alerte>
+  }
+
+  <div [attr.aria-busy]="candidatures.chargement()">
+    @if (candidatures.chargement() && candidatures.elements().length === 0) {
+      <app-spinner libelle="Chargement des candidatures…" />
+    } @else if (!candidatures.erreur() && candidatures.elements().length === 0) {
+      <app-etat-vide titre="Aucune candidature">Les offres auxquelles vous postulez apparaîtront ici.</app-etat-vide>
+    } @else if (candidatures.elements().length > 0) {
+      <p class="total" aria-live="polite">{{ candidatures.total() }} candidature(s)</p>
+      <app-carte>
+        <div class="tableau-conteneur"><table class="tableau tableau--cartes">
+          <caption class="cache">Mes candidatures</caption>
+          <thead>
+            <tr>
+              <th scope="col">Offre</th>
+              <th scope="col">Envoyée le</th>
+              <th scope="col">Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of candidatures.elements(); track c.id) {
+              <tr>
+                <td><strong>{{ c.offerTitle || '—' }}</strong></td>
+                <td data-label="Envoyée le">{{ c.createdAt ? (c.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td data-label="Statut"><app-badge [ton]="tonCandidature(c.status)">{{ libelleCandidature(c.status) }}</app-badge></td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+      </app-carte>
+      <app-pagination [page]="candidatures.page()" [nbPages]="candidatures.nbPages()" (changement)="candidatures.aller($event)" />
+    }
+  </div>
+} @else {
+  @if (erreurPropositions(); as message) {
+    <app-alerte>{{ message }}</app-alerte>
+  }
+
+  <div [attr.aria-busy]="chargementPropositions()">
+    @if (chargementPropositions() && propositions().length === 0) {
+      <app-spinner libelle="Chargement des propositions…" />
+    } @else if (!erreurPropositions() && propositions().length === 0) {
+      <app-etat-vide titre="Aucune proposition">Les offres que des recruteurs vous proposent apparaîtront ici.</app-etat-vide>
+    } @else if (propositions().length > 0) {
+      <ul class="propositions">
+        @for (p of propositionsTriees(); track p.id) {
+          <li>
+            <app-carte>
+              <div class="proposition">
+                <div class="proposition-entete">
+                  <h2>{{ p.offerTitle || 'Offre' }}</h2>
+                  <app-badge [ton]="tonProposition(p.status)">{{ libelleProposition(p.status) }}</app-badge>
+                </div>
+                <p class="meta">
+                  Proposée par <strong>{{ p.recruiterName || 'un recruteur' }}</strong>
+                  @if (p.createdAt) { le {{ p.createdAt | date: 'dd/MM/yyyy' }} }
+                </p>
+                @if (p.message) {
+                  <blockquote>{{ p.message }}</blockquote>
+                }
+                @if (p.status === 'PENDING') {
+                  <div class="actions">
+                    <app-bouton variante="danger" [petit]="true" [desactive]="enCours() === p.id"
+                      [libelleAria]="'Refuser la proposition ' + (p.offerTitle ?? '')" (clic)="repondre(p, false)">Refuser</app-bouton>
+                    <app-bouton [petit]="true" [chargement]="enCours() === p.id"
+                      [libelleAria]="'Accepter la proposition ' + (p.offerTitle ?? '')" (clic)="repondre(p, true)">Accepter</app-bouton>
+                  </div>
+                }
+              </div>
+            </app-carte>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}
