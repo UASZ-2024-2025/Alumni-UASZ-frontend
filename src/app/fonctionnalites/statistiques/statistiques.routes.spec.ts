@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, UrlTree } from '@angular/router';
 import { AuthentificationService } from '../../socle/authentification/services/authentification.service';
-import { TableauDeBord } from '../administration/pages/tableau-de-bord';
+import { Statistiques } from './pages/statistiques';
 import { STATISTIQUES_ROUTES } from './statistiques.routes';
 
 describe('Accès à /statistiques (ALUM-187)', () => {
@@ -25,6 +25,6 @@ describe('Accès à /statistiques (ALUM-187)', () => {
 
   it("charge la vraie page, plus la page en construction", async () => {
     const composant = await (route.loadComponent as () => Promise<unknown>)();
-    expect(composant).toBe(TableauDeBord);
+    expect(composant).toBe(Statistiques);
   });
 });

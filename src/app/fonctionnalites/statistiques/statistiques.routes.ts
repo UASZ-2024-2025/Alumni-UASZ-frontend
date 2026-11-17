@@ -5,7 +5,7 @@ import { DashboardService } from '../../api/generes/analyses-correspondances/api
 import { environment } from '../../../environments/environment';
 import { roleGuard } from '../../socle/gardes-routes/role.guard';
 
-/** Statistiques de l'enseignant et de l'administrateur : même page que le tableau de bord, sans les blocs réservés à l'administrateur. */
+/** Statistiques : tableau de bord complet pour l'administrateur ; l'enseignant garde l'accès mais sans appel tant que le back ne lui ouvre pas ces API. */
 export const STATISTIQUES_ROUTES: Routes = [
   {
     path: 'statistiques',
@@ -14,6 +14,6 @@ export const STATISTIQUES_ROUTES: Routes = [
     data: { roles: ['ENSEIGNANT', 'ADMINISTRATEUR'] },
     // Provisoire, comme dans administration.routes.ts : à retirer quand les BASE_PATH seront déclarés dans app.config.ts
     providers: [{ provide: BASE_PATH_ANALYSES, useValue: environment.urlsApi.analyses }, DashboardService, AnalyticsReportsService],
-    loadComponent: () => import('../administration/pages/tableau-de-bord').then((m) => m.TableauDeBord),
+    loadComponent: () => import('./pages/statistiques').then((m) => m.Statistiques),
   },
 ];
