@@ -1,9 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { AnalyticsReportsService } from '../../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../../api/generes/analyses-correspondances/api/dashboard.service';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { TableauDeBord } from './tableau-de-bord';
 
 const stats = { alumniCount: 320, studentCount: 1450, companyCount: 23, insertionRate: 68.4, internshipCount: 87, jobOfferCount: 42 };
@@ -21,6 +23,7 @@ const competences = {
 
 describe('TableauDeBord', () => {
   let dashboard: { getDashboardStats: ReturnType<typeof vi.fn> };
+  let utilisateurs: { listUsers: ReturnType<typeof vi.fn> };
   let rapports: { getInsertionReport: ReturnType<typeof vi.fn>; getSkillsGapReport: ReturnType<typeof vi.fn> };
 
   const monter = () => {
@@ -29,7 +32,10 @@ describe('TableauDeBord', () => {
     return fixture.nativeElement as HTMLElement;
   };
 
+  const profil = (admin: boolean) => TestBed.overrideProvider(AuthentificationService, { useValue: { estAdministrateur: signal(admin) } });
+
   beforeEach(() => {
+    utilisateurs = { listUsers: vi.fn(() => of({ content: [], totalElements: 5 })) };
     dashboard = { getDashboardStats: vi.fn(() => of(stats)) };
     rapports = {
       getInsertionReport: vi.fn(() => of(insertion)),
@@ -39,7 +45,8 @@ describe('TableauDeBord', () => {
       providers: [
         { provide: DashboardService, useValue: dashboard },
         { provide: AnalyticsReportsService, useValue: rapports },
-        { provide: UsersService, useValue: { listUsers: vi.fn(() => of({ content: [], totalElements: 5 })) } },
+        { provide: UsersService, useValue: utilisateurs },
+        { provide: AuthentificationService, useValue: { estAdministrateur: signal(true) } },
       ],
     });
   });
@@ -96,5 +103,19 @@ describe('TableauDeBord', () => {
     const texte = monter().textContent;
     expect(texte).toContain("Aucune donnée d'insertion");
     expect(texte).toContain('Aucune donnée de compétences');
+  });
+
+  it("pour l'enseignant : titre Statistiques, pas de répartition des comptes, aucun appel réservé à l'administrateur", () => {
+    profil(false);
+    const el = monter();
+    expect(el.querySelector('h1')!.textContent).toBe('Statistiques');
+    expect(el.textContent).not.toContain('Comptes par rôle');
+    expect(el.querySelectorAll('app-graphique-anneau').length).toBe(1);
+    expect(utilisateurs.listUsers).not.toHaveBeenCalled();
+    expect(el.querySelectorAll('app-carte-stat').length).toBe(6);
+  });
+
+  it("pour l'administrateur : titre Tableau de bord administrateur", () => {
+    expect(monter().querySelector('h1')!.textContent).toBe('Tableau de bord administrateur');
   });
 });

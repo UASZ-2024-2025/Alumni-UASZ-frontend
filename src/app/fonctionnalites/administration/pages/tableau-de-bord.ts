@@ -15,6 +15,7 @@ import { CarteStat } from '../../../commun/components/carte-stat/carte-stat';
 import { GraphiqueBarres, LigneGraphique } from '../../../commun/components/graphique-barres/graphique-barres';
 import { ColonneGraphique, GraphiqueColonnes } from '../../../commun/components/graphique-colonnes/graphique-colonnes';
 import { GraphiqueAnneau, SegmentAnneau } from '../../../commun/components/graphique-anneau/graphique-anneau';
+import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { messageErreur } from '../erreurs';
 import { libelleRole, libelleStatut } from '../../../commun/utilitaires/libelles';
 
@@ -37,6 +38,9 @@ export class TableauDeBord {
   private readonly dashboard = inject(DashboardService);
   private readonly rapports = inject(AnalyticsReportsService);
   private readonly utilisateurs = inject(UsersService);
+
+  /** Les répartitions de comptes viennent d'une API réservée à l'administrateur : l'enseignant ne voit que les statistiques. */
+  protected readonly estAdmin = inject(AuthentificationService).estAdministrateur;
 
   protected readonly stats = signal<Etat<DashboardStats>>(enChargement());
   protected readonly insertion = signal<Etat<InsertionReportResponse>>(enChargement());
@@ -103,7 +107,7 @@ export class TableauDeBord {
     this.chargerStats();
     this.chargerInsertion();
     this.chargerCompetences();
-    this.chargerRepartitions();
+    if (this.estAdmin()) this.chargerRepartitions();
   }
 
   /** Une requête par valeur (page de taille 1) : seul `totalElements` nous intéresse. */

@@ -1,4 +1,4 @@
-<h1>Tableau de bord administrateur</h1>
+<h1>{{ estAdmin() ? 'Tableau de bord administrateur' : 'Statistiques' }}</h1>
 
 <section aria-labelledby="titre-kpi">
   <h2 id="titre-kpi" class="cache">Indicateurs clés</h2>
@@ -22,6 +22,7 @@
 </section>
 
 <div class="graphiques">
+  @if (estAdmin()) {
   <app-carte titre="Comptes par rôle">
     @switch (parRole().statut) {
       @case ('chargement') { <p aria-busy="true">Chargement…</p> }
@@ -47,6 +48,7 @@
       @default { <app-graphique-anneau [segments]="parStatut().donnees ?? []" /> }
     }
   </app-carte>
+  }
 
   <app-carte titre="Taux d'insertion global">
     @if (stats().statut === 'ok') {
