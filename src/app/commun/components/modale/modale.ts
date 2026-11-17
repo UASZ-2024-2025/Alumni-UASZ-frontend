@@ -11,4 +11,9 @@ export class Modale {
   readonly ouvert = input(false);
   readonly titre = input.required<string>();
   readonly fermer = output<void>();
+
+  /** Ferme au clic sur le fond seulement. Pas d'expression `a && b` dans le gabarit : quand elle vaut `false`, Angular bloque l'action par défaut (donc l'envoi d'un formulaire). */
+  protected clicFond(e: Event): void {
+    if (e.target === e.currentTarget) this.fermer.emit();
+  }
 }

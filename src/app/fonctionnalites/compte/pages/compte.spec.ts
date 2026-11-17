@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
@@ -23,6 +24,7 @@ describe('Profil', () => {
     const toast = { succes: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         { provide: AuthentificationService, useValue: auth },
         { provide: UsersService, useValue: api },
         { provide: ToastService, useValue: toast },

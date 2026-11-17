@@ -119,4 +119,30 @@ describe('GestionEntreprises', () => {
     soumettre();
     expect(el.querySelector('[role="alert"]')!.textContent).toContain('Nom déjà utilisé');
   });
+
+  it('traduit le 403 au chargement de la liste', () => {
+    api.searchCompanies.mockReturnValue(throwError(() => new ErreurApi(403, 'FORBIDDEN', 'x')));
+    fixture = TestBed.createComponent(GestionEntreprises);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain("réservée à l'administrateur");
+  });
+
+  it('signale une entreprise disparue (404) quand on change le partenariat', () => {
+    api.updateCompany.mockReturnValue(throwError(() => new ErreurApi(404, 'NF', 'x')));
+    const case_ = el.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    case_.checked = true;
+    case_.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(el.querySelector('[role="alert"]')!.textContent).toContain("n'existe plus");
+  });
+
+  it('affiche les erreurs de validation (400) à la création', () => {
+    ouvrirAjout();
+    api.createCompany.mockReturnValue(throwError(() => new ErreurApi(400, 'BAD', 'email invalide')));
+    saisir('name', 'Sonatel');
+    saisir('sector', 'Télécoms');
+    saisir('contactEmail', 'a@b.sn');
+    soumettre();
+    expect(el.querySelector('[role="alert"]')!.textContent).toContain('Données invalides : email invalide');
+  });
 });
