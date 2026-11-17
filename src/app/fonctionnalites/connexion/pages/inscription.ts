@@ -63,6 +63,8 @@ const motsDePasseIdentiques: ValidatorFn = (g) =>
     </app-mise-en-page-auth>
   `,
 })
+
+
 export class Inscription {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly compte = inject(CompteService);
