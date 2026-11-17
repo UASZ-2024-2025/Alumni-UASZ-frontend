@@ -5,8 +5,6 @@ export interface ElementMenu { libelle: string; chemin: string; }
 const commun: ElementMenu[] = [
   { libelle: 'Messagerie', chemin: '/messagerie' },
   { libelle: 'Notifications', chemin: '/notifications' },
-  { libelle: 'Mon profil', chemin: '/profil' },
-  { libelle: 'Mot de passe', chemin: '/mot-de-passe' },
 ];
 
 export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
