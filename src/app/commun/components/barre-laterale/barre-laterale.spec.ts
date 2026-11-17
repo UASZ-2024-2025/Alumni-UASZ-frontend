@@ -39,8 +39,16 @@ describe('BarreLaterale', () => {
     fixture.componentInstance.deconnexion.subscribe(() => (emis = true));
     fixture.nativeElement.querySelector('.utilisateur').click();
     fixture.detectChanges();
-    fixture.nativeElement.querySelector('.deconnexion').click();
+    fixture.nativeElement.querySelector('button.deconnexion').click();
     expect(emis).toBe(true);
+  });
+
+  it('propose Mon profil dans le menu du profil', () => {
+    fixture.nativeElement.querySelector('.utilisateur').click();
+    fixture.detectChanges();
+    const lien = fixture.nativeElement.querySelector('a.profil');
+    expect(lien.textContent).toContain('Mon profil');
+    expect(lien.getAttribute('href')).toBe('/profil');
   });
 
   it('ferme le menu au clic en dehors', () => {

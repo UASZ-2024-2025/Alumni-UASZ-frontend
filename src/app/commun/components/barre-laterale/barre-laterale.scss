@@ -15,7 +15,7 @@
 .logo svg path { fill: #fff; }
 .logo small { display: block; margin-top: 2px; font: 400 10px var(--police); opacity: 0.8; }
 
-nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; }
+nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.28) transparent; }
 nav a {
   display: flex;
   align-items: center;
@@ -82,3 +82,4 @@ nav a {
 
   &:hover { background: rgba(255, 255, 255, 0.1); }
 }
+.deconnexion.profil { color: #fff; text-decoration: none; }
