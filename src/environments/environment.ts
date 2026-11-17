@@ -4,5 +4,6 @@ export const environment = {
     utilisateurs: 'https://api.alumni-uasz.sn/user-service/v1',
     alumni: 'https://api.alumni-uasz.sn/alumni-student-company-service/v1',
     analyses: 'https://api.alumni-uasz.sn/analytics-matching-service/v1',
+    offres: 'https://api.alumni-uasz.sn/job-offer-service/v1',
   },
 };

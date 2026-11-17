@@ -2,7 +2,8 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { BASE_PATH } from './api/generes/utilisateurs/variables';
+import { BASE_PATH as BASE_PATH_UTILISATEURS } from './api/generes/utilisateurs/variables';
+import { BASE_PATH as BASE_PATH_OFFRES } from './api/generes/offres-emploi/variables';
 import { environment } from '../environments/environment';
 import { erreurInterceptor } from './socle/intercepteurs-http/erreur.interceptor';
 import { jetonInterceptor } from './socle/intercepteurs-http/jeton.interceptor';
@@ -15,6 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([erreurInterceptor, jetonInterceptor, renouvellementInterceptor]),
     ),
-    { provide: BASE_PATH, useValue: environment.urlsApi.utilisateurs },
+    { provide: BASE_PATH_UTILISATEURS, useValue: environment.urlsApi.utilisateurs },
+    { provide: BASE_PATH_OFFRES, useValue: environment.urlsApi.offres },
   ],
 };

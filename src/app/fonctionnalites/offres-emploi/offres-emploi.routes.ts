@@ -6,25 +6,19 @@ const enConstruction = () =>
 
 /** Squelette (AL-49) : remplacer chaque `enConstruction` par la vraie page. Rôles à confirmer avec l'équipe back. */
 export const OFFRES_EMPLOI_ROUTES: Routes = [
-  {
-    path: 'offres-emploi',
-    title: "Offres d'emploi",
+   {
+    path: 'offres-emploi/mes-offres',
+    title: 'Mes offres',
     canActivate: [roleGuard],
-    data: { roles: ['ALUMNI', 'ETUDIANT', 'ENTREPRISE', 'ADMINISTRATEUR'], titre: "Offres d'emploi", ticket: 'AL-49' },
-    loadComponent: enConstruction,
+    data: { roles: ['ENTREPRISE'], titre: 'Mes offres', ticket: 'ALUM-131' },
+    loadComponent: () => import('./pages/mes-offres').then((m) => m.MesOffres),
   },
   {
-    path: 'candidatures',
-    title: 'Candidatures',
+    path: 'offres-emploi/publier',
+    title: 'Publier une offre',
     canActivate: [roleGuard],
-    data: { roles: ['ETUDIANT', 'ENTREPRISE'], titre: 'Candidatures', ticket: 'AL-49' },
-    loadComponent: enConstruction,
+    data: { roles: ['ENTREPRISE'], titre: 'Publier une offre', ticket: 'ALUM-131' },
+    loadComponent: () => import('./pages/publier-offre').then((m) => m.PublierOffre),
   },
-  {
-    path: 'correspondances',
-    title: 'Correspondances',
-    canActivate: [roleGuard],
-    data: { roles: ['ETUDIANT'], titre: 'Correspondances', ticket: 'AL-49' },
-    loadComponent: enConstruction,
-  },
+ 
 ];
