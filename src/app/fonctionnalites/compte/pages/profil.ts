@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { Gender } from '../../../api/generes/utilisateurs/model/gender';
@@ -19,7 +20,7 @@ const dansLePasse: ValidatorFn = (c) => (!c.value || c.value < aujourdhui() ? nu
 
 @Component({
   selector: 'app-profil',
-  imports: [ReactiveFormsModule, Alerte, Bouton, Carte, Champ, Spinner],
+  imports: [ReactiveFormsModule, RouterLink, Alerte, Bouton, Carte, Champ, Spinner],
   styleUrl: '../compte.scss',
   template: `
     <h1>Mon profil</h1>
@@ -51,6 +52,7 @@ const dansLePasse: ValidatorFn = (c) => (!c.value || c.value < aujourdhui() ? nu
             <app-bouton type="submit" [chargement]="envoi()">Enregistrer</app-bouton>
           </div>
         </form>
+        <p class="aide"><a routerLink="/mot-de-passe">Changer mon mot de passe</a></p>
       }
     </app-carte>
   `,
