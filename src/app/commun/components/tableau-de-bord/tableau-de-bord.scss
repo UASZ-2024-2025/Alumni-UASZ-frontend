@@ -1,0 +1,16 @@
+:host { display: block; }
+
+h1 { margin: 0 0 1rem; font: 700 1.625rem/1.2 var(--police-titre); }
+.cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 0 0 .5rem; padding: 0; list-style: none; }
+.graphiques { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 14px; margin-top: 14px; }
+.deux-cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-top: 14px; }
+.maj { margin: .5rem 0; color: var(--mu); font-size: .8125rem; }
+.vide { padding: .6rem .9rem; border-radius: var(--rayon); background: var(--g0); color: var(--mu); }
+app-alerte { margin: .75rem 0; }
+.sous-titre { margin: 1rem 0 .5rem; color: var(--mu); font: 600 .8125rem var(--police); text-transform: uppercase; letter-spacing: .04em; }
+.filtres app-bouton, .filtres .btn { align-self: end; }
+@media (max-width: 600px) {
+  h1 { font-size: 1.375rem; }
+  .filtres app-champ, .filtres .champ { flex: 1 1 100%; }
+}
