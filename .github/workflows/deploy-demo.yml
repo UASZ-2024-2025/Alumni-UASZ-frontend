@@ -1,0 +1,93 @@
+# CD de la démo AWS (ALUM-215) : chaque fusion dans develop est déployée automatiquement.
+#
+#   1. image du front (configuration Angular « demo ») -> ghcr.io (amd64 + arm64), tags <sha> et develop
+#   2. GitHub prend le rôle AWS de déploiement par OIDC (aucune clé stockée)
+#   3. AWS SSM lance deploy.sh (dépôt backend, deploy/demo/scripts) sur les machines de la démo
+#
+# Variables du dépôt : AWS_DEPLOY_ROLE_ARN, AWS_REGION, DEMO_URL (sorties de la pile CloudFormation,
+# voir deploy/demo/README.md dans uasz-alumni-backend).
+
+name: CD - Démo AWS
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+# Droits accordés job par job : seul le job de déploiement peut obtenir un jeton AWS.
+permissions: {}
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Image du frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nom d'image (minuscules)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/frontend" >> "$GITHUB_ENV"
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          build-args: CONFIGURATION=demo
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:develop
+          cache-from: type=gha,scope=demo-frontend
+          cache-to: type=gha,mode=max,scope=demo-frontend
+
+  deploy:
+    name: Déploiement sur la démo
+    needs: build
+    permissions:
+      id-token: write # OIDC vers AWS
+    runs-on: ubuntu-latest
+    environment:
+      name: demo
+      url: ${{ vars.DEMO_URL }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: deploy.sh sur la machine du front (AWS SSM)
+        run: |
+          IDS=$(aws ec2 describe-instances \
+            --filters "Name=tag:alumni-demo,Values=vm-a" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          [ -n "$IDS" ] || { echo "::error::machine vm-a de la démo introuvable"; exit 1; }
+
+          CMD_ID=$(aws ssm send-command \
+            --document-name AWS-RunShellScript \
+            --instance-ids $IDS \
+            --timeout-seconds 600 \
+            --comment "deploy $GITHUB_REPOSITORY@${GITHUB_SHA::7}" \
+            --parameters "$(jq -nc --arg c "/opt/alumni/app/deploy/demo/scripts/deploy.sh frontend=$GITHUB_SHA" '{commands:[$c], executionTimeout:["600"]}')" \
+            --query Command.CommandId --output text)
+          echo "commande SSM : $CMD_ID"
+
+          for i in $(seq 1 60); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IDS" --query Status --output text 2>/dev/null || echo Pending)
+            echo "[$((i*10))s] $STATUS"
+            case "$STATUS" in Pending|InProgress|Delayed) ;; *) break ;; esac
+          done
+
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IDS" \
+            --query '[StandardOutputContent, StandardErrorContent]' --output text
+          [ "$STATUS" = Success ] || { echo "::error::déploiement en échec (version précédente remise en place)"; exit 1; }
