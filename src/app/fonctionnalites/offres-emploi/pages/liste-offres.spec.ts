@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { OffersService } from '../../../api/generes/offres-emploi/api/offers.service';
 import { JobOffer } from '../../../api/generes/offres-emploi/model/jobOffer';
@@ -24,7 +25,9 @@ describe('ListeOffres', () => {
 
   beforeEach(() => {
     api = { searchOffers: vi.fn(() => of(page([offre]))) };
-    TestBed.configureTestingModule({ providers: [{ provide: OffersService, useValue: api }] });
+    TestBed.configureTestingModule({
+      providers: [{ provide: OffersService, useValue: api }, provideRouter([])],
+    });
     fixture = TestBed.createComponent(ListeOffres);
     fixture.detectChanges();
     el = fixture.nativeElement;
@@ -38,6 +41,11 @@ describe('ListeOffres', () => {
     expect(el.textContent).toContain('Développeur Angular');
     expect(el.textContent).toContain('Orange');
     expect(el.textContent).toContain('Ouverte');
+  });
+
+  it("ouvre le détail de l'offre au clic sur son titre", () => {
+    const lien = el.querySelector<HTMLAnchorElement>('tbody a')!;
+    expect(lien.getAttribute('href')).toBe('/offres-emploi/o1');
   });
 
   it('filtre par type', () => {

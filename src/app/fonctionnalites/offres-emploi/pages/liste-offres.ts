@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { OffersService } from '../../../api/generes/offres-emploi/api/offers.service';
 import { JobOffer } from '../../../api/generes/offres-emploi/model/jobOffer';
 import { OfferType } from '../../../api/generes/offres-emploi/model/offerType';
@@ -11,15 +12,12 @@ import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { creerListePaginee } from '../../../commun/utilitaires/liste-paginee';
+import { MODES, STATUTS, TYPES } from '../offres-libelles';
 
-const TYPES: Record<string, string> = { JOB: 'Emploi', INTERNSHIP: 'Stage' };
-const MODES: Record<string, string> = { ON_SITE: 'Sur site', HYBRID: 'Hybride', REMOTE: 'À distance' };
-const STATUTS: Record<string, string> = { OPEN: 'Ouverte', CLOSED: 'Clôturée', ARCHIVED: 'Archivée' };
-
-/** Liste des offres d'emploi et de stage (AL-156) : recherche, filtre par type, pagination. */
+/** Liste des offres d'emploi et de stage (ALUM-156) : recherche, filtre par type, pagination, lien vers le détail. */
 @Component({
   selector: 'app-liste-offres',
-  imports: [DatePipe, FormsModule, Alerte, Badge, BarreRecherche, Champ, Pagination, Tableau],
+  imports: [DatePipe, FormsModule, RouterLink, Alerte, Badge, BarreRecherche, Champ, Pagination, Tableau],
   templateUrl: './liste-offres.html',
   styles: `
     .identite-texte { display: flex; flex-direction: column; gap: 2px; }

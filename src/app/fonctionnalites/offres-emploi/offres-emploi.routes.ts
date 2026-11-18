@@ -7,16 +7,27 @@ import { environment } from '../../../environments/environment';
 const enConstruction = () =>
   import('../../commun/components/page-en-construction/page-en-construction').then((m) => m.PageEnConstruction);
 
+const ROLES_OFFRES = ['ALUMNI', 'ETUDIANT', 'ENTREPRISE', 'ADMINISTRATEUR'];
+// Provisoire : à retirer quand le BASE_PATH des offres sera déclaré dans app.config.ts
+const FOURNISSEURS_OFFRES = [{ provide: BASE_PATH_OFFRES, useValue: environment.urlsApi.offres }, OffersService];
+
 /** Squelette (AL-49) : remplacer chaque `enConstruction` par la vraie page. Rôles à confirmer avec l'équipe back. */
 export const OFFRES_EMPLOI_ROUTES: Routes = [
   {
     path: 'offres-emploi',
     title: "Offres d'emploi",
     canActivate: [roleGuard],
-    data: { roles: ['ALUMNI', 'ETUDIANT', 'ENTREPRISE', 'ADMINISTRATEUR'], titre: "Offres d'emploi", ticket: 'AL-49' },
-    // Provisoire : à retirer quand le BASE_PATH des offres sera déclaré dans app.config.ts
-    providers: [{ provide: BASE_PATH_OFFRES, useValue: environment.urlsApi.offres }, OffersService],
+    data: { roles: ROLES_OFFRES, titre: "Offres d'emploi", ticket: 'AL-49' },
+    providers: FOURNISSEURS_OFFRES,
     loadComponent: () => import('./pages/liste-offres').then((m) => m.ListeOffres),
+  },
+  {
+    path: 'offres-emploi/:id',
+    title: "Détail de l'offre",
+    canActivate: [roleGuard],
+    data: { roles: ROLES_OFFRES, titre: "Détail de l'offre", ticket: 'AL-49' },
+    providers: FOURNISSEURS_OFFRES,
+    loadComponent: () => import('./pages/detail-offre').then((m) => m.DetailOffre),
   },
   {
     path: 'candidatures',

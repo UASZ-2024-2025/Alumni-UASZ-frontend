@@ -32,7 +32,7 @@
     @switch (cle) {
       @case ('title') {
         <span class="identite-texte">
-          <strong>{{ ligne.title }}</strong>
+          <a [routerLink]="['/offres-emploi', ligne.id]"><strong>{{ ligne.title }}</strong></a>
           <small>{{ ligne.companyName }}</small>
         </span>
       }
