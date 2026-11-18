@@ -28,6 +28,9 @@
           <li>
             <button type="button" class="element" [class.non-lue]="!n.isRead" (click)="ouvrirNotification(n)">
               <span class="point" aria-hidden="true"></span>
+              <span class="icone" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="icone(n.type)" /></svg>
+              </span>
               <span class="texte">
                 <strong>{{ n.title || 'Notification' }}</strong>
                 @if (n.content) { <span class="contenu">{{ n.content }}</span> }

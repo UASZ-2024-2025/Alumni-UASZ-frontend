@@ -8,6 +8,7 @@ import { EtatVide } from '../../commun/components/etat-vide/etat-vide';
 import { Spinner } from '../../commun/components/spinner/spinner';
 import { AuthentificationService } from '../authentification/services/authentification.service';
 import { CentreNotificationsService } from './centre-notifications.service';
+import { iconeNotification } from './icones-notifications';
 import { cheminNotification } from './liens-notifications';
 
 /**
@@ -56,6 +57,10 @@ export class ClocheNotifications {
     const ouvrir = !this.ouvert();
     this.ouvert.set(ouvrir);
     if (ouvrir) this.centre.charger();
+  }
+
+  protected icone(type: Notification['type']): string {
+    return iconeNotification(type);
   }
 
   protected toutMarquerLu(): void {

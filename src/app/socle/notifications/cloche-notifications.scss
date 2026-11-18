@@ -17,6 +17,8 @@ h2 { margin: 0; font: 700 1rem var(--police); color: var(--tx); }
 .element.non-lue { background: var(--g0); }
 .point { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: transparent; }
 .non-lue .point { background: var(--g7); }
+.icone { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--g1); color: var(--g8); }
+.non-lue .icone { background: var(--g7); color: #fff; }
 .texte { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .contenu { color: var(--mu); overflow-wrap: anywhere; }
 .date { color: var(--mu); font-size: 0.75rem; }
