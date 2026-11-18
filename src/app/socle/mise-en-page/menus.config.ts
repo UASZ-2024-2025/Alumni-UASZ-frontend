@@ -42,7 +42,6 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
   ADMINISTRATEUR: [
     { libelle: 'Administration', chemin: '/administration' },
     { libelle: 'Annuaire', chemin: '/annuaire' },
-    { libelle: 'Promotions', chemin: '/promotions' },
     { libelle: 'Entreprises', chemin: '/entreprises' },
     { libelle: 'Offres', chemin: '/offres-emploi' },
     { libelle: 'Statistiques', chemin: '/statistiques' },

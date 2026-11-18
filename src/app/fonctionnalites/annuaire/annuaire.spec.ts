@@ -1,7 +1,6 @@
 import { FormBuilder } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
 import { datesCoherentes } from '../profil-alumni/pages/profil-alumni';
-import { trierPromotions } from '../promotions/pages/gestion-promotions';
 import { formaterDate } from '../profil-etudiant/modeles/cv.modele';
 import { carteAlumni, carteEntreprise, carteEtudiant, initiales, ongletValide } from './modeles/cartes';
 import { trierExperiences } from './pages/fiche-alumni';
@@ -60,15 +59,6 @@ describe('tris', () => {
       { id: '3', startDate: '2022-01-01' },
     ]);
     expect(r.map((e) => e.id)).toEqual(['2', '3', '1']);
-  });
-
-  it('trie les promotions par année décroissante puis par spécialité', () => {
-    const r = trierPromotions([
-      { id: '1', academicYear: 2023, specialty: 'Réseaux' },
-      { id: '2', academicYear: 2024, specialty: 'Réseaux' },
-      { id: '3', academicYear: 2024, specialty: 'Génie Logiciel' },
-    ]);
-    expect(r.map((p) => p.id)).toEqual(['3', '2', '1']);
   });
 });
 

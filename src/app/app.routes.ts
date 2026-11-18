@@ -33,7 +33,7 @@ export const routes: Routes = [
           ),
       },
 
-      // --- Annuaire, profil Alumni, promotions ---
+      // --- Annuaire et profil Alumni ---
       {
         path: 'annuaire',
         loadChildren: () =>
@@ -47,13 +47,6 @@ export const routes: Routes = [
           import('./fonctionnalites/profil-alumni/profil-alumni.routes').then(
             (m) => m.PROFIL_ALUMNI_ROUTES,
           ),
-      },
-      {
-        path: 'promotions',
-        canActivate: [roleGuard],
-        data: { roles: ['ADMINISTRATEUR'] },
-        loadChildren: () =>
-          import('./fonctionnalites/promotions/promotions.routes').then((m) => m.PROMOTIONS_ROUTES),
       },
 
       ...PROFILS_ROUTES,
