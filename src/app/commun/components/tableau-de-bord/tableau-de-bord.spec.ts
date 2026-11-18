@@ -3,7 +3,7 @@ import { of, throwError } from 'rxjs';
 import { AnalyticsReportsService } from '../../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../../api/generes/analyses-correspondances/api/dashboard.service';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
-import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { ErreurApi } from '../../modeles/erreur-api.model';
 import { TableauDeBord } from './tableau-de-bord';
 
 const stats = { alumniCount: 320, studentCount: 1450, companyCount: 23, insertionRate: 68.4, internshipCount: 87, jobOfferCount: 42 };
@@ -21,15 +21,18 @@ const competences = {
 
 describe('TableauDeBord', () => {
   let dashboard: { getDashboardStats: ReturnType<typeof vi.fn> };
+  let utilisateurs: { listUsers: ReturnType<typeof vi.fn> };
   let rapports: { getInsertionReport: ReturnType<typeof vi.fn>; getSkillsGapReport: ReturnType<typeof vi.fn> };
 
-  const monter = () => {
+  const monter = (admin = true) => {
     const fixture = TestBed.createComponent(TableauDeBord);
+    fixture.componentRef.setInput('admin', admin);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   };
 
   beforeEach(() => {
+    utilisateurs = { listUsers: vi.fn(() => of({ content: [], totalElements: 5 })) };
     dashboard = { getDashboardStats: vi.fn(() => of(stats)) };
     rapports = {
       getInsertionReport: vi.fn(() => of(insertion)),
@@ -39,7 +42,7 @@ describe('TableauDeBord', () => {
       providers: [
         { provide: DashboardService, useValue: dashboard },
         { provide: AnalyticsReportsService, useValue: rapports },
-        { provide: UsersService, useValue: { listUsers: vi.fn(() => of({ content: [], totalElements: 5 })) } },
+        { provide: UsersService, useValue: utilisateurs },
       ],
     });
   });
@@ -96,5 +99,30 @@ describe('TableauDeBord', () => {
     const texte = monter().textContent;
     expect(texte).toContain("Aucune donnée d'insertion");
     expect(texte).toContain('Aucune donnée de compétences');
+  });
+
+  it("pour l'enseignant : message d'attente, aucun appel (ces API répondent 403 hors administrateur)", () => {
+    const el = monter(false);
+    expect(el.querySelector('h1')!.textContent).toBe('Statistiques');
+    expect(el.textContent).toContain('Statistiques bientôt disponibles');
+    expect(el.querySelector('app-carte-stat')).toBeNull();
+    expect(dashboard.getDashboardStats).not.toHaveBeenCalled();
+    expect(rapports.getInsertionReport).not.toHaveBeenCalled();
+    expect(rapports.getSkillsGapReport).not.toHaveBeenCalled();
+    expect(utilisateurs.listUsers).not.toHaveBeenCalled();
+  });
+
+  it('affiche un message clair quand un bloc répond 403', () => {
+    const refus = () => throwError(() => new ErreurApi(403, 'FORBIDDEN', 'Action réservée à l\'Administrateur'));
+    dashboard.getDashboardStats.mockReturnValue(refus());
+    rapports.getSkillsGapReport.mockReturnValue(refus());
+    const el = monter();
+    expect(el.querySelectorAll('[role="alert"]').length).toBe(2);
+    expect(el.textContent).toContain("Action réservée à l'Administrateur");
+    expect(el.querySelectorAll('app-graphique-barres').length).toBe(1);
+  });
+
+  it("pour l'administrateur : titre Tableau de bord administrateur", () => {
+    expect(monter().querySelector('h1')!.textContent).toBe('Tableau de bord administrateur');
   });
 });
