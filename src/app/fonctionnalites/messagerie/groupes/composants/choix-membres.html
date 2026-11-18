@@ -1,0 +1,40 @@
+<div class="choix">
+  <label class="champ">
+    Ajouter des participants
+    <input type="search" placeholder="Nom, prénom ou compétence (2 lettres minimum)" autocomplete="off"
+      [value]="requete()" (input)="saisir($any($event.target).value)" />
+  </label>
+
+  @if (selection().length) {
+    <ul class="puces" aria-label="Participants choisis">
+      @for (m of selection(); track m.userId) {
+        <li>
+          {{ m.nom }}
+          <button type="button" [attr.aria-label]="'Retirer ' + m.nom" (click)="retirer(m)">×</button>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="resultats" aria-live="polite">
+    @if (erreur(); as message) {
+      <p class="info info--erreur">{{ message }}</p>
+    } @else if (recherche()) {
+      <p class="info">Recherche…</p>
+    } @else if (requete().trim().length >= 2 && resultats().length === 0) {
+      <p class="info">Aucune personne trouvée.</p>
+    } @else if (resultats().length) {
+      <ul class="liste">
+        @for (m of resultats(); track m.userId) {
+          <li>
+            <button type="button" class="personne" (click)="choisir(m)" [attr.aria-label]="'Ajouter ' + m.nom">
+              <app-avatar [nom]="m.nom" />
+              <span class="texte"><strong>{{ m.nom }}</strong><small>{{ m.detail }}</small></span>
+              <span class="plus" aria-hidden="true">+</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

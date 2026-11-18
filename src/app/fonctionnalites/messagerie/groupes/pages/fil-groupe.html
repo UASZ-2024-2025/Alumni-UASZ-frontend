@@ -1,0 +1,89 @@
+@switch (etat()) {
+  @case ('chargement') {
+    <div class="etat"><app-spinner libelle="Ouverture du groupe…" /></div>
+  }
+  @case ('interdit') {
+    <div class="etat" role="alert">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7V5a4 4 0 018 0v2M3 7h10v7H3z" /></svg>
+      <h2>Accès réservé aux membres</h2>
+      <p>Vous ne faites pas partie de ce groupe : seuls ses membres peuvent lire et écrire dans ce fil.</p>
+      <a class="lien-retour" routerLink="/groupes">Retour à mes groupes</a>
+    </div>
+  }
+  @case ('introuvable') {
+    <div class="etat" role="alert">
+      <h2>Groupe introuvable</h2>
+      <p>Ce groupe n'existe pas ou a été supprimé.</p>
+      <a class="lien-retour" routerLink="/groupes">Retour à mes groupes</a>
+    </div>
+  }
+  @case ('erreur') {
+    <div class="etat">
+      <app-alerte>{{ erreur() }}</app-alerte>
+      <button type="button" class="lien-retour" (click)="recharger()">Réessayer</button>
+    </div>
+  }
+  @case ('pret') {
+    @if (groupe(); as g) {
+      <header class="entete-fil">
+        <a class="retour" routerLink="/groupes" aria-label="Retour à mes groupes">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+        </a>
+        <button type="button" class="identite" (click)="infosOuvertes.set(true)" [attr.aria-label]="'Infos du groupe ' + g.name">
+          <app-avatar [nom]="g.name ?? ''" />
+          <span class="texte">
+            <strong>{{ g.name }}</strong>
+            <small>{{ participants() }}</small>
+          </span>
+        </button>
+        <button type="button" class="bouton-icone" title="Infos du groupe" aria-label="Infos du groupe" (click)="infosOuvertes.set(true)">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15A7 7 0 108 1a7 7 0 000 14zM8 7v4M8 4.5v.5" /></svg>
+        </button>
+      </header>
+
+      <div class="defilement" #defilement>
+        <ol class="fil" aria-label="Messages du groupe" aria-live="polite">
+          @if (plusAnciens()) {
+            <li class="plus-anciens">
+              <button type="button" [disabled]="chargementAnciens()" (click)="chargerAnciens()">
+                {{ chargementAnciens() ? 'Chargement…' : 'Afficher les messages précédents' }}
+              </button>
+            </li>
+          }
+          @for (el of fil(); track el.cle) {
+            @if (el.type === 'jour') {
+              <li class="jour"><span>{{ el.libelle }}</span></li>
+            } @else {
+              <li class="bulle" [class.moi]="el.moi" [class.debut]="el.debutSerie">
+                @if (!el.moi && el.debutSerie) {
+                  <span class="auteur" [style.color]="couleurAuteur(el.message.senderId)">{{ el.message.senderName || 'Membre' }}</span>
+                }
+                <p>{{ el.message.content }}<time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time></p>
+              </li>
+            }
+          } @empty {
+            <li class="jour"><span>Aucun message pour l'instant. Lancez la discussion !</span></li>
+          }
+        </ol>
+      </div>
+
+      <footer class="saisie">
+        @if (erreurEnvoi(); as message) {
+          <p class="erreur-envoi" role="alert">{{ message }}</p>
+        }
+        <form class="barre" (submit)="$event.preventDefault(); envoyer()">
+          <label class="cache" for="message-groupe">Votre message</label>
+          <textarea id="message-groupe" #saisie rows="1" placeholder="Écrire un message"
+            [value]="brouillon()" (input)="brouillon.set($any($event.target).value)" (keydown)="touche($event)"></textarea>
+          <button type="submit" class="envoyer" aria-label="Envoyer" title="Envoyer" [disabled]="!brouillon().trim() || envoi()">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2l12 6-12 6 2-6zM4 8h10" /></svg>
+          </button>
+        </form>
+      </footer>
+
+      <app-modale titre="Infos du groupe" [ouvert]="infosOuvertes()" (fermer)="infosOuvertes.set(false)">
+        <app-infos-groupe [groupe]="g" [moiId]="moiId ?? ''" (modifie)="groupeModifie($event)" (quitte)="groupeQuitte()" />
+      </app-modale>
+    }
+  }
+}

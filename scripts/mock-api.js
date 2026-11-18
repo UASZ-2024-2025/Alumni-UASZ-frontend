@@ -16,6 +16,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
 };
 const accessValides = new Map(); // token -> expiration (ms)
+const accessEmails = new Map(); // token -> email (identifie l'utilisateur connecté)
 const refreshValides = new Map(); // token -> email
 const jetonsConfirmation = new Map(); // token -> email
 const jetonsReset = new Map(); // token -> email
@@ -33,6 +34,7 @@ function emettre(email) {
   const accessToken = `acc-${++compteur}`;
   const refreshToken = `ref-${++compteur}`;
   accessValides.set(accessToken, Date.now() + DUREE_ACCESS_S * 1000);
+  accessEmails.set(accessToken, email);
   refreshValides.set(refreshToken, email);
   const { motDePasse, ...publicUser } = u;
   return { accessToken, refreshToken, expiresIn: DUREE_ACCESS_S, user: { ...publicUser, email, status: 'ACTIF' } };
@@ -191,6 +193,151 @@ function routesOffres(req, res, chemin, corps) {
   return false;
 }
 
+// --- Annuaires étudiants et Alumni (recherche de participants) : profils construits depuis l'annuaire des comptes ---
+function routesAnnuaires(req, res, chemin) {
+  const role = { '/v1/students': 'ETUDIANT', '/v1/alumni': 'ALUMNI' }[chemin];
+  if (req.method !== 'GET' || !role) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const requete = (new URL(req.url, 'http://mock').searchParams.get('query') || '').toLowerCase();
+  const liste = annuaire
+    .filter((u) => u.role === role && u.status === 'ACTIF' && `${u.firstName} ${u.lastName}`.toLowerCase().includes(requete))
+    .map((u) => ({
+      id: `profil-${u.id}`, userId: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email,
+      specialty: 'Génie Logiciel', ...(role === 'ALUMNI' ? { currentPosition: 'Développeur' } : {}),
+    }));
+  return envoyer(res, 200, parPage(liste, req.url)) ?? true;
+}
+
+// --- Groupes de discussion (service messagerie, port 8085) ---
+// L'étudiant (2) est membre de g1 et g2, pas de g3 : /groupes/g3 doit afficher « Accès réservé aux membres ».
+const ilYA = (jours, h, m = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - jours);
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+const compte = (id) => annuaire.find((u) => u.id === id);
+const membre = (id, groupRole = 'MEMBER') => {
+  const u = compte(id);
+  return { userId: id, userName: u ? `${u.firstName} ${u.lastName}` : 'Inconnu', userRole: u?.role, groupRole, joinedAt: ilYA(10, 9) };
+};
+const groupes = [
+  { id: 'g1', name: 'Promo GL 2025', description: 'Entraide et annonces de la promotion Génie Logiciel.', ownerId: '3',
+    members: [membre('3', 'OWNER'), membre('1'), membre('2'), membre('u10'), membre('u11')], createdAt: ilYA(10, 9) },
+  { id: 'g2', name: 'Club Data & IA', description: 'Veille, projets et offres autour de la data.', ownerId: '2',
+    members: [membre('2', 'OWNER'), membre('1'), membre('u13')], createdAt: ilYA(6, 14) },
+  { id: 'g3', name: 'Conseil pédagogique', description: 'Réservé aux enseignants.', ownerId: '3',
+    members: [membre('3', 'OWNER'), membre('u12')], createdAt: ilYA(20, 8) },
+];
+let numeroMessage = 0;
+const msg = (groupId, senderId, content, createdAt) => ({
+  id: `m${++numeroMessage}`, groupId, senderId, senderName: membre(senderId).userName, content, createdAt,
+});
+const messagesGroupes = [
+  msg('g1', '3', 'Bonjour à tous, bienvenue dans le groupe de la promo !', ilYA(3, 9, 5)),
+  msg('g1', '1', 'Merci Madame. Je partagerai ici les offres de mon entreprise.', ilYA(3, 9, 20)),
+  msg('g1', 'u10', 'Super, merci Awa !', ilYA(3, 9, 22)),
+  msg('g1', '2', "Est-ce que quelqu'un a le planning des soutenances ?", ilYA(1, 18, 2)),
+  msg('g1', '3', 'Il sera publié vendredi.', ilYA(1, 18, 30)),
+  msg('g1', '3', 'Pensez à déposer vos rapports avant jeudi minuit.', ilYA(0, 8, 15)),
+  msg('g1', 'u11', 'Bien noté, merci !', ilYA(0, 8, 40)),
+  msg('g2', '2', 'Atelier pandas samedi à 10 h en salle 3.', ilYA(2, 11)),
+  msg('g2', '1', 'Je peux venir présenter un cas réel de scoring.', ilYA(2, 12, 10)),
+  msg('g3', '3', 'Réunion du conseil lundi.', ilYA(1, 10)),
+];
+const lus = new Map(); // `${groupe}:${utilisateur}` -> date de dernière lecture
+lus.set('g1:2', ilYA(1, 18, 10));
+
+function routesGroupes(req, res, chemin, corps) {
+  if (!/^\/v1\/messages\/groups(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const moi = utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))];
+  const estMembre = (g) => g.members.some((m) => m.userId === moi.id);
+  const estProprietaire = (g) => g.ownerId === moi.id;
+  const ajouterMembres = (g, ids = []) => ids
+    .filter((id) => compte(id) && !g.members.some((m) => m.userId === id))
+    .forEach((id) => g.members.push({ ...membre(id), joinedAt: new Date().toISOString() }));
+
+  if (chemin === '/v1/messages/groups') {
+    if (req.method === 'GET') {
+      return envoyer(res, 200, groupes.filter(estMembre).map((g) => {
+        const fil = messagesGroupes.filter((m) => m.groupId === g.id);
+        const dernier = fil[fil.length - 1];
+        const lu = lus.get(`${g.id}:${moi.id}`) ?? '';
+        return {
+          id: g.id, name: g.name, memberCount: g.members.length, lastMessage: dernier?.content,
+          lastMessageTime: dernier?.createdAt ?? g.createdAt,
+          unreadCount: fil.filter((m) => m.senderId !== moi.id && m.createdAt > lu).length,
+        };
+      })) ?? true;
+    }
+    if (req.method === 'POST') {
+      if (!corps.name?.trim()) return erreur(res, 400, 'VALIDATION_ERROR', 'Le nom du groupe est obligatoire.') ?? true;
+      const g = { id: `g${Date.now()}`, name: corps.name.trim(), description: corps.description, ownerId: moi.id,
+        members: [{ ...membre(moi.id, 'OWNER'), joinedAt: new Date().toISOString() }], createdAt: new Date().toISOString() };
+      ajouterMembres(g, corps.memberIds);
+      groupes.push(g);
+      console.log(`[groupes] ${moi.id} crée ${g.id} (${g.members.length} membres)`);
+      return envoyer(res, 201, g) ?? true;
+    }
+  }
+
+  const m = chemin.match(/^\/v1\/messages\/groups\/([^/]+)(\/[a-z]+)?(?:\/([^/]+))?$/);
+  if (!m) return false;
+  const [, id, suite = '', cible] = m;
+  const g = groupes.find((x) => x.id === id);
+  if (!g) return erreur(res, 404, 'GROUP_NOT_FOUND', 'Groupe introuvable.') ?? true;
+  const interdit = (message = "Vous n'êtes pas membre de ce groupe.") => erreur(res, 403, 'FORBIDDEN', message) ?? true;
+
+  if (suite === '' && req.method === 'DELETE') {
+    if (!estProprietaire(g) && moi.role !== 'ADMINISTRATEUR') return interdit('Suppression réservée au propriétaire.');
+    groupes.splice(groupes.indexOf(g), 1);
+    return envoyer(res, 204) ?? true;
+  }
+  if (!estMembre(g)) {
+    console.log(`[groupes] 403 : ${moi.id} n'est pas membre de ${g.id}`);
+    return interdit();
+  }
+  if (suite === '' && req.method === 'GET') return envoyer(res, 200, g) ?? true;
+  if (suite === '' && req.method === 'PUT') {
+    if (!estProprietaire(g)) return interdit('Modification réservée au propriétaire.');
+    if (corps.name !== undefined && !corps.name.trim()) return erreur(res, 400, 'VALIDATION_ERROR', 'Le nom est obligatoire.') ?? true;
+    Object.assign(g, { name: corps.name?.trim() ?? g.name, description: corps.description ?? g.description });
+    return envoyer(res, 200, g) ?? true;
+  }
+  if (suite === '/members' && !cible && req.method === 'POST') {
+    if (!estProprietaire(g)) return interdit('Ajout réservé au propriétaire.');
+    if (!corps.memberIds?.length) return erreur(res, 400, 'VALIDATION_ERROR', 'memberIds est obligatoire.') ?? true;
+    ajouterMembres(g, corps.memberIds);
+    return envoyer(res, 200, g) ?? true;
+  }
+  if (suite === '/members' && cible && req.method === 'DELETE') {
+    if (!estProprietaire(g) && cible !== moi.id) return interdit('Retrait réservé au propriétaire.');
+    if (!g.members.some((x) => x.userId === cible)) return erreur(res, 404, 'MEMBER_NOT_FOUND', 'Membre introuvable.') ?? true;
+    g.members = g.members.filter((x) => x.userId !== cible);
+    return envoyer(res, 204) ?? true;
+  }
+  if (suite === '/messages' && req.method === 'GET') {
+    // Page 0 = messages les plus récents, chaque page restituée dans l'ordre chronologique.
+    const q = new URL(req.url, 'http://mock').searchParams;
+    const page = Number(q.get('page') ?? 0);
+    const size = Number(q.get('size') ?? 30);
+    const fil = messagesGroupes.filter((x) => x.groupId === g.id).reverse();
+    return envoyer(res, 200, { content: fil.slice(page * size, (page + 1) * size).reverse(), totalElements: fil.length, page, size }) ?? true;
+  }
+  if (suite === '/messages' && req.method === 'POST') {
+    if (!corps.content?.trim()) return erreur(res, 400, 'VALIDATION_ERROR', 'Le message est vide.') ?? true;
+    const nouveau = msg(g.id, moi.id, corps.content.trim(), new Date().toISOString());
+    messagesGroupes.push(nouveau);
+    return envoyer(res, 201, nouveau) ?? true;
+  }
+  if (suite === '/read' && req.method === 'PATCH') {
+    lus.set(`${g.id}:${moi.id}`, new Date().toISOString());
+    return envoyer(res, 204) ?? true;
+  }
+  return false;
+}
+
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     let brut = '';
@@ -201,6 +348,8 @@ const traiter = (req, res) => {
 
       if (routesAdmin(req, res, chemin, corps)) return;
       if (routesOffres(req, res, chemin, corps)) return;
+      if (routesAnnuaires(req, res, chemin)) return;
+      if (routesGroupes(req, res, chemin, corps)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
         const u = utilisateurs[corps.email];
@@ -303,8 +452,8 @@ const traiter = (req, res) => {
     });
 };
 
-// Un même mock sert les quatre services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084)
-[8081, 8082, 8083, 8084].forEach((port) =>
+// Un même mock sert les cinq services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084, messagerie 8085)
+[8081, 8082, 8083, 8084, 8085].forEach((port) =>
   http
     .createServer(traiter)
     .listen(port, () => console.log(`Mock API sur http://localhost:${port}/v1 (mot de passe : ${MOT_DE_PASSE})`)),

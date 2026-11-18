@@ -1,0 +1,76 @@
+<div class="infos">
+  <section class="presentation">
+    <app-avatar class="grand" [nom]="groupe().name ?? ''" />
+    @if (edition()) {
+      <form class="formulaire" (ngSubmit)="enregistrer()">
+        <app-champ libelle="Nom du groupe" name="nom" [requis]="true" [(ngModel)]="nom" />
+        <app-champ libelle="Description" type="textarea" name="description" [lignes]="2" [(ngModel)]="description" />
+        <div class="actions">
+          <app-bouton variante="secondaire" [petit]="true" (clic)="edition.set(false)">Annuler</app-bouton>
+          <app-bouton type="submit" [petit]="true" [chargement]="enCours() === 'edition'">Enregistrer</app-bouton>
+        </div>
+      </form>
+    } @else {
+      <h3>{{ groupe().name }}</h3>
+      <p class="sous-titre">Groupe · {{ membres().length }} participant(s)</p>
+      @if (groupe().description) {
+        <p class="description">{{ groupe().description }}</p>
+      }
+      @if (estProprietaire()) {
+        <app-bouton variante="secondaire" [petit]="true" (clic)="modifier()">Modifier le nom ou la description</app-bouton>
+      }
+    }
+  </section>
+
+  @if (erreur(); as message) {
+    <app-alerte>{{ message }}</app-alerte>
+  }
+
+  <section>
+    <div class="titre-section">
+      <h4>{{ membres().length }} participant(s)</h4>
+      @if (estProprietaire() && !ajout()) {
+        <app-bouton [petit]="true" (clic)="ouvrirAjout()">Ajouter</app-bouton>
+      }
+    </div>
+
+    @if (ajout()) {
+      <div class="ajout">
+        <app-choix-membres [exclus]="idsMembres()" [(selection)]="nouveaux" />
+        <div class="actions">
+          <app-bouton variante="secondaire" [petit]="true" (clic)="ajout.set(false)">Annuler</app-bouton>
+          <app-bouton [petit]="true" [desactive]="!nouveaux().length" [chargement]="enCours() === 'ajout'" (clic)="ajouter()">
+            Ajouter au groupe
+          </app-bouton>
+        </div>
+      </div>
+    }
+
+    <ul class="membres">
+      @for (m of membres(); track m.userId) {
+        <li>
+          <app-avatar [nom]="m.userName ?? ''" />
+          <span class="texte">
+            <strong>{{ m.userId === moiId() ? 'Vous' : (m.userName || 'Membre') }}</strong>
+            <small>{{ libelleRole(m.userRole) }}</small>
+          </span>
+          @if (m.groupRole === 'OWNER') {
+            <app-badge ton="ok">Propriétaire</app-badge>
+          } @else if (estProprietaire()) {
+            <app-bouton variante="secondaire" [petit]="true" [chargement]="enCours() === m.userId"
+              [libelleAria]="'Retirer ' + (m.userName ?? 'ce membre')" (clic)="retirer(m)">Retirer</app-bouton>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="zone-danger">
+    @if (!estProprietaire()) {
+      <app-bouton variante="danger" [petit]="true" [chargement]="enCours() === 'quitter'" (clic)="quitter()">Quitter le groupe</app-bouton>
+    }
+    @if (peutSupprimer()) {
+      <app-bouton variante="danger" [petit]="true" [chargement]="enCours() === 'supprimer'" (clic)="supprimer()">Supprimer le groupe</app-bouton>
+    }
+  </section>
+</div>
