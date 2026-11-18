@@ -17,6 +17,7 @@ const CORS = {
 };
 const accessValides = new Map(); // token -> expiration (ms)
 const refreshValides = new Map(); // token -> email
+const emailParAccess = new Map(); // access token -> email
 const jetonsConfirmation = new Map(); // token -> email
 const jetonsReset = new Map(); // token -> email
 let compteur = 0;
@@ -33,6 +34,7 @@ function emettre(email) {
   const accessToken = `acc-${++compteur}`;
   const refreshToken = `ref-${++compteur}`;
   accessValides.set(accessToken, Date.now() + DUREE_ACCESS_S * 1000);
+  emailParAccess.set(accessToken, email);
   refreshValides.set(refreshToken, email);
   const { motDePasse, ...publicUser } = u;
   return { accessToken, refreshToken, expiresIn: DUREE_ACCESS_S, user: { ...publicUser, email, status: 'ACTIF' } };
@@ -191,6 +193,62 @@ function routesOffres(req, res, chemin, corps) {
   return false;
 }
 
+// --- Notifications (notification-messaging-service, port 8085) ---
+// Chaque utilisateur a ses notifications ; une nouvelle « message reçu » arrive toutes les 45 s pour voir le compteur bouger sans recharger.
+const notifications = new Map(); // email -> Notification[]
+const TYPES_DEMO = [
+  ['APPLICATION_STATUS_CHANGED', 'Candidature mise à jour', 'Votre candidature « Stage Java » est en cours d’examen.'],
+  ['NEW_JOB_PROPOSAL', 'Nouvelle proposition', 'Ibou Ba vous propose l’offre « Dev Angular ».'],
+  ['NEW_MATCHING_OFFER', 'Offre qui vous correspond', 'Une nouvelle offre correspond à votre profil.'],
+  ['SYSTEM_ALERT', 'Maintenance', 'La plateforme sera indisponible dimanche de 2 h à 4 h.'],
+];
+let idNotification = 0;
+const creerNotification = (email, type, title, content, isRead = false) => {
+  const n = {
+    id: `00000000-0000-4000-8000-${String(++idNotification).padStart(12, '0')}`,
+    userId: utilisateurs[email].id, type, channel: 'IN_APP', title, content, isRead,
+    createdAt: new Date().toISOString(),
+  };
+  notifications.set(email, [n, ...(notifications.get(email) ?? [])]);
+  return n;
+};
+Object.keys(utilisateurs).forEach((email) =>
+  TYPES_DEMO.forEach(([type, titre, contenu], i) => creerNotification(email, type, titre, contenu, i > 1)),
+);
+setInterval(() => {
+  Object.keys(utilisateurs).forEach((email) =>
+    creerNotification(email, 'MESSAGE_RECEIVED', 'Nouveau message', `Message de test reçu à ${new Date().toLocaleTimeString('fr-FR')}.`),
+  );
+  console.log('[notifications] nouveau message pour tous les comptes');
+}, 45000);
+
+// Routes du service notifications ; renvoie true si la requête a été traitée.
+function routesNotifications(req, res, chemin) {
+  if (!/^\/v1\/notifications(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const email = emailParAccess.get((req.headers.authorization || '').replace('Bearer ', ''));
+  const miennes = notifications.get(email) ?? [];
+  if (req.method === 'GET' && chemin === '/v1/notifications/unread-count') {
+    return envoyer(res, 200, { unreadCount: miennes.filter((n) => !n.isRead).length }) ?? true;
+  }
+  if (req.method === 'GET' && chemin === '/v1/notifications') {
+    const nonLuesSeulement = new URL(req.url, 'http://mock').searchParams.get('unreadOnly') === 'true';
+    return envoyer(res, 200, parPage(nonLuesSeulement ? miennes.filter((n) => !n.isRead) : miennes, req.url)) ?? true;
+  }
+  if (req.method === 'PATCH' && chemin === '/v1/notifications/read-all') {
+    miennes.forEach((n) => (n.isRead = true));
+    return envoyer(res, 204) ?? true;
+  }
+  const m = chemin.match(/^\/v1\/notifications\/([^/]+)\/read$/);
+  if (req.method === 'PATCH' && m) {
+    const n = miennes.find((x) => x.id === m[1]);
+    if (!n) return erreur(res, 404, 'NOTIFICATION_NOT_FOUND', 'Notification introuvable.') ?? true;
+    n.isRead = true;
+    return envoyer(res, 200, n) ?? true;
+  }
+  return false;
+}
+
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     let brut = '';
@@ -201,6 +259,7 @@ const traiter = (req, res) => {
 
       if (routesAdmin(req, res, chemin, corps)) return;
       if (routesOffres(req, res, chemin, corps)) return;
+      if (routesNotifications(req, res, chemin)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
         const u = utilisateurs[corps.email];
@@ -303,8 +362,8 @@ const traiter = (req, res) => {
     });
 };
 
-// Un même mock sert les quatre services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084)
-[8081, 8082, 8083, 8084].forEach((port) =>
+// Un même mock sert les cinq services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084, notifications 8085)
+[8081, 8082, 8083, 8084, 8085].forEach((port) =>
   http
     .createServer(traiter)
     .listen(port, () => console.log(`Mock API sur http://localhost:${port}/v1 (mot de passe : ${MOT_DE_PASSE})`)),

@@ -70,6 +70,8 @@ Mot de passe de tous les comptes : `password123`.
 | entreprise@uasz.sn | ENTREPRISE |
 | admin@uasz.sn | ADMINISTRATEUR |
 
+Le mock sert aussi le service notifications (port 8085) : chaque compte a quatre notifications, et un nouveau message arrive toutes les 45 s pour voir le compteur de la cloche monter sans recharger.
+
 Le jeton d'accès du mock expire après 20 secondes et le refresh token est à usage unique. Pour vérifier le rafraîchissement automatique : se connecter, attendre plus de 20 s, puis cliquer sur « Appeler une ressource protégée » sur la page d'accueil. Dans l'onglet Network : un 401, un `refresh-token`, puis la requête rejouée en 200. Avec « 3 appels en parallèle », le terminal du mock ne doit afficher qu'un seul `[refresh]`.
 
 `scripts/mock-api.js` est un outil de test, il n'est pas inclus dans le build.
@@ -347,6 +349,7 @@ Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir
 | Tests unitaires et SonarQube | Fait (suite Vitest, analyse locale) |
 | Administration (tableau de bord, utilisateurs, entreprises partenaires) | Fait (AL-51) |
 | Squelettes des fonctionnalités, pages 403 et 404, composants communs | Fait, voir `docs/ajouter-une-fonctionnalite.md` |
+| Cloche et centre de notifications (ALUM-160) | Fait : compteur de non-lus avec polling toutes les 30 s, panneau, « tout marquer comme lu », lien vers l'écran concerné |
 | Autres fonctionnalités métier | À faire (AL-48, AL-49, AL-50) |
 
 ### Fonctionnalités à développer
@@ -365,6 +368,6 @@ Les rôles associés à chaque fonctionnalité sont des propositions à confirme
 ## 11. Points ouverts
 
 - Le rôle `ENTREPRISE` n'existe pas dans le `RoleName` généré depuis `user-service.yaml` (seulement `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ADMINISTRATEUR`). Il est géré côté frontend. À confirmer avec l'équipe back.
-- Seul le client `utilisateurs` est configuré. Les quatre autres services restent à brancher.
+- Seuls les clients `utilisateurs` et `notifications-messagerie` sont configurés dans `app.config.ts` (le second pour la cloche, présente dans toute la coquille). Les autres services restent à brancher.
 - Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités).
 - Le back doit autoriser CORS pour `http://localhost:4200` pour les tests en local.

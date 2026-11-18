@@ -1,0 +1,43 @@
+<button type="button" class="cloche" [attr.aria-label]="libelleCloche()" aria-haspopup="true" [attr.aria-expanded]="ouvert()" aria-controls="panneau-notifications" (click)="basculer()">
+  <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M8 2a4 4 0 00-4 4c0 4-2 5-2 5h12s-2-1-2-5a4 4 0 00-4-4zM6.5 13.5a1.5 1.5 0 003 0" />
+  </svg>
+  @if (nonLus() > 0) {
+    <span class="compteur" aria-hidden="true">{{ compteurAffiche() }}</span>
+  }
+</button>
+
+@if (ouvert()) {
+  <section id="panneau-notifications" class="panneau" aria-label="Centre de notifications">
+    <header class="panneau-entete">
+      <h2>Notifications</h2>
+      <app-bouton variante="secondaire" [petit]="true" [desactive]="nonLus() === 0" (clic)="toutMarquerLu()">Tout marquer comme lu</app-bouton>
+    </header>
+
+    @if (erreur(); as message) {
+      <app-alerte>{{ message }}</app-alerte>
+    }
+
+    @if (chargement() && notifications().length === 0) {
+      <app-spinner libelle="Chargement des notifications…" />
+    } @else if (!erreur() && notifications().length === 0) {
+      <app-etat-vide titre="Aucune notification">Les nouveautés vous seront signalées ici.</app-etat-vide>
+    } @else {
+      <ul class="liste">
+        @for (n of notifications(); track n.id) {
+          <li>
+            <button type="button" class="element" [class.non-lue]="!n.isRead" (click)="ouvrirNotification(n)">
+              <span class="point" aria-hidden="true"></span>
+              <span class="texte">
+                <strong>{{ n.title || 'Notification' }}</strong>
+                @if (n.content) { <span class="contenu">{{ n.content }}</span> }
+                @if (n.createdAt) { <time class="date" [attr.datetime]="n.createdAt">{{ n.createdAt | date: 'dd/MM/yyyy HH:mm' }}</time> }
+              </span>
+              @if (!n.isRead) { <span class="cache">Non lue</span> }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}
