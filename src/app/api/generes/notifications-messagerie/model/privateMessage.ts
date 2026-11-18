@@ -12,6 +12,9 @@
 export interface PrivateMessage { 
     id?: string;
     senderId?: string;
+    /**
+     * Nom affiché de l\'expéditeur ; absent tant que l\'utilisateur ne s\'est jamais connecté au service avec un jeton portant son nom (prévoir un nom par défaut).
+     */
     senderName?: string;
     recipientId?: string;
     recipientName?: string;
