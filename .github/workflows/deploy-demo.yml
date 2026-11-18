@@ -2,10 +2,11 @@
 #
 #   1. image du front (configuration Angular « demo ») -> ghcr.io (amd64 + arm64), tags <sha> et develop
 #   2. GitHub prend le rôle AWS de déploiement par OIDC (aucune clé stockée)
-#   3. AWS SSM lance deploy.sh (dépôt backend, deploy/demo/scripts) sur les machines de la démo
+#   3. AWS SSM lance le document « alumni-demo-deploy » (deploy.sh) sur la machine du front
 #
-# Variables du dépôt : AWS_DEPLOY_ROLE_ARN, AWS_REGION, DEMO_URL (sorties de la pile CloudFormation,
-# voir deploy/demo/README.md dans uasz-alumni-backend).
+# Variables du dépôt : AWS_DEPLOY_ROLE_ARN (sortie FrontendDeployRoleArn), AWS_REGION, DEMO_URL
+# (pile CloudFormation, voir deploy/demo/README.md dans uasz-alumni-backend). Le job deploy
+# utilise l'environnement GitHub « demo », limité à develop : seule identité acceptée par le rôle AWS.
 
 name: CD - Démo AWS
 
@@ -73,11 +74,11 @@ jobs:
           [ -n "$IDS" ] || { echo "::error::machine vm-a de la démo introuvable"; exit 1; }
 
           CMD_ID=$(aws ssm send-command \
-            --document-name AWS-RunShellScript \
+            --document-name alumni-demo-deploy \
             --instance-ids $IDS \
             --timeout-seconds 600 \
             --comment "deploy $GITHUB_REPOSITORY@${GITHUB_SHA::7}" \
-            --parameters "$(jq -nc --arg c "/opt/alumni/app/deploy/demo/scripts/deploy.sh frontend=$GITHUB_SHA" '{commands:[$c], executionTimeout:["600"]}')" \
+            --parameters "$(jq -nc --arg c "frontend=$GITHUB_SHA" '{components:[$c]}')" \
             --query Command.CommandId --output text)
           echo "commande SSM : $CMD_ID"
 
