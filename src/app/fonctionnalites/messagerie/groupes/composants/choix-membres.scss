@@ -1,0 +1,18 @@
+.choix { display: flex; flex-direction: column; gap: .6rem; }
+
+.puces { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.puces li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--g1); color: var(--g8); font-size: .8125rem; font-weight: 600; }
+.puces button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; }
+.puces button:hover { background: rgba(11, 93, 59, .12); }
+
+.resultats { min-height: 1.5rem; }
+.info { margin: 0; color: var(--mu); font-size: .875rem; }
+.info--erreur { color: var(--dg); }
+.liste { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border: 1px solid var(--bd); border-radius: var(--rayon); overflow: hidden; }
+.liste li + li { border-top: 1px solid var(--bd); }
+.personne { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; background: var(--sf); color: var(--tx); font: inherit; text-align: left; cursor: pointer; }
+.personne:hover { background: var(--g0); }
+.personne app-avatar { width: 2.1rem; font-size: .75rem; }
+.texte { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.texte small { overflow: hidden; color: var(--mu); text-overflow: ellipsis; white-space: nowrap; }
+.plus { color: var(--g8); font-size: 1.25rem; font-weight: 700; }

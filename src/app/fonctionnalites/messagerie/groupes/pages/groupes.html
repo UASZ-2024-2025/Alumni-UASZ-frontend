@@ -1,0 +1,137 @@
+<div class="messagerie" [class.fil-ouvert]="filOuvert()">
+  <aside class="colonne-liste" aria-label="Mes groupes">
+    @if (vueArchives()) {
+      <header class="entete-liste">
+        <button type="button" class="bouton-icone" aria-label="Retour aux groupes" (click)="vueArchives.set(false)">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+        </button>
+        <h1 class="titre-archives">Archivées</h1>
+      </header>
+      <p class="note-archives">Les groupes archivés restent à part, même quand un nouveau message arrive.</p>
+    } @else {
+      <header class="entete-liste">
+        <h1>Groupes</h1>
+        <button type="button" class="bouton-rond" aria-label="Nouveau groupe" title="Nouveau groupe" (click)="ouvrirCreation()">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+        </button>
+      </header>
+    }
+
+    <div class="recherche">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 107 2a5 5 0 000 10zM11 11l3 3" /></svg>
+      <input type="search" placeholder="Rechercher un groupe" aria-label="Rechercher un groupe"
+        [value]="recherche()" (input)="recherche.set($any($event.target).value)" />
+    </div>
+
+    @if (!vueArchives()) {
+      <div class="filtres" role="group" aria-label="Filtrer les groupes">
+        <button type="button" class="puce" [class.active]="filtre() === 'tous'" [attr.aria-pressed]="filtre() === 'tous'"
+          (click)="filtre.set('tous')">Tous</button>
+        <button type="button" class="puce" [class.active]="filtre() === 'non-lus'" [attr.aria-pressed]="filtre() === 'non-lus'"
+          (click)="filtre.set('non-lus')">Non lus @if (nonLus()) {<span class="compte">{{ nonLus() }}</span>}</button>
+      </div>
+    }
+
+    <div class="defilement" [attr.aria-busy]="store.chargement()">
+      @if (store.erreur(); as message) {
+        <div class="message-liste">
+          <app-alerte>{{ message }}</app-alerte>
+          <app-bouton variante="secondaire" [petit]="true" (clic)="store.charger()">Réessayer</app-bouton>
+        </div>
+      } @else if (store.chargement() && !store.charge()) {
+        <div class="message-liste"><app-spinner libelle="Chargement des groupes…" /></div>
+      } @else if (store.liste().length === 0) {
+        <div class="message-liste vide">
+          <strong>Aucun groupe pour l'instant</strong>
+          <span>Créez un groupe pour échanger à plusieurs avec des étudiants et des Alumni.</span>
+          <app-bouton [petit]="true" (clic)="ouvrirCreation()">Nouveau groupe</app-bouton>
+        </div>
+      } @else {
+        @if (!vueArchives() && !recherche() && store.archives().length) {
+          <button type="button" class="entree-archives" (click)="vueArchives.set(true)">
+            <span class="icone-archives">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12v3H2zM3 6v7h10V6M6.5 9h3" /></svg>
+            </span>
+            <span class="libelle">Archivées</span>
+            <span class="nombre">{{ store.archives().length }}</span>
+          </button>
+        }
+        @if (groupesAffiches().length === 0) {
+          <p class="message-liste">
+            @if (recherche()) {
+              Aucun groupe ne correspond à « {{ recherche() }} ».
+            } @else if (filtre() === 'non-lus') {
+              Aucun message non lu. Vous êtes à jour !
+            } @else {
+              Aucun groupe à afficher.
+            }
+          </p>
+        } @else {
+          <ul class="conversations">
+            @for (g of groupesAffiches(); track g.id) {
+              <li>
+                <a class="conversation" [routerLink]="['/groupes', g.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+                  <app-avatar [nom]="g.name ?? ''" />
+                  <span class="resume">
+                    <span class="ligne">
+                      <strong class="nom">{{ g.name }}</strong>
+                      <time class="date" [class.non-lu]="g.unreadCount && !g.preferences?.muted">{{ horodatage(g.lastMessageTime) }}</time>
+                    </span>
+                    <span class="ligne">
+                      <span class="apercu" [class.systeme]="g.lastMessageType === 'SYSTEM'">{{ apercu(g) }}</span>
+                      <span class="indicateurs">
+                        @if (g.preferences?.muted) {
+                          <svg class="indicateur" viewBox="0 0 16 16" role="img" aria-label="Notifications coupées">
+                            <path d="M3 6h2l3-3v10l-3-3H3zM11 6l4 4M15 6l-4 4" />
+                          </svg>
+                        }
+                        @if (g.unreadCount) {
+                          <span class="pastille" [class.sourdine]="g.preferences?.muted"
+                            [attr.aria-label]="g.unreadCount + ' message(s) non lu(s)'">{{ g.unreadCount }}</span>
+                        }
+                        @if (g.preferences?.pinned) {
+                          <svg class="indicateur" viewBox="0 0 16 16" role="img" aria-label="Épinglé">
+                            <path d="M10 2l4 4-2 1-2 3 1 3-1 1-3-3-4 4M5 8l3 3" />
+                          </svg>
+                        }
+                      </span>
+                    </span>
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  </aside>
+
+  <section class="colonne-fil">
+    <router-outlet (activate)="filOuvert.set(true)" (deactivate)="filOuvert.set(false)" />
+    @if (!filOuvert()) {
+      <div class="accueil-fil">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h9v6H5L3 10V8H1zM12 5h3v6h-1v2l-2-2H7V10" /></svg>
+        <h2>Groupes de discussion</h2>
+        <p>Choisissez un groupe dans la liste, ou créez-en un pour échanger à plusieurs.</p>
+        <p class="discret">Seuls les membres d'un groupe peuvent lire et écrire dans son fil.</p>
+      </div>
+    }
+  </section>
+</div>
+
+<app-modale titre="Nouveau groupe" [ouvert]="creation()" (fermer)="creation.set(false)">
+  <form class="formulaire" (ngSubmit)="creer()">
+    <app-champ libelle="Nom du groupe" name="nom" [requis]="true" [(ngModel)]="nom" placeholder="3 à 100 caractères"
+      [erreur]="erreurNom()" />
+    <app-champ libelle="Description (facultative)" type="textarea" name="description" [lignes]="2" [(ngModel)]="description" />
+    <app-choix-membres [exclus]="[moiId]" [(selection)]="membres" />
+    <p class="aide">Vous serez propriétaire du groupe. Vous pourrez ensuite nommer des administrateurs et régler qui peut écrire.</p>
+    @if (erreurCreation(); as message) {
+      <app-alerte>{{ message }}</app-alerte>
+    }
+    <div class="actions">
+      <app-bouton variante="secondaire" (clic)="creation.set(false)">Annuler</app-bouton>
+      <app-bouton type="submit" [chargement]="envoi()">Créer le groupe</app-bouton>
+    </div>
+  </form>
+</app-modale>

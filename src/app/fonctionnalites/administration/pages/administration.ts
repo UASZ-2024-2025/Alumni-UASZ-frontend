@@ -11,6 +11,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         Tableau de bord
       </a>
       <a routerLink="utilisateurs" routerLinkActive="actif">Utilisateurs</a>
+      <a routerLink="promotions" routerLinkActive="actif">Promotions</a>
       <a routerLink="entreprises" routerLinkActive="actif">Entreprises</a>
     </nav>
     <router-outlet />
