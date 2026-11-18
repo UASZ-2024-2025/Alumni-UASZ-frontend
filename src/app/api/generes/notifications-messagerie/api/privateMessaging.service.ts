@@ -104,6 +104,7 @@ export class PrivateMessagingService extends BaseService {
 
     /**
      * Historique des messages d\&#39;une conversation avec un utilisateur
+     * Messages triés du plus récent au plus ancien (createdAt décroissant), paginés. Seuls les échanges entre l\&#39;appelant et recipientId sont renvoyés.
      * @endpoint get /messages/conversations/{recipientId}
      * @param recipientId 
      * @param page 

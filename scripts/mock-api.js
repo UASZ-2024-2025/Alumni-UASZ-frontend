@@ -73,6 +73,8 @@ const jetonValide = (req) => {
   const expire = accessValides.get((req.headers.authorization || '').replace('Bearer ', ''));
   return !!expire && expire > Date.now();
 };
+// Compte de l'utilisateur connecté (jeton -> email -> compte), réutilisable par toutes les routes de la messagerie.
+const utilisateurConnecte = (req) => utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))];
 
 // Routes de l'administration ; renvoie true si la requête a été traitée.
 function routesAdmin(req, res, chemin, corps) {
@@ -262,7 +264,7 @@ preferences.set('g2:2', { pinned: true, archived: false });
 function routesGroupes(req, res, chemin, corps) {
   if (!/^\/v1\/messages\/groups(\/|$)/.test(chemin)) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
-  const moi = utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))];
+  const moi = utilisateurConnecte(req);
   if (moi.role === 'ENTREPRISE') return erreur(res, 403, 'FORBIDDEN', 'Groupes réservés à la communauté UASZ.') ?? true;
   const maintenant = () => new Date().toISOString();
   const moiDans = (g) => g.members.find((m) => m.userId === moi.id);
