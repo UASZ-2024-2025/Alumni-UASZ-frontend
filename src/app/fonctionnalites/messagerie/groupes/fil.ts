@@ -1,8 +1,10 @@
 import { GroupMessage } from '../../../api/generes/notifications-messagerie/model/groupMessage';
+import { GroupSummary } from '../../../api/generes/notifications-messagerie/model/groupSummary';
 
-/** Élément affiché dans le fil : un séparateur de jour, ou une bulle. */
+/** Élément affiché dans le fil : un séparateur de jour, un événement du groupe (message SYSTEM), ou une bulle. */
 export type ElementFil =
   | { type: 'jour'; cle: string; libelle: string }
+  | { type: 'systeme'; cle: string; message: GroupMessage }
   | { type: 'message'; cle: string; message: GroupMessage; moi: boolean; debutSerie: boolean };
 
 const JOUR_MS = 86_400_000;
@@ -51,6 +53,12 @@ export function construireFil(messages: GroupMessage[], moiId: string | undefine
       auteurPrecedent = undefined;
       if (jour) fil.push({ type: 'jour', cle: `jour-${message.createdAt}`, libelle: jour });
     }
+    if (message.type === 'SYSTEM') {
+      // Un événement (ajout, départ, réglage...) coupe la série : le message suivant réaffiche son auteur.
+      fil.push({ type: 'systeme', cle: message.id ?? `sys-${message.createdAt}`, message });
+      auteurPrecedent = undefined;
+      continue;
+    }
     fil.push({
       type: 'message',
       cle: message.id ?? `${message.senderId}-${message.createdAt}`,
@@ -70,4 +78,32 @@ export function couleurAuteur(id = ''): string {
   let h = 0;
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return COULEURS_AUTEURS[h % COULEURS_AUTEURS.length];
+}
+
+/** Aperçu de la liste : « Vous : … » ou « Awa : … » pour un message, l'événement tel quel pour un message système. */
+export function apercuGroupe(g: GroupSummary, moiNom?: string): string {
+  const n = g.memberCount ?? 0;
+  if (!g.lastMessage) return `${n} participant${n > 1 ? 's' : ''}`;
+  if (g.lastMessageType === 'SYSTEM' || !g.lastMessageSenderName) return g.lastMessage;
+  const auteur = moiNom && g.lastMessageSenderName === moiNom ? 'Vous' : g.lastMessageSenderName.split(' ')[0];
+  return `${auteur} : ${g.lastMessage}`;
+}
+
+const formatJusqua = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+
+/** Sourdine : jusqu'à quand, ou sans limite (mutedUntil absent). */
+export function libelleSourdine(mutedUntil?: string): string {
+  return mutedUntil ? `Notifications coupées jusqu'à ${formatJusqua.format(new Date(mutedUntil))}` : 'Notifications coupées';
+}
+
+/** Bornes du nom imposées par le contrat (GroupCreateRequest.name). */
+export const NOM_MIN = 3;
+export const NOM_MAX = 100;
+
+/** Message d'erreur du nom de groupe, ou null s'il respecte le contrat. */
+export function erreurNomGroupe(nom: string): string | null {
+  const n = nom.trim().length;
+  if (!n) return 'Le nom du groupe est obligatoire.';
+  if (n < NOM_MIN || n > NOM_MAX) return `Le nom doit contenir entre ${NOM_MIN} et ${NOM_MAX} caractères.`;
+  return null;
 }

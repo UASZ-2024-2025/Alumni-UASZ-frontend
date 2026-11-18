@@ -5,6 +5,8 @@ import { GroupMessagingService } from '../../../../api/generes/notifications-mes
 import { Group } from '../../../../api/generes/notifications-messagerie/model/group';
 import { GroupMessage } from '../../../../api/generes/notifications-messagerie/model/groupMessage';
 import { ErreurApi } from '../../../../commun/modeles/erreur-api.model';
+import { ConfirmationService } from '../../../../commun/services/confirmation.service';
+import { ToastService } from '../../../../commun/services/toast.service';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
 import { GroupesStore } from '../groupes.store';
 import { FilGroupe } from './fil-groupe';
@@ -22,7 +24,8 @@ const messages: GroupMessage[] = [
 ];
 
 describe('FilGroupe', () => {
-  let api: Record<'getGroupById' | 'getGroupMessages' | 'sendGroupMessage' | 'markGroupAsRead', ReturnType<typeof vi.fn>>;
+  let api: Record<'getGroupById' | 'getGroupMessages' | 'sendGroupMessage' | 'markGroupAsRead' | 'deleteGroupMessage' | 'updateGroupPreferences', ReturnType<typeof vi.fn>>;
+  let confirmation: { demander: ReturnType<typeof vi.fn> };
   let store: { maj: ReturnType<typeof vi.fn>; retirer: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<FilGroupe>;
   let el: HTMLElement;
@@ -52,7 +55,10 @@ describe('FilGroupe', () => {
       sendGroupMessage: vi.fn((_id: string, { content }: { content: string }) =>
         of({ id: 'm3', senderId: 'moi', senderName: 'Moussa Ndiaye', content, createdAt: '2026-11-18T10:00:00Z' })),
       markGroupAsRead: vi.fn(() => of(null)),
+      deleteGroupMessage: vi.fn(() => of(null)),
+      updateGroupPreferences: vi.fn(() => of({ pinned: true, archived: false, muted: false })),
     };
+    confirmation = { demander: vi.fn(() => Promise.resolve(true)) };
     store = { maj: vi.fn(), retirer: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
@@ -60,6 +66,8 @@ describe('FilGroupe', () => {
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 'g1' })) } },
         { provide: GroupMessagingService, useValue: api },
         { provide: GroupesStore, useValue: store },
+        { provide: ConfirmationService, useValue: confirmation },
+        { provide: ToastService, useValue: { succes: vi.fn(), erreur: vi.fn() } },
         { provide: AuthentificationService, useValue: { utilisateur: () => ({ id: 'moi' }), role: () => 'ETUDIANT' } },
       ],
     });
@@ -104,7 +112,9 @@ describe('FilGroupe', () => {
     expect(api.sendGroupMessage).toHaveBeenCalledWith('g1', { content: 'Bonjour' });
     expect(zone().value).toBe('');
     expect(el.querySelectorAll('.bulle.moi').length).toBe(2);
-    expect(store.maj).toHaveBeenCalledWith('g1', { lastMessage: 'Bonjour', lastMessageTime: '2026-11-18T10:00:00Z' });
+    expect(store.maj).toHaveBeenCalledWith('g1', {
+      lastMessage: 'Bonjour', lastMessageTime: '2026-11-18T10:00:00Z', lastMessageType: 'TEXT', lastMessageSenderName: 'Moussa Ndiaye',
+    });
   });
 
   it("n'envoie pas un message vide et garde le brouillon si l'envoi échoue", () => {
@@ -116,7 +126,7 @@ describe('FilGroupe', () => {
     api.sendGroupMessage.mockReturnValue(throwError(() => new ErreurApi(403, 'FORBIDDEN', 'Interdit')));
     saisir('Toujours là ?');
     entree();
-    expect(el.querySelector('.erreur-envoi')?.textContent).toContain('Vous ne faites plus partie de ce groupe.');
+    expect(el.querySelector('.erreur-envoi')?.textContent).toContain('Vous ne pouvez pas écrire dans ce groupe');
     expect(zone().value).toBe('Toujours là ?');
   });
 
@@ -129,5 +139,53 @@ describe('FilGroupe', () => {
     expect(api.getGroupMessages).toHaveBeenLastCalledWith('g1', 1, 30);
     expect(el.querySelectorAll('.bulle').length).toBe(3);
     expect(el.querySelector('.plus-anciens')).toBeNull();
+  });
+
+  it('affiche les événements du groupe et les messages supprimés', () => {
+    api.getGroupMessages.mockReturnValue(of({ totalElements: 3, content: [
+      { id: 's1', senderId: 'u3', type: 'SYSTEM', content: 'Fatou Sow a créé le groupe « Promo GL 2025 »', createdAt: '2026-11-18T08:00:00Z' },
+      { id: 'm1', senderId: 'u3', senderName: 'Fatou Sow', type: 'TEXT', deleted: true, createdAt: '2026-11-18T09:00:00Z' },
+      { id: 'm2', senderId: 'moi', senderName: 'Moussa Ndiaye', type: 'TEXT', content: 'Merci !', createdAt: '2026-11-18T09:05:00Z' },
+    ] }));
+    creer();
+    expect(el.querySelector('.evenement')?.textContent).toContain('a créé le groupe');
+    const supprime = el.querySelector('.bulle.supprime')!;
+    expect(supprime.textContent).toContain('Ce message a été supprimé');
+    // Un simple membre ne supprime que ses propres messages.
+    expect(supprime.querySelector('.supprimer')).toBeNull();
+    expect(el.querySelectorAll('.bulle .supprimer').length).toBe(1);
+  });
+
+  it('supprime son message pour tous après confirmation', async () => {
+    creer();
+    el.querySelector<HTMLButtonElement>('.bulle.moi .supprimer')!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.deleteGroupMessage).toHaveBeenCalledWith('g1', 'm2');
+    expect(el.querySelector('.bulle.moi')?.textContent).toContain('Vous avez supprimé ce message');
+  });
+
+  it('un administrateur du groupe peut supprimer le message des autres', () => {
+    api.getGroupById.mockReturnValue(of({ ...groupe, members: [groupe.members![0], { userId: 'moi', groupRole: 'ADMIN' }] }));
+    creer();
+    expect(el.querySelectorAll('.bulle .supprimer').length).toBe(2);
+  });
+
+  it('remplace la saisie quand seuls les administrateurs peuvent écrire', () => {
+    api.getGroupById.mockReturnValue(of({ ...groupe, settings: { onlyAdminsCanSend: true } }));
+    creer();
+    expect(el.querySelector('textarea')).toBeNull();
+    expect(el.querySelector('.lecture-seule')?.textContent).toContain('Seuls les administrateurs peuvent envoyer des messages');
+  });
+
+  it('épingle le groupe depuis le menu ⋮', () => {
+    creer();
+    el.querySelector<HTMLButtonElement>('.menu .bouton-icone')!.click();
+    fixture.detectChanges();
+    [...el.querySelectorAll<HTMLButtonElement>('.options button')].find((b) => b.textContent?.trim() === 'Épingler')!.click();
+    fixture.detectChanges();
+    expect(api.updateGroupPreferences).toHaveBeenCalledWith('g1', { pinned: true });
+    expect(store.maj).toHaveBeenCalledWith('g1', { preferences: { pinned: true, archived: false, muted: false } });
+    expect(el.querySelector('.options')).toBeNull();
   });
 });

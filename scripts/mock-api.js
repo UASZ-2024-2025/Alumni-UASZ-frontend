@@ -208,7 +208,8 @@ function routesAnnuaires(req, res, chemin) {
   return envoyer(res, 200, parPage(liste, req.url)) ?? true;
 }
 
-// --- Groupes de discussion (service messagerie, port 8085) ---
+// --- Groupes de discussion (service messagerie, port 8085, contrat 1.1.0) ---
+// Mêmes règles que le back : OWNER/ADMIN = administrateurs, réglages, préférences personnelles, messages système.
 // L'étudiant (2) est membre de g1 et g2, pas de g3 : /groupes/g3 doit afficher « Accès réservé aux membres ».
 const ilYA = (jours, h, m = 0) => {
   const d = new Date();
@@ -217,26 +218,32 @@ const ilYA = (jours, h, m = 0) => {
   return d.toISOString();
 };
 const compte = (id) => annuaire.find((u) => u.id === id);
-const membre = (id, groupRole = 'MEMBER') => {
-  const u = compte(id);
-  return { userId: id, userName: u ? `${u.firstName} ${u.lastName}` : 'Inconnu', userRole: u?.role, groupRole, joinedAt: ilYA(10, 9) };
-};
+const nomDe = (id) => { const u = compte(id); return u ? `${u.firstName} ${u.lastName}` : undefined; };
+const membre = (id, groupRole = 'MEMBER', joinedAt = ilYA(10, 9)) =>
+  ({ userId: id, userName: nomDe(id), userRole: compte(id)?.role, groupRole, joinedAt });
+const reglagesParDefaut = () => ({ onlyAdminsCanSend: false, onlyAdminsCanEditInfo: true, onlyAdminsCanAddMembers: true });
 const groupes = [
   { id: 'g1', name: 'Promo GL 2025', description: 'Entraide et annonces de la promotion Génie Logiciel.', ownerId: '3',
-    members: [membre('3', 'OWNER'), membre('1'), membre('2'), membre('u10'), membre('u11')], createdAt: ilYA(10, 9) },
+    members: [membre('3', 'OWNER'), membre('1', 'ADMIN'), membre('2'), membre('u10'), membre('u11')],
+    settings: reglagesParDefaut(), createdAt: ilYA(10, 9) },
   { id: 'g2', name: 'Club Data & IA', description: 'Veille, projets et offres autour de la data.', ownerId: '2',
-    members: [membre('2', 'OWNER'), membre('1'), membre('u13')], createdAt: ilYA(6, 14) },
+    members: [membre('2', 'OWNER'), membre('1'), membre('u13')], settings: reglagesParDefaut(), createdAt: ilYA(6, 14) },
   { id: 'g3', name: 'Conseil pédagogique', description: 'Réservé aux enseignants.', ownerId: '3',
-    members: [membre('3', 'OWNER'), membre('u12')], createdAt: ilYA(20, 8) },
+    members: [membre('3', 'OWNER'), membre('u12')], settings: reglagesParDefaut(), createdAt: ilYA(20, 8) },
+  { id: 'g4', name: 'Annonces UFR SET', description: 'Informations officielles : seuls les administrateurs écrivent.', ownerId: '3',
+    members: [membre('3', 'OWNER'), membre('2'), membre('1')],
+    settings: { ...reglagesParDefaut(), onlyAdminsCanSend: true }, createdAt: ilYA(30, 8) },
 ];
 let numeroMessage = 0;
-const msg = (groupId, senderId, content, createdAt) => ({
-  id: `m${++numeroMessage}`, groupId, senderId, senderName: membre(senderId).userName, content, createdAt,
+const msg = (groupId, senderId, content, createdAt, type = 'TEXT') => ({
+  id: `m${++numeroMessage}`, groupId, senderId, senderName: nomDe(senderId), type, content, deleted: false, createdAt,
 });
 const messagesGroupes = [
+  msg('g1', '3', 'Fatou Sow a créé le groupe « Promo GL 2025 »', ilYA(10, 9), 'SYSTEM'),
   msg('g1', '3', 'Bonjour à tous, bienvenue dans le groupe de la promo !', ilYA(3, 9, 5)),
   msg('g1', '1', 'Merci Madame. Je partagerai ici les offres de mon entreprise.', ilYA(3, 9, 20)),
   msg('g1', 'u10', 'Super, merci Awa !', ilYA(3, 9, 22)),
+  msg('g1', '3', 'Fatou Sow a nommé Awa Diop administrateur', ilYA(3, 9, 30), 'SYSTEM'),
   msg('g1', '2', "Est-ce que quelqu'un a le planning des soutenances ?", ilYA(1, 18, 2)),
   msg('g1', '3', 'Il sera publié vendredi.', ilYA(1, 18, 30)),
   msg('g1', '3', 'Pensez à déposer vos rapports avant jeudi minuit.', ilYA(0, 8, 15)),
@@ -244,41 +251,68 @@ const messagesGroupes = [
   msg('g2', '2', 'Atelier pandas samedi à 10 h en salle 3.', ilYA(2, 11)),
   msg('g2', '1', 'Je peux venir présenter un cas réel de scoring.', ilYA(2, 12, 10)),
   msg('g3', '3', 'Réunion du conseil lundi.', ilYA(1, 10)),
+  msg('g4', '3', 'Fatou Sow a modifié les réglages : seuls les administrateurs peuvent envoyer des messages', ilYA(30, 8), 'SYSTEM'),
+  msg('g4', '3', 'Les inscriptions pédagogiques ferment le 30 novembre.', ilYA(4, 10)),
 ];
 const lus = new Map(); // `${groupe}:${utilisateur}` -> date de dernière lecture
 lus.set('g1:2', ilYA(1, 18, 10));
+const preferences = new Map(); // `${groupe}:${utilisateur}` -> { pinned, archived, mutedUntil, mutedForever }
+preferences.set('g2:2', { pinned: true, archived: false });
 
 function routesGroupes(req, res, chemin, corps) {
   if (!/^\/v1\/messages\/groups(\/|$)/.test(chemin)) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
   const moi = utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))];
-  const estMembre = (g) => g.members.some((m) => m.userId === moi.id);
-  const estProprietaire = (g) => g.ownerId === moi.id;
-  const ajouterMembres = (g, ids = []) => ids
-    .filter((id) => compte(id) && !g.members.some((m) => m.userId === id))
-    .forEach((id) => g.members.push({ ...membre(id), joinedAt: new Date().toISOString() }));
+  if (moi.role === 'ENTREPRISE') return erreur(res, 403, 'FORBIDDEN', 'Groupes réservés à la communauté UASZ.') ?? true;
+  const maintenant = () => new Date().toISOString();
+  const moiDans = (g) => g.members.find((m) => m.userId === moi.id);
+  const estAdminDe = (g) => ['OWNER', 'ADMIN'].includes(moiDans(g)?.groupRole);
+  const qui = nomDe(moi.id) ?? 'Un participant';
+  const systeme = (g, texte) => messagesGroupes.push(msg(g.id, moi.id, texte, maintenant(), 'SYSTEM'));
+  const prefs = (g) => {
+    const p = preferences.get(`${g.id}:${moi.id}`) ?? {};
+    const muted = !!p.mutedForever || (!!p.mutedUntil && p.mutedUntil > maintenant());
+    return { pinned: !!p.pinned, archived: !!p.archived, muted, ...(muted && !p.mutedForever ? { mutedUntil: p.mutedUntil } : {}) };
+  };
+  const vue = (g) => ({ ...g, preferences: prefs(g) });
+  const noms = (ids) => {
+    const n = ids.map((id) => nomDe(id) ?? 'un participant');
+    return n.length > 1 ? `${n.slice(0, -1).join(', ')} et ${n[n.length - 1]}` : n[0];
+  };
+  const ajouterMembres = (g, ids = []) => {
+    const ajoutes = [...new Set(ids)].filter((id) => compte(id) && !g.members.some((m) => m.userId === id));
+    ajoutes.forEach((id) => g.members.push(membre(id, 'MEMBER', maintenant())));
+    return ajoutes;
+  };
+  const nomValide = (n) => typeof n === 'string' && n.trim().length >= 3 && n.trim().length <= 100;
 
   if (chemin === '/v1/messages/groups') {
     if (req.method === 'GET') {
-      return envoyer(res, 200, groupes.filter(estMembre).map((g) => {
+      const liste = groupes.filter(moiDans).map((g) => {
         const fil = messagesGroupes.filter((m) => m.groupId === g.id);
         const dernier = fil[fil.length - 1];
-        const lu = lus.get(`${g.id}:${moi.id}`) ?? '';
+        const depuis = [lus.get(`${g.id}:${moi.id}`) ?? '', moiDans(g).joinedAt].sort().pop();
         return {
-          id: g.id, name: g.name, memberCount: g.members.length, lastMessage: dernier?.content,
-          lastMessageTime: dernier?.createdAt ?? g.createdAt,
-          unreadCount: fil.filter((m) => m.senderId !== moi.id && m.createdAt > lu).length,
+          id: g.id, name: g.name, memberCount: g.members.length,
+          lastMessage: dernier?.deleted ? undefined : dernier?.content, lastMessageType: dernier?.type,
+          lastMessageSenderName: dernier?.senderName, lastMessageTime: dernier?.createdAt ?? g.createdAt,
+          unreadCount: fil.filter((m) => m.type === 'TEXT' && !m.deleted && m.senderId !== moi.id && m.createdAt > depuis).length,
+          preferences: prefs(g),
         };
-      })) ?? true;
+      });
+      liste.sort((a, b) => Number(b.preferences.pinned) - Number(a.preferences.pinned) || b.lastMessageTime.localeCompare(a.lastMessageTime));
+      return envoyer(res, 200, liste) ?? true;
     }
     if (req.method === 'POST') {
-      if (!corps.name?.trim()) return erreur(res, 400, 'VALIDATION_ERROR', 'Le nom du groupe est obligatoire.') ?? true;
-      const g = { id: `g${Date.now()}`, name: corps.name.trim(), description: corps.description, ownerId: moi.id,
-        members: [{ ...membre(moi.id, 'OWNER'), joinedAt: new Date().toISOString() }], createdAt: new Date().toISOString() };
+      if (!nomValide(corps.name)) return erreur(res, 400, 'INVALID_GROUP', 'Le nom du groupe doit contenir entre 3 et 100 caractères.') ?? true;
+      const g = { id: `g${Date.now()}`, name: corps.name.trim(), description: corps.description?.trim() || undefined, ownerId: moi.id,
+        members: [membre(moi.id, 'OWNER', maintenant())], settings: reglagesParDefaut(), createdAt: maintenant() };
       ajouterMembres(g, corps.memberIds);
       groupes.push(g);
+      systeme(g, `${qui} a créé le groupe « ${g.name} »`);
+      lus.set(`${g.id}:${moi.id}`, maintenant());
       console.log(`[groupes] ${moi.id} crée ${g.id} (${g.members.length} membres)`);
-      return envoyer(res, 201, g) ?? true;
+      return envoyer(res, 201, vue(g)) ?? true;
     }
   }
 
@@ -290,34 +324,91 @@ function routesGroupes(req, res, chemin, corps) {
   const interdit = (message = "Vous n'êtes pas membre de ce groupe.") => erreur(res, 403, 'FORBIDDEN', message) ?? true;
 
   if (suite === '' && req.method === 'DELETE') {
-    if (!estProprietaire(g) && moi.role !== 'ADMINISTRATEUR') return interdit('Suppression réservée au propriétaire.');
+    if (moiDans(g)?.groupRole !== 'OWNER' && moi.role !== 'ADMINISTRATEUR') return interdit('Suppression réservée au propriétaire.');
     groupes.splice(groupes.indexOf(g), 1);
     return envoyer(res, 204) ?? true;
   }
-  if (!estMembre(g)) {
+  const moiMembre = moiDans(g);
+  if (!moiMembre) {
     console.log(`[groupes] 403 : ${moi.id} n'est pas membre de ${g.id}`);
     return interdit();
   }
-  if (suite === '' && req.method === 'GET') return envoyer(res, 200, g) ?? true;
+  if (suite === '' && req.method === 'GET') return envoyer(res, 200, vue(g)) ?? true;
   if (suite === '' && req.method === 'PUT') {
-    if (!estProprietaire(g)) return interdit('Modification réservée au propriétaire.');
-    if (corps.name !== undefined && !corps.name.trim()) return erreur(res, 400, 'VALIDATION_ERROR', 'Le nom est obligatoire.') ?? true;
-    Object.assign(g, { name: corps.name?.trim() ?? g.name, description: corps.description ?? g.description });
-    return envoyer(res, 200, g) ?? true;
+    if (g.settings.onlyAdminsCanEditInfo && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent modifier les infos.');
+    if (corps.name !== undefined && !nomValide(corps.name)) return erreur(res, 400, 'INVALID_GROUP', 'Le nom du groupe doit contenir entre 3 et 100 caractères.') ?? true;
+    if (corps.name !== undefined && corps.name.trim() !== g.name) {
+      g.name = corps.name.trim();
+      systeme(g, `${qui} a renommé le groupe en « ${g.name} »`);
+    }
+    if (corps.description !== undefined && (corps.description.trim() || undefined) !== g.description) {
+      g.description = corps.description.trim() || undefined;
+      systeme(g, `${qui} a modifié la description du groupe`);
+    }
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  if (suite === '/settings' && req.method === 'PATCH') {
+    if (!estAdminDe(g)) return interdit('Seuls les administrateurs peuvent modifier les réglages.');
+    const libelles = { onlyAdminsCanSend: 'envoyer des messages', onlyAdminsCanEditInfo: 'modifier les infos du groupe', onlyAdminsCanAddMembers: 'ajouter des participants' };
+    for (const [cle, libelle] of Object.entries(libelles)) {
+      if (typeof corps[cle] === 'boolean' && corps[cle] !== g.settings[cle]) {
+        g.settings[cle] = corps[cle];
+        systeme(g, `${qui} a modifié les réglages : ${corps[cle] ? 'seuls les administrateurs' : 'tous les participants'} peuvent ${libelle}`);
+      }
+    }
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  if (suite === '/preferences' && req.method === 'PATCH') {
+    const cle = `${g.id}:${moi.id}`;
+    const p = { ...(preferences.get(cle) ?? {}) };
+    if (typeof corps.pinned === 'boolean') p.pinned = corps.pinned;
+    if (typeof corps.archived === 'boolean') p.archived = corps.archived;
+    const heures = { EIGHT_HOURS: 8, ONE_WEEK: 24 * 7 };
+    if (corps.mute) {
+      p.mutedForever = corps.mute === 'ALWAYS';
+      p.mutedUntil = heures[corps.mute] ? new Date(Date.now() + heures[corps.mute] * 3_600_000).toISOString() : undefined;
+    }
+    preferences.set(cle, p);
+    return envoyer(res, 200, prefs(g)) ?? true;
   }
   if (suite === '/members' && !cible && req.method === 'POST') {
-    if (!estProprietaire(g)) return interdit('Ajout réservé au propriétaire.');
+    if (g.settings.onlyAdminsCanAddMembers && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent ajouter des participants.');
     if (!corps.memberIds?.length) return erreur(res, 400, 'VALIDATION_ERROR', 'memberIds est obligatoire.') ?? true;
-    ajouterMembres(g, corps.memberIds);
-    return envoyer(res, 200, g) ?? true;
+    const ajoutes = ajouterMembres(g, corps.memberIds);
+    if (ajoutes.length) systeme(g, `${qui} a ajouté ${noms(ajoutes)}`);
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  const visee = cible && g.members.find((x) => x.userId === cible);
+  if (suite === '/members' && cible && req.method === 'PATCH') {
+    if (moiMembre.groupRole !== 'OWNER') return interdit('Seul le propriétaire nomme les administrateurs.');
+    if (!visee) return erreur(res, 404, 'MEMBER_NOT_FOUND', 'Membre introuvable.') ?? true;
+    if (visee.groupRole === 'OWNER' || !['ADMIN', 'MEMBER'].includes(corps.groupRole)) return erreur(res, 400, 'INVALID_ROLE', 'Rôle invalide.') ?? true;
+    if (visee.groupRole !== corps.groupRole) {
+      visee.groupRole = corps.groupRole;
+      systeme(g, corps.groupRole === 'ADMIN' ? `${qui} a nommé ${noms([cible])} administrateur` : `${qui} a retiré ${noms([cible])} des administrateurs`);
+    }
+    return envoyer(res, 200, vue(g)) ?? true;
   }
   if (suite === '/members' && cible && req.method === 'DELETE') {
-    if (!estProprietaire(g) && cible !== moi.id) return interdit('Retrait réservé au propriétaire.');
-    if (!g.members.some((x) => x.userId === cible)) return erreur(res, 404, 'MEMBER_NOT_FOUND', 'Membre introuvable.') ?? true;
+    if (!visee) return erreur(res, 404, 'MEMBER_NOT_FOUND', 'Membre introuvable.') ?? true;
+    const depart = cible === moi.id;
+    const autorise = depart || moiMembre.groupRole === 'OWNER' || (moiMembre.groupRole === 'ADMIN' && visee.groupRole !== 'OWNER');
+    if (!autorise) return interdit('Vous ne pouvez pas retirer ce membre.');
     g.members = g.members.filter((x) => x.userId !== cible);
+    if (!g.members.length) {
+      groupes.splice(groupes.indexOf(g), 1);
+      return envoyer(res, 204) ?? true;
+    }
+    systeme(g, depart ? `${qui} a quitté le groupe` : `${qui} a retiré ${noms([cible])}`);
+    if (visee.groupRole === 'OWNER') {
+      const successeur = g.members.find((x) => x.groupRole === 'ADMIN') ?? g.members[0];
+      successeur.groupRole = 'OWNER';
+      g.ownerId = successeur.userId;
+      messagesGroupes.push(msg(g.id, successeur.userId, `${nomDe(successeur.userId) ?? 'Un participant'} est maintenant propriétaire du groupe`, maintenant(), 'SYSTEM'));
+    }
     return envoyer(res, 204) ?? true;
   }
-  if (suite === '/messages' && req.method === 'GET') {
+  if (suite === '/messages' && !cible && req.method === 'GET') {
     // Page 0 = messages les plus récents, chaque page restituée dans l'ordre chronologique.
     const q = new URL(req.url, 'http://mock').searchParams;
     const page = Number(q.get('page') ?? 0);
@@ -325,14 +416,25 @@ function routesGroupes(req, res, chemin, corps) {
     const fil = messagesGroupes.filter((x) => x.groupId === g.id).reverse();
     return envoyer(res, 200, { content: fil.slice(page * size, (page + 1) * size).reverse(), totalElements: fil.length, page, size }) ?? true;
   }
-  if (suite === '/messages' && req.method === 'POST') {
-    if (!corps.content?.trim()) return erreur(res, 400, 'VALIDATION_ERROR', 'Le message est vide.') ?? true;
-    const nouveau = msg(g.id, moi.id, corps.content.trim(), new Date().toISOString());
+  if (suite === '/messages' && !cible && req.method === 'POST') {
+    if (g.settings.onlyAdminsCanSend && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent envoyer des messages dans ce groupe.');
+    const texte = corps.content?.trim();
+    if (!texte || texte.length > 4000) return erreur(res, 400, 'INVALID_MESSAGE', 'Le message doit contenir entre 1 et 4000 caractères.') ?? true;
+    const nouveau = msg(g.id, moi.id, texte, maintenant());
     messagesGroupes.push(nouveau);
+    lus.set(`${g.id}:${moi.id}`, nouveau.createdAt);
     return envoyer(res, 201, nouveau) ?? true;
   }
+  if (suite === '/messages' && cible && req.method === 'DELETE') {
+    const message = messagesGroupes.find((x) => x.groupId === g.id && x.id === cible);
+    if (!message) return erreur(res, 404, 'MESSAGE_NOT_FOUND', 'Message introuvable.') ?? true;
+    if (message.type === 'SYSTEM') return erreur(res, 400, 'INVALID_MESSAGE', 'Les messages système ne peuvent pas être supprimés.') ?? true;
+    if (message.senderId !== moi.id && !estAdminDe(g)) return interdit('Vous ne pouvez supprimer que vos propres messages.');
+    Object.assign(message, { deleted: true, content: undefined });
+    return envoyer(res, 204) ?? true;
+  }
   if (suite === '/read' && req.method === 'PATCH') {
-    lus.set(`${g.id}:${moi.id}`, new Date().toISOString());
+    lus.set(`${g.id}:${moi.id}`, maintenant());
     return envoyer(res, 204) ?? true;
   }
   return false;

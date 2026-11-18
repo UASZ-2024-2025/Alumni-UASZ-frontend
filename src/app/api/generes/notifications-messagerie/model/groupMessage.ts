@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { GroupMessageType } from './groupMessageType';
 
 
 export interface GroupMessage { 
@@ -14,7 +15,15 @@ export interface GroupMessage {
     groupId?: string;
     senderId?: string;
     senderName?: string;
+    type?: GroupMessageType;
+    /**
+     * Texte du message ; vide si le message a été supprimé.
+     */
     content?: string;
+    deleted?: boolean;
     createdAt?: string;
 }
+export namespace GroupMessage {
+}
+
 

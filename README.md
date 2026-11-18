@@ -74,6 +74,15 @@ Le jeton d'accès du mock expire après 20 secondes et le refresh token est à u
 
 `scripts/mock-api.js` est un outil de test, il n'est pas inclus dans le build.
 
+Groupes de discussion (`/groupes`) : le mock applique les règles du contrat messagerie 1.1.0 (rôles OWNER/ADMIN/MEMBER, réglages, préférences, messages système).
+
+| Compte | Ce qu'il permet de vérifier |
+|---|---|
+| enseignant@uasz.sn | Propriétaire de « Promo GL 2025 » et « Annonces UFR SET » : réglages, rôles, retrait, suppression |
+| alumni@uasz.sn | Admin de « Promo GL 2025 » : retire des membres, mais pas la propriétaire, et ne gère pas les rôles |
+| etudiant@uasz.sn | Simple membre ; « Annonces UFR SET » en lecture seule ; `/groupes/g3` répond « Accès réservé aux membres » |
+| entreprise@uasz.sn | Pas d'accès aux groupes (403) |
+
 ## 5. Architecture
 
 ```
@@ -366,5 +375,5 @@ Les rôles associés à chaque fonctionnalité sont des propositions à confirme
 
 - Le rôle `ENTREPRISE` n'existe pas dans le `RoleName` généré depuis `user-service.yaml` (seulement `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ADMINISTRATEUR`). Il est géré côté frontend. À confirmer avec l'équipe back.
 - Seul le client `utilisateurs` est configuré. Les quatre autres services restent à brancher.
-- Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités).
+- Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités). En attendant, pour régénérer un client avec les options par défaut (identiques aux clients commités) : `npx openapi-generator-cli generate -i contrat/notification-messaging-service.yaml -g typescript-angular -o src/app/api/generes/notifications-messagerie`.
 - Le back doit autoriser CORS pour `http://localhost:4200` pour les tests en local.

@@ -1,23 +1,70 @@
-.infos { display: flex; flex-direction: column; gap: 1.25rem; }
+// Panneau « Infos du groupe » à la WhatsApp : présentation centrée, puis des cartes de réglages.
+.infos { display: flex; flex-direction: column; gap: 1rem; }
 
 .presentation { display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; }
-.grand { width: 4.5rem; margin-bottom: .25rem; font-size: 1.5rem; }
-h3 { margin: 0; font: 700 1.25rem/1.2 var(--police-titre); }
+.grand { width: 5.5rem; margin-bottom: .35rem; font-size: 1.9rem; }
+h3 { margin: 0; font: 700 1.35rem/1.2 var(--police-titre); }
 .sous-titre { margin: 0; color: var(--mu); font-size: .875rem; }
-.description { margin: .25rem 0; white-space: pre-line; }
+.description { max-width: 30rem; margin: .35rem 0 0; white-space: pre-line; }
+.description.vide { color: var(--mu); font-style: italic; }
+.lien { padding: 2px 0; border: 0; background: none; color: var(--g8); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; &:hover { text-decoration: underline; } }
 .formulaire { display: flex; flex-direction: column; gap: .75rem; width: 100%; text-align: left; }
 .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 
-.titre-section { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: .5rem; }
-h4 { margin: 0; color: var(--g8); font-size: .875rem; font-weight: 700; }
-.ajout { display: flex; flex-direction: column; gap: .6rem; margin-bottom: .75rem; padding: 12px; border-radius: var(--rayon); background: var(--g0); }
+.carte-section { padding: 12px 14px; border: 1px solid var(--bd); border-radius: 14px; background: var(--sf); }
+h4 { margin: 0 0 .4rem; color: var(--g8); font-size: .8125rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.aide { margin: 0 0 .4rem; color: var(--mu); font-size: .8125rem; }
+
+.ligne-reglage {
+  display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--bd); cursor: pointer;
+  &:first-of-type { border-top: 0; }
+}
+.texte { display: flex; flex: 1; flex-direction: column; min-width: 0; text-align: left; }
+.texte strong { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.texte small { color: var(--mu); font-size: .8125rem; }
+
+.selection {
+  max-width: 11rem; padding: 6px 10px; border: 1px solid var(--bord-champ); border-radius: 10px;
+  background: var(--sf); color: var(--tx); font: inherit; font-size: .875rem; cursor: pointer;
+  &:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
+}
+
+// Interrupteur (case à cocher native, role="switch") aux couleurs UASZ.
+.interrupteur {
+  position: relative; flex: none; width: 40px; height: 22px; margin: 0;
+  border-radius: 999px; background: var(--bd); cursor: pointer; transition: background .15s;
+  appearance: none;
+  &::after {
+    content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s;
+  }
+  &:checked { background: var(--g7); }
+  &:checked::after { transform: translateX(18px); }
+  &:focus-visible { outline: 2px solid var(--g7); outline-offset: 2px; }
+  &:disabled { cursor: wait; opacity: .6; }
+}
+
+.ligne-action {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 0;
+  border: 0; background: none; color: var(--g8); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+  &:hover { text-decoration: underline; }
+  &:disabled { cursor: wait; opacity: .6; }
+  svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  &.danger { color: var(--dg); }
+}
+.pastille-action {
+  display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--g7); color: #fff;
+}
+.ajout { display: flex; flex-direction: column; gap: .6rem; margin-bottom: .5rem; padding: 12px; border-radius: var(--rayon); background: var(--g0); }
 
 .membres { margin: 0; padding: 0; list-style: none; }
-.membres li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--bd); }
-.membres li:last-child { border-bottom: 0; }
-.texte { display: flex; flex: 1; flex-direction: column; min-width: 0; }
-.texte strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.texte small { color: var(--mu); }
+.membres li { border-top: 1px solid var(--bd); }
+.membres li.ouvert { background: var(--g0); }
+.membre {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 4px;
+  border: 0; background: none; color: inherit; font: inherit; cursor: default;
+  &.gerable { cursor: pointer; &:hover { background: var(--g0); } }
+}
+.actions-membre { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0 4px 10px 3.4rem; }
 
-.zone-danger { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: 1rem; border-top: 1px solid var(--bd); }
-.zone-danger:empty { display: none; }
+.zone-danger { display: flex; flex-direction: column; padding: 4px 14px; border: 1px solid var(--bd); border-radius: 14px; }

@@ -59,6 +59,35 @@ describe('Groupes', () => {
     expect(lignes[0].querySelector('.apercu')?.textContent).toBe('Bien noté');
   });
 
+  it('met les groupes épinglés en tête et range les archivés à part', () => {
+    const epingle = { ...ancien, preferences: { pinned: true } };
+    const archive: GroupSummary = { id: 'g3', name: 'Vieux projet', memberCount: 2, lastMessageTime: '2026-11-18T09:00:00Z', preferences: { archived: true } };
+    api.listGroups.mockReturnValue(of([recent, epingle, archive]));
+    creer();
+    expect([...el.querySelectorAll('.conversation .nom')].map((n) => n.textContent)).toEqual(['Club Data', 'Promo GL 2025']);
+    expect(el.querySelector('.conversation [aria-label="Épinglé"]')).not.toBeNull();
+
+    el.querySelector<HTMLButtonElement>('.entree-archives')!.click();
+    fixture.detectChanges();
+    expect(el.querySelector('h1')?.textContent).toBe('Archivées');
+    expect([...el.querySelectorAll('.conversation .nom')].map((n) => n.textContent)).toEqual(['Vieux projet']);
+  });
+
+  it('filtre les groupes non lus et grise la pastille des groupes en sourdine', () => {
+    api.listGroups.mockReturnValue(of([ancien, { ...recent, preferences: { muted: true } }]));
+    creer();
+    [...el.querySelectorAll<HTMLButtonElement>('.puce')].find((b) => b.textContent?.includes('Non lus'))!.click();
+    fixture.detectChanges();
+    expect([...el.querySelectorAll('.conversation .nom')].map((n) => n.textContent)).toEqual(['Promo GL 2025']);
+    expect(el.querySelector('.pastille')?.classList).toContain('sourdine');
+  });
+
+  it("préfixe l'aperçu par le prénom de l'auteur", () => {
+    api.listGroups.mockReturnValue(of([{ ...recent, lastMessageSenderName: 'Awa Diop', lastMessageType: 'TEXT' }]));
+    creer();
+    expect(el.querySelector('.apercu')?.textContent).toBe('Awa : Bien noté');
+  });
+
   it('filtre la liste par nom', () => {
     creer();
     saisir('.recherche input', 'data');
@@ -91,6 +120,12 @@ describe('Groupes', () => {
     fixture.detectChanges();
     expect(api.createGroup).not.toHaveBeenCalled();
     expect(el.textContent).toContain('Le nom du groupe est obligatoire.');
+
+    saisir('.formulaire app-champ input', 'GL');
+    el.querySelector<HTMLFormElement>('.formulaire')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(api.createGroup).not.toHaveBeenCalled();
+    expect(el.textContent).toContain('entre 3 et 100 caractères');
 
     saisir('.formulaire app-champ input', '  Projet tutoré  ');
     el.querySelector<HTMLFormElement>('.formulaire')!.dispatchEvent(new Event('submit'));

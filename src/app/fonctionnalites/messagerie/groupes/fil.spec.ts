@@ -1,9 +1,12 @@
 import { GroupMessage } from '../../../api/generes/notifications-messagerie/model/groupMessage';
-import { construireFil, couleurAuteur, fusionnerMessages, horodatageListe, libelleJour } from './fil';
+import { apercuGroupe, construireFil, couleurAuteur, erreurNomGroupe, fusionnerMessages, horodatageListe, libelleJour } from './fil';
 
 const maintenant = new Date(2026, 10, 18, 15, 0); // mercredi 18 novembre 2026, 15 h
 const le = (jour: number, h: number, m = 0) => new Date(2026, 10, jour, h, m).toISOString();
 const msg = (id: string, senderId: string, createdAt: string): GroupMessage => ({ id, senderId, senderName: senderId, content: id, createdAt });
+
+const resumer = (e: ReturnType<typeof construireFil>[number]) =>
+  e.type === 'jour' ? e.libelle : e.type === 'systeme' ? `sys:${e.cle}` : `${e.cle}:${e.moi ? 'moi' : 'autre'}:${e.debutSerie ? 'debut' : 'suite'}`;
 
 describe('fil de groupe', () => {
   it('fusionne deux pages sans doublon, du plus ancien au plus récent', () => {
@@ -32,7 +35,7 @@ describe('fil de groupe', () => {
       'moi',
       maintenant,
     );
-    expect(fil.map((e) => (e.type === 'jour' ? e.libelle : `${e.cle}:${e.moi ? 'moi' : 'autre'}:${e.debutSerie ? 'debut' : 'suite'}`))).toEqual([
+    expect(fil.map(resumer)).toEqual([
       'Hier',
       'a:autre:debut',
       'b:autre:suite',
@@ -45,5 +48,26 @@ describe('fil de groupe', () => {
   it('donne toujours la même couleur à un même auteur', () => {
     expect(couleurAuteur('u1')).toBe(couleurAuteur('u1'));
     expect(couleurAuteur('u1')).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it('affiche les événements du groupe à part, et ils coupent la série', () => {
+    const systeme: GroupMessage = { ...msg('s', 'u1', le(18, 9, 1)), type: 'SYSTEM', content: 'Awa a ajouté Moussa' };
+    const fil = construireFil([msg('a', 'u1', le(18, 9)), systeme, msg('b', 'u1', le(18, 9, 2))], 'moi', maintenant);
+    expect(fil.map(resumer)).toEqual(["Aujourd'hui", 'a:autre:debut', 'sys:s', 'b:autre:debut']);
+  });
+
+  it("résume le dernier message dans la liste (« Vous », prénom de l'auteur, événement)", () => {
+    const base = { memberCount: 3, lastMessage: 'Salut', lastMessageType: 'TEXT' as const };
+    expect(apercuGroupe({ ...base, lastMessageSenderName: 'Awa Diop' }, 'Moussa Ndiaye')).toBe('Awa : Salut');
+    expect(apercuGroupe({ ...base, lastMessageSenderName: 'Moussa Ndiaye' }, 'Moussa Ndiaye')).toBe('Vous : Salut');
+    expect(apercuGroupe({ ...base, lastMessageType: 'SYSTEM', lastMessage: 'Awa a quitté le groupe' })).toBe('Awa a quitté le groupe');
+    expect(apercuGroupe({ memberCount: 1 })).toBe('1 participant');
+  });
+
+  it('valide le nom du groupe selon le contrat (3 à 100 caractères)', () => {
+    expect(erreurNomGroupe('  ')).toBe('Le nom du groupe est obligatoire.');
+    expect(erreurNomGroupe('ab')).toContain('entre 3 et 100');
+    expect(erreurNomGroupe('x'.repeat(101))).toContain('entre 3 et 100');
+    expect(erreurNomGroupe(' Promo ')).toBeNull();
   });
 });

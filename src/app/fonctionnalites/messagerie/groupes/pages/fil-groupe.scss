@@ -32,6 +32,23 @@
 .identite .texte { display: flex; flex-direction: column; min-width: 0; }
 .identite strong, .identite small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .identite small { color: var(--mu); font-size: .8125rem; }
+.identite .sourdine { width: 14px; height: 14px; margin-left: 4px; vertical-align: -2px; fill: none; stroke: var(--mu); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+// --- Menu ⋮ ---
+.menu { position: relative; }
+.bouton-icone svg path[d^='M8 3.5'] { stroke-width: 2.6; }
+.options {
+  position: absolute; z-index: 10; top: calc(100% + 4px); right: 0; min-width: 230px; margin: 0; padding: 6px 0;
+  border: 1px solid var(--bd); border-radius: 12px; background: var(--sf); list-style: none;
+  box-shadow: 0 8px 24px rgba(7, 61, 39, .16);
+  animation: apparition .12s ease-out;
+  button {
+    display: block; width: 100%; padding: 9px 18px; border: 0; background: none; color: var(--tx);
+    font: inherit; font-size: .9rem; text-align: left; cursor: pointer;
+    &:hover, &:focus-visible { background: var(--g0); outline: none; }
+  }
+}
+@keyframes apparition { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 
 // --- Messages ---
 .defilement {
@@ -64,9 +81,40 @@
 // L'heure flotte en bas à droite de la bulle, sans ligne à elle seule quand il y a la place.
 .bulle time { float: right; margin: 6px 0 -4px 10px; color: var(--mu); font-size: .6875rem; line-height: 1; }
 
+// Message supprimé : texte gris en italique précédé d'un symbole « interdit », comme WhatsApp.
+.bulle.supprime p { color: var(--mu); font-style: italic; }
+.bulle.supprime p svg { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+
+// Corbeille qui apparaît au survol (ou au focus clavier) de la bulle.
+.supprimer {
+  position: absolute; top: 50%; right: calc(100% + 4px); display: grid; place-items: center; width: 28px; height: 28px;
+  border: 0; border-radius: 50%; background: var(--sf); color: var(--mu); cursor: pointer; opacity: 0;
+  box-shadow: 0 1px 2px rgba(7, 61, 39, .15); transform: translateY(-50%); transition: opacity .12s;
+  svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  &:hover { color: var(--dg); }
+  &:focus-visible { opacity: 1; }
+}
+.bulle:not(.moi) .supprimer { right: auto; left: calc(100% + 4px); }
+.bulle:hover .supprimer { opacity: 1; }
+@media (hover: none) { .supprimer { opacity: .7; } }
+
+// Événement du groupe (création, ajout, départ, réglage) : pastille centrée, sans auteur.
+.evenement { align-self: center; max-width: 85%; margin: 8px 0; text-align: center; }
+.evenement span {
+  display: inline-block; padding: 5px 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--g1) 70%, var(--sf)); color: var(--g9); font-size: .78rem; line-height: 1.35;
+  box-shadow: 0 1px 1px rgba(7, 61, 39, .08);
+}
+
 // --- Saisie ---
 .saisie { padding: 8px 12px 10px; border-top: 1px solid var(--bd); background: var(--sf); }
 .erreur-envoi { margin: 0 0 6px; color: var(--dg); font-size: .8125rem; }
+.compteur { margin: 4px 54px 0 0; color: var(--mu); font-size: .75rem; text-align: right; }
+.lecture-seule {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 10px;
+  color: var(--mu); font-size: .875rem; text-align: center;
+  svg { flex: none; width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
+}
 .barre { display: flex; align-items: flex-end; gap: 8px; }
 textarea {
   flex: 1; box-sizing: border-box; min-height: 42px; max-height: 9rem; padding: 10px 16px;

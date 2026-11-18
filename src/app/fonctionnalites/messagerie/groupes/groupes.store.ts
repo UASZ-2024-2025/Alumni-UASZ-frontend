@@ -16,10 +16,17 @@ export class GroupesStore {
   readonly erreur = signal<string | null>(null);
   readonly charge = signal(false);
 
-  /** Les conversations les plus récentes en haut. */
+  /** Comme WhatsApp : épinglés en haut, puis les conversations les plus récentes. */
   readonly liste = computed(() =>
-    [...this.groupes()].sort((a, b) => (b.lastMessageTime ?? '').localeCompare(a.lastMessageTime ?? '')),
+    [...this.groupes()].sort(
+      (a, b) =>
+        Number(!!b.preferences?.pinned) - Number(!!a.preferences?.pinned) ||
+        (b.lastMessageTime ?? '').localeCompare(a.lastMessageTime ?? ''),
+    ),
   );
+  /** La liste principale exclut les groupes archivés, rangés dans leur propre section. */
+  readonly actifs = computed(() => this.liste().filter((g) => !g.preferences?.archived));
+  readonly archives = computed(() => this.liste().filter((g) => g.preferences?.archived));
 
   charger(): void {
     this.chargement.set(true);

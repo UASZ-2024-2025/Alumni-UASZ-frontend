@@ -36,6 +36,38 @@ h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
   }
 }
 
+.bouton-icone {
+  display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%;
+  background: none; color: var(--mu); cursor: pointer;
+  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  &:hover { background: var(--g0); color: var(--tx); }
+}
+.entete-liste:has(.titre-archives) { justify-content: flex-start; }
+.titre-archives { font-size: 1.25rem; }
+.note-archives { margin: 0 16px 10px; color: var(--mu); font-size: .8125rem; }
+
+// Filtres en puces, comme les onglets « Tous / Non lus » de WhatsApp.
+.filtres { display: flex; gap: 6px; padding: 0 12px 8px; }
+.puce {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+  border: 0; border-radius: 999px; background: var(--g0); color: var(--mu); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer;
+  &:hover { color: var(--tx); }
+  &.active { background: var(--g1); color: var(--g9); }
+}
+.compte { min-width: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--g7); color: #fff; font-size: .6875rem; line-height: 18px; text-align: center; }
+
+.entree-archives {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 16px;
+  border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  &:hover { background: var(--g0); }
+  .libelle { flex: 1; font-weight: 600; }
+  .nombre { color: var(--g7); font-size: .8125rem; font-weight: 700; }
+}
+.icone-archives {
+  display: grid; place-items: center; width: 2.9rem; height: 2.9rem; flex: none;
+  svg { width: 20px; height: 20px; fill: none; stroke: var(--g7); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+}
+
 .defilement { flex: 1; min-height: 0; overflow-y: auto; }
 .message-liste { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; margin: 0; padding: 16px; color: var(--mu); font-size: .875rem; }
 .message-liste.vide { align-items: center; text-align: center; strong { color: var(--tx); } }
@@ -56,7 +88,12 @@ h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
 .apercu { color: var(--mu); font-size: .875rem; }
 .date { flex: none; color: var(--mu); font-size: .75rem; }
 .date.non-lu { color: var(--g7); font-weight: 700; }
+.apercu.systeme { font-style: italic; }
+.indicateurs { display: flex; flex: none; align-items: center; gap: 4px; }
+.indicateur { width: 15px; height: 15px; fill: none; stroke: var(--mu); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .pastille { display: grid; place-items: center; flex: none; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: var(--g7); color: #fff; font-size: .6875rem; font-weight: 700; }
+// Groupe en sourdine : la pastille passe au gris, comme sur WhatsApp.
+.pastille.sourdine { background: var(--mu); }
 
 // --- Colonne du fil ---
 .colonne-fil { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--g0); }
@@ -68,10 +105,12 @@ h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
   svg { width: 64px; height: 64px; margin-bottom: .5rem; fill: var(--g1); stroke: var(--g7); stroke-width: .6; stroke-linejoin: round; }
   h2 { margin: 0; color: var(--tx); font: 700 1.5rem/1.2 var(--police-titre); }
   p { max-width: 26rem; margin: 0; }
+  .discret { margin-top: 1rem; font-size: .8125rem; }
 }
 
 // --- Fenêtre de création ---
 .formulaire { display: flex; flex-direction: column; gap: 1rem; }
+.aide { margin: 0; color: var(--mu); font-size: .8125rem; }
 .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 
 @media (max-width: 800px) {
