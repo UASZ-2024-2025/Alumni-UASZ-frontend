@@ -33,6 +33,7 @@ function emettre(email) {
   const accessToken = `acc-${++compteur}`;
   const refreshToken = `ref-${++compteur}`;
   accessValides.set(accessToken, Date.now() + DUREE_ACCESS_S * 1000);
+  accesUtilisateur.set(accessToken, u.id);   // <-- à ajouter
   refreshValides.set(refreshToken, email);
   const { motDePasse, ...publicUser } = u;
   return { accessToken, refreshToken, expiresIn: DUREE_ACCESS_S, user: { ...publicUser, email, status: 'ACTIF' } };
@@ -191,6 +192,84 @@ function routesOffres(req, res, chemin, corps) {
   return false;
 }
 
+const accesUtilisateur = new Map(); // jeton d'accès -> id de l'utilisateur connecté
+
+// --- Messagerie privée (service notification-messaging, port 8085) ---
+const minutes = (n) => new Date(Date.now() - n * 60000).toISOString();
+const messagesPrives = [
+  { id: 'm1', senderId: '1', recipientId: '2', content: 'Bonjour Moussa, as-tu vu le stage chez Orange ?', isRead: true, createdAt: minutes(120) },
+  { id: 'm2', senderId: '2', recipientId: '1', content: 'Bonjour Awa, non pas encore, tu peux me donner le lien ?', isRead: true, createdAt: minutes(110) },
+  { id: 'm3', senderId: '1', recipientId: '2', content: 'Je te le renvoie ce soir. Bonne chance pour ta candidature !', isRead: false, createdAt: minutes(30) },
+  { id: 'm4', senderId: '4', recipientId: '2', content: 'Bonjour, votre profil nous intéresse.', isRead: false, createdAt: minutes(15) },
+];
+const utilisateurParId = (id) => Object.values(utilisateurs).find((u) => u.id === id);
+const nomComplet = (u) => `${u.firstName} ${u.lastName}`;
+const enrichir = (m) => ({
+  ...m,
+  senderName: nomComplet(utilisateurParId(m.senderId)),
+  recipientName: nomComplet(utilisateurParId(m.recipientId)),
+});
+const entre = (a, b) => (m) =>
+  (m.senderId === a && m.recipientId === b) || (m.senderId === b && m.recipientId === a);
+
+// Routes de la messagerie privée ; renvoie true si la requête a été traitée.
+// L'historique est renvoyé du plus récent au plus ancien (page 0 = les derniers messages).
+function routesMessagerie(req, res, chemin, corps) {
+  if (!/^\/v1\/messages\/conversations(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const moi = accesUtilisateur.get((req.headers.authorization || '').replace('Bearer ', ''));
+
+  if (req.method === 'GET' && chemin === '/v1/messages/conversations') {
+    const autres = new Set(
+      messagesPrives
+        .filter((m) => m.senderId === moi || m.recipientId === moi)
+        .map((m) => (m.senderId === moi ? m.recipientId : m.senderId)),
+    );
+    const liste = [...autres]
+      .map((id) => {
+        const fil = messagesPrives.filter(entre(moi, id));
+        const dernier = fil.reduce((a, b) => (a.createdAt > b.createdAt ? a : b));
+        const autre = utilisateurParId(id);
+        return {
+          recipientId: id,
+          recipientName: nomComplet(autre),
+          recipientRole: autre.role,
+          lastMessage: dernier.content,
+          lastMessageTime: dernier.createdAt,
+          unreadCount: fil.filter((m) => m.senderId === id && !m.isRead).length,
+        };
+      })
+      .sort((a, b) => b.lastMessageTime.localeCompare(a.lastMessageTime));
+    return envoyer(res, 200, liste) ?? true;
+  }
+
+  const m = chemin.match(/^\/v1\/messages\/conversations\/([^/]+)(\/read)?$/);
+  if (!m) return false;
+  const autreId = m[1];
+
+  if (req.method === 'PATCH' && m[2]) {
+    messagesPrives.filter((x) => x.senderId === autreId && x.recipientId === moi).forEach((x) => (x.isRead = true));
+    return envoyer(res, 204) ?? true;
+  }
+  if (req.method === 'GET' && !m[2]) {
+    if (!utilisateurParId(autreId)) return erreur(res, 404, 'USER_NOT_FOUND', 'Utilisateur introuvable.') ?? true;
+    const fil = messagesPrives.filter(entre(moi, autreId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const page = parPage(fil, req.url);
+    return envoyer(res, 200, { ...page, content: page.content.map(enrichir) }) ?? true;
+  }
+  if (req.method === 'POST' && !m[2]) {
+    const texte = typeof corps.content === 'string' ? corps.content.trim() : '';
+    if (!texte) return erreur(res, 400, 'VALIDATION_ERROR', 'Le message ne peut pas être vide.') ?? true;
+    if (autreId === moi || !utilisateurParId(autreId))
+      return erreur(res, 400, 'INVALID_RECIPIENT', 'Destinataire invalide.') ?? true;
+    const nouveau = { id: `m${messagesPrives.length + 1}`, senderId: moi, recipientId: autreId, content: texte, isRead: false, createdAt: new Date().toISOString() };
+    messagesPrives.push(nouveau);
+    console.log(`[messages] ${moi} -> ${autreId}`);
+    return envoyer(res, 201, enrichir(nouveau)) ?? true;
+  }
+  return false;
+}
+
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     let brut = '';
@@ -201,6 +280,7 @@ const traiter = (req, res) => {
 
       if (routesAdmin(req, res, chemin, corps)) return;
       if (routesOffres(req, res, chemin, corps)) return;
+      if (routesMessagerie(req, res, chemin, corps)) return;   // <-- à ajouter
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
         const u = utilisateurs[corps.email];
@@ -304,7 +384,7 @@ const traiter = (req, res) => {
 };
 
 // Un même mock sert les quatre services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084)
-[8081, 8082, 8083, 8084].forEach((port) =>
+[8081, 8082, 8083, 8084, 8085].forEach((port) =>
   http
     .createServer(traiter)
     .listen(port, () => console.log(`Mock API sur http://localhost:${port}/v1 (mot de passe : ${MOT_DE_PASSE})`)),
