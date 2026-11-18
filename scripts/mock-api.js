@@ -152,6 +152,57 @@ function routesAdmin(req, res, chemin, corps) {
   return false;
 }
 
+// --- Données de test des offres d'emploi (job-offer-service, port 8083) ---
+const TYPES_OFFRE = ['JOB', 'INTERNSHIP'];
+const MODES = ['ON_SITE', 'HYBRID', 'REMOTE'];
+const LIEUX = ['Ziguinchor', 'Dakar', 'Thiès', 'Remote'];
+const COMPETENCES = ['Angular', 'Java', 'Spring Boot', 'SQL', 'Docker', 'Réseaux'];
+const offres = Array.from({ length: 27 }, (_, i) => ({
+  id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`,
+  title: `${i % 2 ? 'Stage' : 'Poste'} ${COMPETENCES[i % COMPETENCES.length]} n°${i + 1}`,
+  type: TYPES_OFFRE[i % 2],
+  description: `Description de l'offre ${i + 1}.`,
+  companyId: `c${(i % 5) + 1}`,
+  companyName: `Entreprise ${(i % 5) + 1}`,
+  publisherId: '4',
+  publisherName: 'Ibou Ba',
+  location: LIEUX[i % LIEUX.length],
+  remoteType: MODES[i % MODES.length],
+  requiredSkills: [COMPETENCES[i % COMPETENCES.length], COMPETENCES[(i + 2) % COMPETENCES.length]],
+  durationMonths: i % 2 ? 6 : undefined,
+  salaryRange: i % 2 ? undefined : '400 000 - 600 000 FCFA',
+  deadline: '2026-12-31',
+  status: i % 9 === 8 ? 'CLOSED' : 'OPEN',
+  createdAt: `2026-11-${String((i % 17) + 1).padStart(2, '0')}T09:00:00Z`,
+}));
+
+// Routes des offres ; renvoie true si la requête a été traitée.
+function routesOffres(req, res, chemin) {
+  if (!/^\/v1\/offers(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const q = new URL(req.url, 'http://mock').searchParams;
+
+  if (req.method === 'GET' && chemin === '/v1/offers') {
+    const requete = (q.get('query') || '').toLowerCase();
+    const liste = offres.filter(
+      (o) =>
+        (!requete || `${o.title} ${o.companyName} ${o.requiredSkills.join(' ')}`.toLowerCase().includes(requete)) &&
+        (!q.get('type') || o.type === q.get('type')) &&
+        (!q.get('location') || o.location === q.get('location')) &&
+        (!q.get('remoteType') || o.remoteType === q.get('remoteType')) &&
+        (!q.get('status') || o.status === q.get('status')),
+    );
+    return envoyer(res, 200, parPage(liste, req.url)) ?? true;
+  }
+  const m = chemin.match(/^\/v1\/offers\/([^/]+)$/);
+  if (req.method === 'GET' && m) {
+    const o = offres.find((x) => x.id === m[1]);
+    if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
+    return envoyer(res, 200, o) ?? true;
+  }
+  return false;
+}
+
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     let brut = '';
@@ -161,6 +212,7 @@ const traiter = (req, res) => {
       const chemin = req.url.split('?')[0];
 
       if (routesAdmin(req, res, chemin, corps)) return;
+      if (routesOffres(req, res, chemin)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
         const u = utilisateurs[corps.email];
@@ -263,8 +315,8 @@ const traiter = (req, res) => {
     });
 };
 
-// Un même mock sert les trois services (ports par défaut des contrats : user 8081, alumni 8082, analytics 8084)
-[8081, 8082, 8084].forEach((port) =>
+// Un même mock sert les quatre services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084)
+[8081, 8082, 8083, 8084].forEach((port) =>
   http
     .createServer(traiter)
     .listen(port, () => console.log(`Mock API sur http://localhost:${port}/v1 (mot de passe : ${MOT_DE_PASSE})`)),
