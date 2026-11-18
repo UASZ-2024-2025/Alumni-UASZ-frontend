@@ -38,7 +38,7 @@ export class FicheAlumni implements OnInit {
   protected readonly erreur = signal<string | null>(null);
 
   protected readonly nom = computed(() => (this.profil() ? nomComplet(this.profil()!) : ''));
-  protected readonly estProprietaire = computed(() => this.auth.utilisateur()?.id === this.profil()?.id);
+  protected readonly estProprietaire = computed(() => this.auth.utilisateur()?.id === this.profil()?.userId);
 
   protected duree(e: WorkExperience): string {
     return e.isCurrent ? periode(e.startDate ?? '', '', 'Français') : periode(e.startDate ?? '', e.endDate ?? '', 'Français');

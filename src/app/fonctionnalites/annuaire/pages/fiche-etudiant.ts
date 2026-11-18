@@ -40,7 +40,7 @@ export class FicheEtudiant implements OnInit {
   protected readonly telechargement = signal(false);
 
   protected readonly nom = computed(() => (this.profil() ? nomComplet(this.profil()!) : ''));
-  protected readonly estProprietaire = computed(() => this.auth.utilisateur()?.id === this.profil()?.id);
+  protected readonly estProprietaire = computed(() => this.auth.utilisateur()?.id === this.profil()?.userId);
   protected readonly estAlumni = computed(() => this.auth.role() === 'ALUMNI');
   /** Même règle que le backend : propriétaire, Alumni, enseignant ou administrateur. */
   protected readonly peutVoirCv = computed(
