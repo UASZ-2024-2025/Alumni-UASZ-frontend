@@ -3,7 +3,7 @@
 .cloche { position: relative; display: grid; place-items: center; padding: 6px; border: 0; border-radius: 8px; background: none; color: var(--mu); cursor: pointer; }
 .cloche:hover, .cloche[aria-expanded='true'] { background: var(--g1); color: var(--g8); }
 .cloche:focus-visible { outline: 2px solid var(--g7); outline-offset: 2px; }
-.compteur { position: absolute; top: -4px; right: -4px; min-width: 18px; padding: 1px 5px; border: 2px solid var(--sf); border-radius: 99px; background: var(--dg); color: #fff; font-size: 0.625rem; font-weight: 700; line-height: 1.2; text-align: center; }
+.compteur { position: absolute; top: -8px; right: -10px; min-width: 18px; padding: 1px 5px; border: 2px solid var(--sf); border-radius: 99px; background: var(--dg); color: #fff; font-size: 0.625rem; font-weight: 700; line-height: 1.2; text-align: center; }
 
 .panneau { position: absolute; top: calc(100% + 10px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 8px; width: 380px; max-width: calc(100vw - 24px); max-height: min(70vh, 520px); padding: 12px; overflow-y: auto; border: 1px solid var(--bd); border-radius: var(--rayon); background: var(--sf); box-shadow: var(--ombre-carte); }
 .panneau-entete { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
