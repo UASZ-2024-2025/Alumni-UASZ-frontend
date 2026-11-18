@@ -27,4 +27,14 @@ describe('Modale', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(n).toBe(3);
   });
+
+  it("ne bloque pas l'action par défaut d'un clic dans la boîte (envoi de formulaire)", () => {
+    const fixture = monter(true);
+    let n = 0;
+    fixture.componentInstance.fermer.subscribe(() => n++);
+    const clic = new MouseEvent('click', { bubbles: true, cancelable: true });
+    fixture.nativeElement.querySelector('h2').dispatchEvent(clic);
+    expect(clic.defaultPrevented).toBe(false);
+    expect(n).toBe(0);
+  });
 });

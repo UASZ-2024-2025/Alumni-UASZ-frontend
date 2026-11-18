@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { BASE_PATH as BASE_PATH_ALUMNI } from '../../api/generes/alumni/variables';
 import { CompaniesService } from '../../api/generes/alumni/api/companies.service';
+import { PromotionsService } from '../../api/generes/alumni/api/promotions.service';
 import { BASE_PATH as BASE_PATH_ANALYSES } from '../../api/generes/analyses-correspondances/variables';
 import { AnalyticsReportsService } from '../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../api/generes/analyses-correspondances/api/dashboard.service';
@@ -14,6 +15,7 @@ export const ADMINISTRATION_ROUTES: Routes = [
       { provide: BASE_PATH_ALUMNI, useValue: environment.urlsApi.alumni },
       { provide: BASE_PATH_ANALYSES, useValue: environment.urlsApi.analyses },
       CompaniesService,
+      PromotionsService,
       DashboardService,
       AnalyticsReportsService,
     ],
@@ -29,6 +31,11 @@ export const ADMINISTRATION_ROUTES: Routes = [
         title: 'Gestion des utilisateurs',
         loadComponent: () =>
           import('./pages/gestion-utilisateurs').then((m) => m.GestionUtilisateurs),
+      },
+      {
+        path: 'promotions',
+        title: 'Promotions',
+        loadComponent: () => import('./pages/gestion-promotions').then((m) => m.GestionPromotions),
       },
       {
         path: 'entreprises',

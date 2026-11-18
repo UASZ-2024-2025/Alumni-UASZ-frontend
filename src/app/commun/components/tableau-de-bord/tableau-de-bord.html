@@ -1,4 +1,10 @@
-<h1>Tableau de bord administrateur</h1>
+<h1>{{ admin() ? 'Tableau de bord administrateur' : 'Statistiques' }}</h1>
+
+@if (!admin()) {
+  <app-etat-vide titre="Statistiques bientôt disponibles">
+    <span>Les indicateurs ne sont pas encore ouverts aux enseignants.</span>
+  </app-etat-vide>
+} @else {
 
 <section aria-labelledby="titre-kpi">
   <h2 id="titre-kpi" class="cache">Indicateurs clés</h2>
@@ -122,3 +128,4 @@
     }
   </app-carte>
 </div>
+}

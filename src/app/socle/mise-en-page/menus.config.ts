@@ -1,12 +1,13 @@
 import { RoleApplicatif } from '../authentification/modeles/session.model';
 
-export interface ElementMenu { libelle: string; chemin: string; }
+export interface ElementMenu {
+  libelle: string;
+  chemin: string;
+}
 
 const commun: ElementMenu[] = [
   { libelle: 'Messagerie', chemin: '/messagerie' },
   { libelle: 'Notifications', chemin: '/notifications' },
-  { libelle: 'Mon profil', chemin: '/profil' },
-  { libelle: 'Mot de passe', chemin: '/mot-de-passe' },
 ];
 
 export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
@@ -14,6 +15,7 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Profil Alumni', chemin: '/espace-alumni/profil' },
     { libelle: 'Offres', chemin: '/offres-emploi' },
+    { libelle: 'Propositions envoyées', chemin: '/propositions' },
     ...commun,
   ],
   ETUDIANT: [
@@ -34,9 +36,11 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Mes offres', chemin: '/offres-emploi' },
     { libelle: 'Candidatures reçues', chemin: '/candidatures' },
+    { libelle: 'Propositions envoyées', chemin: '/propositions' },
     ...commun,
   ],
   ADMINISTRATEUR: [
+    { libelle: 'Administration', chemin: '/administration' },
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Promotions', chemin: '/promotions' },
     { libelle: 'Entreprises', chemin: '/entreprises' },

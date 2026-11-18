@@ -171,7 +171,50 @@ Pour ajouter une fonctionnalité pas à pas : [`docs/ajouter-une-fonctionnalite.
 - Une branche par fonctionnalité : `feature/offres-emploi`, `feature/messagerie`, etc.
 - Pull Request obligatoire vers `develop` (jamais directement sur `develop` ni `main`).
 - Relecture du référent obligatoire pour `socle/`, `app.config.ts` et `api/generes/` (le fichier `.github/CODEOWNERS` reste à créer par le propriétaire du dépôt).
-- Messages de commit : `feat:`, `fix:`, `docs:`, `test:`, `refactor:`.
+- Titre de PR au format Conventional Commits (voir [Règles de contribution](#règles-de-contribution-actives-sur-develop-et-main)) : c'est lui qui devient le message du commit sur `develop`.
+
+### Intégration continue (GitHub Actions)
+
+Chaque PR vers `develop` ou `main` lance deux workflows (`.github/workflows/`) :
+
+| Workflow | Check | Rôle |
+|---|---|---|
+| `ci.yml` | `Build et tests frontend` | `npm ci`, `npm run build`, `ng test --watch=false` |
+| `ci.yml` | `CI success` | récapitulatif : échoue si le build ou un test échoue |
+| `pr-title.yml` | `Titre de PR (Conventional Commits)` | le titre doit suivre `type(scope): description` |
+
+Avant de pousser, lancer en local : `npm run build` puis `npx ng test --watch=false`.
+
+### Règles de contribution (actives sur `develop` et `main`)
+
+Ces règles sont imposées par GitHub (ruleset `protect-main-develop`) : le bouton de fusion reste bloqué tant qu'elles ne sont pas toutes respectées. Le backend (`uasz-alumni-backend`) applique les mêmes.
+
+| Règle | Détail |
+|---|---|
+| Pull Request obligatoire | Jamais de push direct sur `develop` ni `main` ; une branche par tâche (`feature/AL-XX-...`, `fix/...`, `docs/...`) |
+| 1 approbation | Par un autre membre de l'équipe, et par le propriétaire du code (CODEOWNERS) quand il y en a un ; un nouveau push annule l'approbation |
+| Conversations résolues | Tous les commentaires de relecture doivent être résolus |
+| Checks obligatoires | `CI success` (build et tests) et `Titre de PR (Conventional Commits)` doivent être verts |
+| Branche à jour | La PR doit contenir le dernier état de `develop` (bouton *Update branch*) |
+| Squash merge uniquement | Toute la PR devient un seul commit, dont le message est le **titre de la PR** |
+
+#### Format du titre de PR
+
+```text
+type(scope): description courte (AL-XX)
+```
+
+- `type` : `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert` ;
+- `scope` (facultatif) : la partie concernée, ex. `profils`, `offres`, `socle`, `admin` ;
+- la référence du ticket Jira à la fin, entre parenthèses, quand il y en a une.
+
+| Correct | Refusé (et pourquoi) |
+|---|---|
+| `feat(profils): éditeur de CV (AL-48)` | `AL-48: éditeur de CV` (le ticket n'est pas un type) |
+| `fix(socle): rafraîchissement du jeton expiré` | `Feature/offres emploi` (nom de branche, pas de type) |
+| `test(admin): tests de la liste des utilisateurs` | `Mise à jour` (pas de type ni de description utile) |
+
+Si le check du titre est rouge, il suffit de **modifier le titre de la PR** : le contrôle se relance tout seul, sans nouveau commit.
 
 ## 8. Client API généré
 
@@ -291,7 +334,7 @@ Résultats : http://localhost:9000/dashboard?id=alumni-frontend
 
 La première analyse échouera probablement au Quality Gate : la règle par défaut exige 80 % de couverture sur le nouveau code, et tant que les tests n'existent pas, la couverture est de 0 %. Les fichiers à tester en priorité sont ceux du socle : service d'authentification, intercepteurs et gardes.
 
-À terme, l'analyse doit être lancée automatiquement sur chaque Pull Request via GitHub Actions.
+Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir [Intégration continue](#intégration-continue-github-actions)). L'analyse SonarQube, elle, reste locale.
 
 ## 10. État d'avancement
 
