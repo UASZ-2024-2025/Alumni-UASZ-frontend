@@ -9,17 +9,22 @@ const utilisateurs = {
   'enseignant@uasz.sn': { id: '3', firstName: 'Fatou', lastName: 'Sow', role: 'ENSEIGNANT' },
   'entreprise@uasz.sn': { id: '4', firstName: 'Ibou', lastName: 'Ba', role: 'ENTREPRISE' },
   'admin@uasz.sn': { id: '5', firstName: 'Admin', lastName: 'UASZ', role: 'ADMINISTRATEUR' },
+  'entreprise-attente@uasz.sn': { id: '6', firstName: 'Mariama', lastName: 'Sy', role: 'ENTREPRISE' },
 };
+
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
 };
 const accessValides = new Map(); // token -> expiration (ms)
+const accessEmails = new Map(); // token -> email (identifie l'utilisateur connecté / son rôle)
 const refreshValides = new Map(); // token -> email
 const jetonsConfirmation = new Map(); // token -> email
 const jetonsReset = new Map(); // token -> email
 let compteur = 0;
+const { randomUUID } = require('crypto');
 
 const envoyer = (res, statut, corps) => {
   res.writeHead(statut, { 'Content-Type': 'application/json', ...CORS });
@@ -33,10 +38,13 @@ function emettre(email) {
   const accessToken = `acc-${++compteur}`;
   const refreshToken = `ref-${++compteur}`;
   accessValides.set(accessToken, Date.now() + DUREE_ACCESS_S * 1000);
+  accessEmails.set(accessToken, email); // à qui appartient le token
+
   refreshValides.set(refreshToken, email);
   const { motDePasse, ...publicUser } = u;
   return { accessToken, refreshToken, expiresIn: DUREE_ACCESS_S, user: { ...publicUser, email, status: 'ACTIF' } };
 }
+const entreprisesNonValidees = new Set(['entreprise-attente@uasz.sn']);
 
 // --- Données de test de l'administration (utilisateurs, statistiques, entreprises) ---
 const STATUTS = ['ACTIF', 'ACTIF', 'EN_ATTENTE', 'SUSPENDU', 'INACTIF'];
@@ -71,6 +79,8 @@ const jetonValide = (req) => {
   const expire = accessValides.get((req.headers.authorization || '').replace('Bearer ', ''));
   return !!expire && expire > Date.now();
 };
+// Compte de l'utilisateur connecté (jeton -> email -> compte), réutilisable par toutes les routes de la messagerie.
+const utilisateurConnecte = (req) => utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))];
 
 // Routes de l'administration ; renvoie true si la requête a été traitée.
 function routesAdmin(req, res, chemin, corps) {
@@ -152,6 +162,273 @@ function routesAdmin(req, res, chemin, corps) {
   return false;
 }
 
+// --- Profils étudiants, Alumni, promotions, recommandations (données en mémoire, perdues à l'arrêt) ---
+const SPECS = ['Génie Logiciel', 'Réseaux et Télécommunications', 'Informatique de Gestion', 'Intelligence Artificielle'];
+const NOMS = [['Awa', 'Sarr'], ['Cheikh', 'Fall'], ['Fatou', 'Ba'], ['Ibrahima', 'Diallo'], ['Aminata', 'Gueye'], ['Omar', 'Sy'], ['Khady', 'Ndoye'], ['Mamadou', 'Faye'], ['Ndeye', 'Thiam'], ['Abdou', 'Mbaye'], ['Mariama', 'Cissé'], ['Pape', 'Sow']];
+const COMPETENCES = ['Java', 'Spring Boot', 'Angular', 'Docker', 'SQL', 'Python', 'React', 'Linux', 'Réseaux', 'Kubernetes'];
+const DISPOS = ['AVAILABLE_FOR_INTERNSHIP', 'AVAILABLE_FOR_JOB', 'AVAILABLE_IMMEDIATELY', 'NOT_AVAILABLE'];
+
+const profilsEtudiants = {};
+NOMS.forEach(([firstName, lastName], i) => {
+  const id = `s${i + 1}`;
+  profilsEtudiants[id] = {
+    id, userId: id, firstName, lastName, email: `${firstName}.${lastName}@etu.uasz.sn`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+    specialty: SPECS[i % SPECS.length], academicYear: 2024 + (i % 3),
+    bio: i % 2 ? 'Étudiant motivé, à la recherche d’un stage de fin d’études.' : undefined,
+    interests: ['Cloud', 'IA'].slice(0, (i % 2) + 1),
+    skills: [COMPETENCES[i % 10], COMPETENCES[(i + 3) % 10], COMPETENCES[(i + 6) % 10]],
+    availabilityStatus: DISPOS[i % 4], availabilityDate: i % 4 === 3 ? undefined : '2026-09-01',
+  };
+});
+const cvsEtudiants = {
+  s1: {
+    id: 'cv-s1', studentId: 's1', title: 'Développeuse Java / Spring', template: 'MODERN_BLUE', language: 'Français',
+    summary: 'Étudiante en génie logiciel, passionnée par les API et le cloud.', skills: ['Java', 'Spring Boot', 'Docker'],
+    experiences: [{ companyName: 'Orange Sonatel', position: 'Stagiaire développeuse', startDate: '2025-07-01', endDate: '2025-09-30', description: 'API REST et déploiement Docker.' }],
+    educations: [{ institution: 'UASZ', degree: 'Licence', fieldOfStudy: 'Génie Logiciel', startDate: '2022-10-01', endDate: '2025-07-01' }],
+    languages: [{ language: 'Français', proficiency: 'Langue maternelle' }, { language: 'Anglais', proficiency: 'Avancé' }],
+  },
+};
+function profilEtudiant(id) {
+  if (!profilsEtudiants[id]) {
+    const [email, u] = Object.entries(utilisateurs).find(([, v]) => v.id === id) ?? [];
+    if (!u) return null;
+    profilsEtudiants[id] = { id, userId: id, firstName: u.firstName, lastName: u.lastName, email, interests: [], skills: [], availabilityStatus: 'NOT_AVAILABLE' };
+  }
+  return profilsEtudiants[id];
+}
+
+const profilsAlumni = {};
+const experiencesAlumni = {};
+[['Awa', 'Diop'], ['Moussa', 'Kane'], ['Fatima', 'Ndiaye'], ['Samba', 'Wade'], ['Rokhaya', 'Seck'], ['Alioune', 'Badji'], ['Coumba', 'Diouf'], ['Babacar', 'Lo']].forEach(([firstName, lastName], i) => {
+  const id = i === 0 ? '1' : `al${i}`;
+  profilsAlumni[id] = {
+    id, userId: id, firstName, lastName, email: `${firstName}.${lastName}@alumni.uasz.sn`.toLowerCase(), graduationYear: 2019 + (i % 5),
+    specialty: SPECS[i % SPECS.length], currentCompany: `Entreprise ${(i % 6) + 1}`, currentPosition: ['Ingénieur logiciel', 'Administrateur réseaux', 'Data analyst', 'Chef de projet'][i % 4],
+    linkedinUrl: i % 2 ? undefined : `https://www.linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+  };
+  experiencesAlumni[id] = [
+    { id: `e${id}-1`, companyName: profilsAlumni[id].currentCompany, position: profilsAlumni[id].currentPosition, startDate: '2023-02-01', isCurrent: true, description: 'Missions principales du poste actuel.' },
+    { id: `e${id}-2`, companyName: 'Start-up locale', position: 'Stagiaire', startDate: '2021-07-01', endDate: '2021-12-31', isCurrent: false },
+  ];
+});
+let compteurAlumni = 0;
+const promotions = [
+  { id: 'p1', academicYear: 2025, specialty: 'Génie Logiciel' },
+  { id: 'p2', academicYear: 2025, specialty: 'Réseaux et Télécommunications' },
+  { id: 'p3', academicYear: 2024, specialty: 'Génie Logiciel' },
+];
+const diplomesDe = (p) => Object.values(profilsEtudiants).filter((s) => s.academicYear === p.academicYear && s.specialty === p.specialty);
+const vue = (p) => ({ ...p, graduateCount: diplomesDe(p).length });
+const contient = (v, q) => (v ?? '').toString().toLowerCase().includes(q);
+
+function routesAnnuaire(req, res, chemin, corps) {
+  const m = chemin.match(/^\/v1\/(students|alumni|promotions)(?:\/([^/]+))?(?:\/([^/]+))?$/);
+  if (!m) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const [, ressource, id, sous] = m;
+  const q = new URL(req.url, 'http://mock').searchParams;
+  const ok = (corpsReponse, statut = 200) => envoyer(res, statut, corpsReponse) ?? true;
+  const absent = (msg) => erreur(res, 404, 'NOT_FOUND', msg) ?? true;
+  const invalide = (msg) => erreur(res, 400, 'BAD_REQUEST', msg) ?? true;
+
+  if (ressource === 'students') {
+    if (!id && req.method === 'GET') {
+      profilEtudiant('2');
+      const texte = (q.get('query') || '').trim().toLowerCase();
+      const liste = Object.values(profilsEtudiants).filter((s) =>
+        (!texte || contient(s.firstName, texte) || contient(s.lastName, texte) || (s.skills ?? []).some((c) => contient(c, texte))) &&
+        (!q.get('specialty') || (s.specialty ?? '').toLowerCase() === q.get('specialty').toLowerCase()) &&
+        (!q.get('graduationYear') || s.academicYear === Number(q.get('graduationYear'))) &&
+        (!q.get('availability') || s.availabilityStatus === q.get('availability')));
+      return ok(parPage(liste, req.url));
+    }
+    const profil = id && profilEtudiant(id);
+    if (!profil) return absent('Étudiant introuvable.');
+    if (!sous && req.method === 'GET') return ok(profil);
+    if (!sous && req.method === 'PUT') {
+      if (corps.academicYear != null && (corps.academicYear < 2000 || corps.academicYear > 2100)) return invalide("L'année doit être comprise entre 2000 et 2100.");
+      Object.assign(profil, { specialty: corps.specialty, academicYear: corps.academicYear, bio: corps.bio, interests: corps.interests ?? [], skills: corps.skills ?? [], availabilityStatus: corps.availabilityStatus ?? 'NOT_AVAILABLE', availabilityDate: corps.availabilityDate });
+      return ok(profil);
+    }
+    if (sous === 'cv' && req.method === 'GET') return cvsEtudiants[id] ? ok(cvsEtudiants[id]) : absent("Cet étudiant n'a pas encore de CV.");
+    if (sous === 'cv' && req.method === 'PUT') {
+      if (!corps.title || !corps.template || !corps.language) return invalide('Le titre, le modèle et la langue du CV sont obligatoires.');
+      cvsEtudiants[id] = { id: `cv-${id}`, studentId: id, ...corps };
+      return ok(cvsEtudiants[id]);
+    }
+  }
+
+  if (ressource === 'alumni') {
+    if (id === 'recommendations' && req.method === 'POST') {
+      if (!corps.studentId || !corps.companyId || !corps.comments?.trim()) return invalide('studentId, companyId et comments sont obligatoires.');
+      if (!profilEtudiant(corps.studentId)) return absent('Étudiant introuvable.');
+      console.log(`[recommandation] ${corps.studentId} -> ${corps.companyId} : ${corps.comments}`);
+      return ok({ id: `r${++compteurAlumni}`, recommenderId: '1', ...corps, createdAt: new Date().toISOString() }, 201);
+    }
+    if (!id && req.method === 'GET') {
+      const texte = (q.get('query') || '').trim().toLowerCase();
+      const societe = q.get('companyId') && entreprises.find((c) => c.id === q.get('companyId'))?.name;
+      const liste = Object.values(profilsAlumni).filter((a) =>
+        (!texte || [a.firstName, a.lastName, a.currentCompany, a.currentPosition].some((v) => contient(v, texte))) &&
+        (!q.get('companyId') || a.currentCompany === societe) &&
+        (!q.get('graduationYear') || a.graduationYear === Number(q.get('graduationYear'))));
+      return ok(parPage(liste, req.url));
+    }
+    const profil = id && profilsAlumni[id];
+    if (!profil) return absent('Alumni introuvable.');
+    if (!sous && req.method === 'GET') return ok({ ...profil, experiences: experiencesAlumni[id] ?? [] });
+    if (!sous && req.method === 'PUT') { Object.assign(profil, { graduationYear: corps.graduationYear, specialty: corps.specialty, currentCompany: corps.currentCompany, currentPosition: corps.currentPosition, linkedinUrl: corps.linkedinUrl }); return ok(profil); }
+    if (sous === 'experiences' && req.method === 'GET') return ok(experiencesAlumni[id] ?? []);
+    if (sous === 'experiences' && req.method === 'POST') {
+      if (!corps.companyName || !corps.position || !corps.startDate) return invalide('companyName, position et startDate sont obligatoires.');
+      const e = { id: `e${id}-${Date.now()}`, ...corps };
+      (experiencesAlumni[id] ??= []).push(e);
+      return ok(e, 201);
+    }
+  }
+
+  if (ressource === 'promotions') {
+    if (!id && req.method === 'GET') return ok(promotions.map(vue));
+    if (!id && req.method === 'POST') {
+      if (!corps.academicYear || !corps.specialty?.trim()) return invalide('academicYear et specialty sont obligatoires.');
+      if (promotions.some((p) => p.academicYear === corps.academicYear && p.specialty === corps.specialty.trim())) return erreur(res, 409, 'PROMOTION_EXISTS', 'Cette promotion existe déjà.') ?? true;
+      const p = { id: `p${promotions.length + 1}`, academicYear: corps.academicYear, specialty: corps.specialty.trim() };
+      promotions.push(p);
+      return ok(vue(p), 201);
+    }
+    const promo = promotions.find((p) => p.id === id);
+    if (sous === 'graduates' && req.method === 'GET') return promo ? ok(diplomesDe(promo)) : absent('Promotion introuvable.');
+  }
+  return false;
+}
+
+// --- Offres d'emploi (job-offer-service) ---
+// Cet id doit être identique à ID_ENTREPRISE_MOCK dans offres-entreprise.service.ts
+const ID_ENTREPRISE = '11111111-1111-4111-8111-111111111111';
+const ID_AUTRE_ENTREPRISE = '22222222-2222-4222-8222-222222222222';
+const nomsEntreprises = { [ID_ENTREPRISE]: 'Sonatel', [ID_AUTRE_ENTREPRISE]: 'Orange Digital Center' };
+const offres = [
+  // Une offre d'une AUTRE entreprise : elle ne doit jamais apparaître dans « Mes offres »
+  {
+    id: randomUUID(), title: 'Développeur Java', type: 'JOB', description: 'Backend Spring.',
+    companyId: ID_AUTRE_ENTREPRISE, companyName: nomsEntreprises[ID_AUTRE_ENTREPRISE],
+    publisherId: '99', publisherName: 'RH Orange', location: 'Dakar', remoteType: 'HYBRID',
+    requiredSkills: ['Java', 'Spring'], status: 'OPEN', createdAt: '2026-11-01T09:00:00Z',
+  },
+
+  // --- Offres simulées, publiées par entreprise@uasz.sn ---
+  {
+    id: randomUUID(), title: 'Développeur Full Stack Angular / Spring', type: 'JOB',
+    description: "Conception et développement d'applications web pour nos clients.",
+    companyId: ID_ENTREPRISE, companyName: nomsEntreprises[ID_ENTREPRISE],
+    publisherId: utilisateurs['entreprise@uasz.sn'].id,
+    publisherName: `${utilisateurs['entreprise@uasz.sn'].firstName} ${utilisateurs['entreprise@uasz.sn'].lastName}`,
+    location: 'Dakar', remoteType: 'HYBRID',
+    requiredSkills: ['Angular', 'Spring Boot', 'SQL'], status: 'OPEN', createdAt: '2026-11-10T09:00:00Z',
+  },
+  {
+    id: randomUUID(), title: 'Stage Data Analyst', type: 'INTERNSHIP',
+    description: 'Stage de 6 mois : analyse de données et tableaux de bord.',
+    companyId: ID_ENTREPRISE, companyName: nomsEntreprises[ID_ENTREPRISE],
+    publisherId: utilisateurs['entreprise@uasz.sn'].id,
+    publisherName: `${utilisateurs['entreprise@uasz.sn'].firstName} ${utilisateurs['entreprise@uasz.sn'].lastName}`,
+    location: 'Ziguinchor', remoteType: 'ONSITE',
+    requiredSkills: ['Python', 'SQL', 'Power BI'], status: 'OPEN', createdAt: '2026-11-12T09:00:00Z',
+  },
+  {
+    id: randomUUID(), title: 'Ingénieur DevOps', type: 'JOB',
+    description: 'Mise en place de pipelines CI/CD et gestion de conteneurs.',
+    companyId: ID_ENTREPRISE, companyName: nomsEntreprises[ID_ENTREPRISE],
+    publisherId: utilisateurs['entreprise@uasz.sn'].id,
+    publisherName: `${utilisateurs['entreprise@uasz.sn'].firstName} ${utilisateurs['entreprise@uasz.sn'].lastName}`,
+    location: 'Dakar', remoteType: 'REMOTE',
+    requiredSkills: ['Docker', 'Jenkins', 'GitHub Actions'], status: 'OPEN', createdAt: '2026-11-14T09:00:00Z',
+  },
+];
+const TYPES_OFFRE = ['JOB', 'INTERNSHIP'];
+
+// ALUM-204 : dépôt d'une candidature ; 409 si l'étudiant a déjà postulé (elle apparaît ensuite dans ALUM-175)
+function routeCandidatureOffre(req, res, chemin, corps) {
+  const p = chemin.match(/^\/v1\/offers\/([^/]+)\/applications$/);
+  if (req.method !== 'POST' || !p) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const o = offres.find((x) => x.id === p[1]);
+  if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
+  if (!corps.studentId) return erreur(res, 400, 'VALIDATION_ERROR', 'studentId est obligatoire.') ?? true;
+  if (candidatures.some((a) => a.offerId === o.id && a.studentId === corps.studentId)) {
+    return erreur(res, 409, 'ALREADY_APPLIED', 'Vous avez déjà postulé à cette offre.') ?? true;
+  }
+  const candidature = {
+    id: `a${candidatures.length + 1}`, offerId: o.id, offerTitle: o.title, studentId: corps.studentId,
+    studentName: nomDe(corps.studentId), cvId: corps.cvId, coverLetter: corps.coverLetter,
+    status: 'SUBMITTED', createdAt: new Date().toISOString(),
+  };
+  candidatures.unshift(candidature);
+  console.log(`[applications] ${candidature.id} : étudiant ${corps.studentId} -> offre ${o.id}`);
+  return envoyer(res, 201, candidature) ?? true;
+}
+
+function routesOffres(req, res, chemin, corps) {
+  if (routeCandidatureOffre(req, res, chemin, corps)) return true;
+  const m = chemin.match(/^\/v1\/offers(?:\/([^/]+))?$/);
+  if (!m) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const email = accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''));
+  const utilisateur = utilisateurs[email];
+  const q = new URL(req.url, 'http://mock').searchParams;
+
+  if (req.method === 'GET' && !m[1]) {
+    const terme = (q.get('query') || '').toLowerCase();
+    const liste = offres.filter(
+      (o) =>
+        (!q.get('companyId') || o.companyId === q.get('companyId')) &&
+        (!q.get('type') || o.type === q.get('type')) &&
+        (!q.get('status') || o.status === q.get('status')) &&
+        (!q.get('remoteType') || o.remoteType === q.get('remoteType')) &&
+        (!q.get('location') || o.location.toLowerCase().includes(q.get('location').toLowerCase())) &&
+        o.title.toLowerCase().includes(terme),
+    );
+    return envoyer(res, 200, parPage(liste, req.url)) ?? true;
+  }
+
+  if (req.method === 'GET' && m[1]) {
+    const o = offres.find((x) => x.id === m[1]);
+    if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
+    return envoyer(res, 200, o) ?? true;
+  }
+
+  if (req.method === 'POST' && !m[1]) {
+    if (utilisateur?.role !== 'ENTREPRISE')
+      return erreur(res, 403, 'FORBIDDEN', 'Seules les entreprises peuvent publier une offre.') ?? true;
+    if (entreprisesNonValidees.has(email))
+      return erreur(res, 403, 'COMPANY_NOT_VALIDATED', "Votre entreprise n'est pas encore validée.") ?? true;
+
+    const invalide =
+      !corps.title?.trim() || !TYPES_OFFRE.includes(corps.type) || !corps.description?.trim() ||
+      !corps.companyId || !corps.location?.trim() ||
+      !Array.isArray(corps.requiredSkills) || corps.requiredSkills.length === 0;
+    if (invalide)
+      return erreur(res, 400, 'VALIDATION_ERROR', 'title, type, description, companyId, location et requiredSkills sont obligatoires.') ?? true;
+    if (!nomsEntreprises[corps.companyId])
+      return erreur(res, 404, 'COMPANY_NOT_FOUND', 'Entreprise introuvable.') ?? true;
+
+    const offre = {
+      ...corps,
+      id: randomUUID(),
+      companyName: nomsEntreprises[corps.companyId],
+      publisherId: utilisateur.id,
+      publisherName: `${utilisateur.firstName} ${utilisateur.lastName}`,
+      status: 'OPEN',
+      createdAt: new Date().toISOString(),
+    };
+    offres.unshift(offre); // la plus récente en premier
+    console.log(`[offers] publiée par ${email} : ${offre.title}`);
+    return envoyer(res, 201, offre) ?? true;
+  }
+  return false;
+}
+
 // --- Données de test des candidatures et propositions (étudiant 2 ; recruteurs : alumni 1, entreprise 4) ---
 const STATUTS_CANDIDATURE = ['SUBMITTED', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'ACCEPTED'];
 const candidatures = Array.from({ length: 12 }, (_, i) => ({
@@ -168,8 +445,8 @@ const propositions = [
     recruiterId: '4', recruiterName: 'Ibou Ba', status: 'EXPIRED', createdAt: '2026-09-01T09:00:00Z' },
 ];
 
-// Routes du service offres ; renvoie true si la requête a été traitée.
-function routesOffres(req, res, chemin, corps) {
+// Routes des candidatures et propositions ; renvoie true si la requête a été traitée.
+function routesCandidaturesPropositions(req, res, chemin, corps) {
   if (!/^\/v1\/(applications|proposals)(\/|$)/.test(chemin)) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
   const q = new URL(req.url, 'http://mock').searchParams;
@@ -191,6 +468,266 @@ function routesOffres(req, res, chemin, corps) {
   return false;
 }
 
+// --- CV des étudiants (ALUM-204) : seul l'étudiant de test (2) en a un ; les autres reçoivent un 404 ---
+const cvs = {
+  '2': { id: 'cv-2', studentId: '2', title: 'Développeur Fullstack Java/Angular', template: 'MODERN_BLUE', language: 'Français',
+    skills: ['Java', 'Spring Boot', 'Angular'] },
+};
+function routesCv(req, res, chemin) {
+  const m = chemin.match(/^\/v1\/students\/([^/]+)\/cv$/);
+  if (req.method !== 'GET' || !m) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const cv = cvs[m[1]];
+  return (cv ? envoyer(res, 200, cv) : erreur(res, 404, 'CV_NOT_FOUND', 'CV introuvable.')) ?? true;
+}
+
+// --- Annuaires étudiants et Alumni (recherche de participants) : profils construits depuis l'annuaire des comptes ---
+function routesAnnuaires(req, res, chemin) {
+  const role = { '/v1/students': 'ETUDIANT', '/v1/alumni': 'ALUMNI' }[chemin];
+  if (req.method !== 'GET' || !role) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const requete = (new URL(req.url, 'http://mock').searchParams.get('query') || '').toLowerCase();
+  const liste = annuaire
+    .filter((u) => u.role === role && u.status === 'ACTIF' && `${u.firstName} ${u.lastName}`.toLowerCase().includes(requete))
+    .map((u) => ({
+      id: `profil-${u.id}`, userId: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email,
+      specialty: 'Génie Logiciel', ...(role === 'ALUMNI' ? { currentPosition: 'Développeur' } : {}),
+    }));
+  return envoyer(res, 200, parPage(liste, req.url)) ?? true;
+}
+
+// --- Groupes de discussion (service messagerie, port 8085, contrat 1.1.0) ---
+// Mêmes règles que le back : OWNER/ADMIN = administrateurs, réglages, préférences personnelles, messages système.
+// L'étudiant (2) est membre de g1 et g2, pas de g3 : /groupes/g3 doit afficher « Accès réservé aux membres ».
+const ilYA = (jours, h, m = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - jours);
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+const compte = (id) => annuaire.find((u) => u.id === id);
+const nomDe = (id) => { const u = compte(id); return u ? `${u.firstName} ${u.lastName}` : undefined; };
+const membre = (id, groupRole = 'MEMBER', joinedAt = ilYA(10, 9)) =>
+  ({ userId: id, userName: nomDe(id), userRole: compte(id)?.role, groupRole, joinedAt });
+const reglagesParDefaut = () => ({ onlyAdminsCanSend: false, onlyAdminsCanEditInfo: true, onlyAdminsCanAddMembers: true });
+const groupes = [
+  { id: 'g1', name: 'Promo GL 2025', description: 'Entraide et annonces de la promotion Génie Logiciel.', ownerId: '3',
+    members: [membre('3', 'OWNER'), membre('1', 'ADMIN'), membre('2'), membre('u10'), membre('u11')],
+    settings: reglagesParDefaut(), createdAt: ilYA(10, 9) },
+  { id: 'g2', name: 'Club Data & IA', description: 'Veille, projets et offres autour de la data.', ownerId: '2',
+    members: [membre('2', 'OWNER'), membre('1'), membre('u13')], settings: reglagesParDefaut(), createdAt: ilYA(6, 14) },
+  { id: 'g3', name: 'Conseil pédagogique', description: 'Réservé aux enseignants.', ownerId: '3',
+    members: [membre('3', 'OWNER'), membre('u12')], settings: reglagesParDefaut(), createdAt: ilYA(20, 8) },
+  { id: 'g4', name: 'Annonces UFR SET', description: 'Informations officielles : seuls les administrateurs écrivent.', ownerId: '3',
+    members: [membre('3', 'OWNER'), membre('2'), membre('1')],
+    settings: { ...reglagesParDefaut(), onlyAdminsCanSend: true }, createdAt: ilYA(30, 8) },
+];
+let numeroMessage = 0;
+const msg = (groupId, senderId, content, createdAt, type = 'TEXT') => ({
+  id: `m${++numeroMessage}`, groupId, senderId, senderName: nomDe(senderId), type, content, deleted: false, createdAt,
+});
+const messagesGroupes = [
+  msg('g1', '3', 'Fatou Sow a créé le groupe « Promo GL 2025 »', ilYA(10, 9), 'SYSTEM'),
+  msg('g1', '3', 'Bonjour à tous, bienvenue dans le groupe de la promo !', ilYA(3, 9, 5)),
+  msg('g1', '1', 'Merci Madame. Je partagerai ici les offres de mon entreprise.', ilYA(3, 9, 20)),
+  msg('g1', 'u10', 'Super, merci Awa !', ilYA(3, 9, 22)),
+  msg('g1', '3', 'Fatou Sow a nommé Awa Diop administrateur', ilYA(3, 9, 30), 'SYSTEM'),
+  msg('g1', '2', "Est-ce que quelqu'un a le planning des soutenances ?", ilYA(1, 18, 2)),
+  msg('g1', '3', 'Il sera publié vendredi.', ilYA(1, 18, 30)),
+  msg('g1', '3', 'Pensez à déposer vos rapports avant jeudi minuit.', ilYA(0, 8, 15)),
+  msg('g1', 'u11', 'Bien noté, merci !', ilYA(0, 8, 40)),
+  msg('g2', '2', 'Atelier pandas samedi à 10 h en salle 3.', ilYA(2, 11)),
+  msg('g2', '1', 'Je peux venir présenter un cas réel de scoring.', ilYA(2, 12, 10)),
+  msg('g3', '3', 'Réunion du conseil lundi.', ilYA(1, 10)),
+  msg('g4', '3', 'Fatou Sow a modifié les réglages : seuls les administrateurs peuvent envoyer des messages', ilYA(30, 8), 'SYSTEM'),
+  msg('g4', '3', 'Les inscriptions pédagogiques ferment le 30 novembre.', ilYA(4, 10)),
+];
+const lus = new Map(); // `${groupe}:${utilisateur}` -> date de dernière lecture
+lus.set('g1:2', ilYA(1, 18, 10));
+const preferences = new Map(); // `${groupe}:${utilisateur}` -> { pinned, archived, mutedUntil, mutedForever }
+preferences.set('g2:2', { pinned: true, archived: false });
+
+function routesGroupes(req, res, chemin, corps) {
+  if (!/^\/v1\/messages\/groups(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const moi = utilisateurConnecte(req);
+  if (moi.role === 'ENTREPRISE') return erreur(res, 403, 'FORBIDDEN', 'Groupes réservés à la communauté UASZ.') ?? true;
+  const maintenant = () => new Date().toISOString();
+  const moiDans = (g) => g.members.find((m) => m.userId === moi.id);
+  const estAdminDe = (g) => ['OWNER', 'ADMIN'].includes(moiDans(g)?.groupRole);
+  const qui = nomDe(moi.id) ?? 'Un participant';
+  const systeme = (g, texte) => messagesGroupes.push(msg(g.id, moi.id, texte, maintenant(), 'SYSTEM'));
+  const prefs = (g) => {
+    const p = preferences.get(`${g.id}:${moi.id}`) ?? {};
+    const muted = !!p.mutedForever || (!!p.mutedUntil && p.mutedUntil > maintenant());
+    return { pinned: !!p.pinned, archived: !!p.archived, muted, ...(muted && !p.mutedForever ? { mutedUntil: p.mutedUntil } : {}) };
+  };
+  const vue = (g) => ({ ...g, preferences: prefs(g) });
+  const noms = (ids) => {
+    const n = ids.map((id) => nomDe(id) ?? 'un participant');
+    return n.length > 1 ? `${n.slice(0, -1).join(', ')} et ${n[n.length - 1]}` : n[0];
+  };
+  const ajouterMembres = (g, ids = []) => {
+    const ajoutes = [...new Set(ids)].filter((id) => compte(id) && !g.members.some((m) => m.userId === id));
+    ajoutes.forEach((id) => g.members.push(membre(id, 'MEMBER', maintenant())));
+    return ajoutes;
+  };
+  const nomValide = (n) => typeof n === 'string' && n.trim().length >= 3 && n.trim().length <= 100;
+
+  if (chemin === '/v1/messages/groups') {
+    if (req.method === 'GET') {
+      const liste = groupes.filter(moiDans).map((g) => {
+        const fil = messagesGroupes.filter((m) => m.groupId === g.id);
+        const dernier = fil[fil.length - 1];
+        const depuis = [lus.get(`${g.id}:${moi.id}`) ?? '', moiDans(g).joinedAt].sort().pop();
+        return {
+          id: g.id, name: g.name, memberCount: g.members.length,
+          lastMessage: dernier?.deleted ? undefined : dernier?.content, lastMessageType: dernier?.type,
+          lastMessageSenderName: dernier?.senderName, lastMessageTime: dernier?.createdAt ?? g.createdAt,
+          unreadCount: fil.filter((m) => m.type === 'TEXT' && !m.deleted && m.senderId !== moi.id && m.createdAt > depuis).length,
+          preferences: prefs(g),
+        };
+      });
+      liste.sort((a, b) => Number(b.preferences.pinned) - Number(a.preferences.pinned) || b.lastMessageTime.localeCompare(a.lastMessageTime));
+      return envoyer(res, 200, liste) ?? true;
+    }
+    if (req.method === 'POST') {
+      if (!nomValide(corps.name)) return erreur(res, 400, 'INVALID_GROUP', 'Le nom du groupe doit contenir entre 3 et 100 caractères.') ?? true;
+      const g = { id: `g${Date.now()}`, name: corps.name.trim(), description: corps.description?.trim() || undefined, ownerId: moi.id,
+        members: [membre(moi.id, 'OWNER', maintenant())], settings: reglagesParDefaut(), createdAt: maintenant() };
+      ajouterMembres(g, corps.memberIds);
+      groupes.push(g);
+      systeme(g, `${qui} a créé le groupe « ${g.name} »`);
+      lus.set(`${g.id}:${moi.id}`, maintenant());
+      console.log(`[groupes] ${moi.id} crée ${g.id} (${g.members.length} membres)`);
+      return envoyer(res, 201, vue(g)) ?? true;
+    }
+  }
+
+  const m = chemin.match(/^\/v1\/messages\/groups\/([^/]+)(\/[a-z]+)?(?:\/([^/]+))?$/);
+  if (!m) return false;
+  const [, id, suite = '', cible] = m;
+  const g = groupes.find((x) => x.id === id);
+  if (!g) return erreur(res, 404, 'GROUP_NOT_FOUND', 'Groupe introuvable.') ?? true;
+  const interdit = (message = "Vous n'êtes pas membre de ce groupe.") => erreur(res, 403, 'FORBIDDEN', message) ?? true;
+
+  if (suite === '' && req.method === 'DELETE') {
+    if (moiDans(g)?.groupRole !== 'OWNER' && moi.role !== 'ADMINISTRATEUR') return interdit('Suppression réservée au propriétaire.');
+    groupes.splice(groupes.indexOf(g), 1);
+    return envoyer(res, 204) ?? true;
+  }
+  const moiMembre = moiDans(g);
+  if (!moiMembre) {
+    console.log(`[groupes] 403 : ${moi.id} n'est pas membre de ${g.id}`);
+    return interdit();
+  }
+  if (suite === '' && req.method === 'GET') return envoyer(res, 200, vue(g)) ?? true;
+  if (suite === '' && req.method === 'PUT') {
+    if (g.settings.onlyAdminsCanEditInfo && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent modifier les infos.');
+    if (corps.name !== undefined && !nomValide(corps.name)) return erreur(res, 400, 'INVALID_GROUP', 'Le nom du groupe doit contenir entre 3 et 100 caractères.') ?? true;
+    if (corps.name !== undefined && corps.name.trim() !== g.name) {
+      g.name = corps.name.trim();
+      systeme(g, `${qui} a renommé le groupe en « ${g.name} »`);
+    }
+    if (corps.description !== undefined && (corps.description.trim() || undefined) !== g.description) {
+      g.description = corps.description.trim() || undefined;
+      systeme(g, `${qui} a modifié la description du groupe`);
+    }
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  if (suite === '/settings' && req.method === 'PATCH') {
+    if (!estAdminDe(g)) return interdit('Seuls les administrateurs peuvent modifier les réglages.');
+    const libelles = { onlyAdminsCanSend: 'envoyer des messages', onlyAdminsCanEditInfo: 'modifier les infos du groupe', onlyAdminsCanAddMembers: 'ajouter des participants' };
+    for (const [cle, libelle] of Object.entries(libelles)) {
+      if (typeof corps[cle] === 'boolean' && corps[cle] !== g.settings[cle]) {
+        g.settings[cle] = corps[cle];
+        systeme(g, `${qui} a modifié les réglages : ${corps[cle] ? 'seuls les administrateurs' : 'tous les participants'} peuvent ${libelle}`);
+      }
+    }
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  if (suite === '/preferences' && req.method === 'PATCH') {
+    const cle = `${g.id}:${moi.id}`;
+    const p = { ...(preferences.get(cle) ?? {}) };
+    if (typeof corps.pinned === 'boolean') p.pinned = corps.pinned;
+    if (typeof corps.archived === 'boolean') p.archived = corps.archived;
+    const heures = { EIGHT_HOURS: 8, ONE_WEEK: 24 * 7 };
+    if (corps.mute) {
+      p.mutedForever = corps.mute === 'ALWAYS';
+      p.mutedUntil = heures[corps.mute] ? new Date(Date.now() + heures[corps.mute] * 3_600_000).toISOString() : undefined;
+    }
+    preferences.set(cle, p);
+    return envoyer(res, 200, prefs(g)) ?? true;
+  }
+  if (suite === '/members' && !cible && req.method === 'POST') {
+    if (g.settings.onlyAdminsCanAddMembers && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent ajouter des participants.');
+    if (!corps.memberIds?.length) return erreur(res, 400, 'VALIDATION_ERROR', 'memberIds est obligatoire.') ?? true;
+    const ajoutes = ajouterMembres(g, corps.memberIds);
+    if (ajoutes.length) systeme(g, `${qui} a ajouté ${noms(ajoutes)}`);
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  const visee = cible && g.members.find((x) => x.userId === cible);
+  if (suite === '/members' && cible && req.method === 'PATCH') {
+    if (moiMembre.groupRole !== 'OWNER') return interdit('Seul le propriétaire nomme les administrateurs.');
+    if (!visee) return erreur(res, 404, 'MEMBER_NOT_FOUND', 'Membre introuvable.') ?? true;
+    if (visee.groupRole === 'OWNER' || !['ADMIN', 'MEMBER'].includes(corps.groupRole)) return erreur(res, 400, 'INVALID_ROLE', 'Rôle invalide.') ?? true;
+    if (visee.groupRole !== corps.groupRole) {
+      visee.groupRole = corps.groupRole;
+      systeme(g, corps.groupRole === 'ADMIN' ? `${qui} a nommé ${noms([cible])} administrateur` : `${qui} a retiré ${noms([cible])} des administrateurs`);
+    }
+    return envoyer(res, 200, vue(g)) ?? true;
+  }
+  if (suite === '/members' && cible && req.method === 'DELETE') {
+    if (!visee) return erreur(res, 404, 'MEMBER_NOT_FOUND', 'Membre introuvable.') ?? true;
+    const depart = cible === moi.id;
+    const autorise = depart || moiMembre.groupRole === 'OWNER' || (moiMembre.groupRole === 'ADMIN' && visee.groupRole !== 'OWNER');
+    if (!autorise) return interdit('Vous ne pouvez pas retirer ce membre.');
+    g.members = g.members.filter((x) => x.userId !== cible);
+    if (!g.members.length) {
+      groupes.splice(groupes.indexOf(g), 1);
+      return envoyer(res, 204) ?? true;
+    }
+    systeme(g, depart ? `${qui} a quitté le groupe` : `${qui} a retiré ${noms([cible])}`);
+    if (visee.groupRole === 'OWNER') {
+      const successeur = g.members.find((x) => x.groupRole === 'ADMIN') ?? g.members[0];
+      successeur.groupRole = 'OWNER';
+      g.ownerId = successeur.userId;
+      messagesGroupes.push(msg(g.id, successeur.userId, `${nomDe(successeur.userId) ?? 'Un participant'} est maintenant propriétaire du groupe`, maintenant(), 'SYSTEM'));
+    }
+    return envoyer(res, 204) ?? true;
+  }
+  if (suite === '/messages' && !cible && req.method === 'GET') {
+    // Page 0 = messages les plus récents, chaque page restituée dans l'ordre chronologique.
+    const q = new URL(req.url, 'http://mock').searchParams;
+    const page = Number(q.get('page') ?? 0);
+    const size = Number(q.get('size') ?? 30);
+    const fil = messagesGroupes.filter((x) => x.groupId === g.id).reverse();
+    return envoyer(res, 200, { content: fil.slice(page * size, (page + 1) * size).reverse(), totalElements: fil.length, page, size }) ?? true;
+  }
+  if (suite === '/messages' && !cible && req.method === 'POST') {
+    if (g.settings.onlyAdminsCanSend && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent envoyer des messages dans ce groupe.');
+    const texte = corps.content?.trim();
+    if (!texte || texte.length > 4000) return erreur(res, 400, 'INVALID_MESSAGE', 'Le message doit contenir entre 1 et 4000 caractères.') ?? true;
+    const nouveau = msg(g.id, moi.id, texte, maintenant());
+    messagesGroupes.push(nouveau);
+    lus.set(`${g.id}:${moi.id}`, nouveau.createdAt);
+    return envoyer(res, 201, nouveau) ?? true;
+  }
+  if (suite === '/messages' && cible && req.method === 'DELETE') {
+    const message = messagesGroupes.find((x) => x.groupId === g.id && x.id === cible);
+    if (!message) return erreur(res, 404, 'MESSAGE_NOT_FOUND', 'Message introuvable.') ?? true;
+    if (message.type === 'SYSTEM') return erreur(res, 400, 'INVALID_MESSAGE', 'Les messages système ne peuvent pas être supprimés.') ?? true;
+    if (message.senderId !== moi.id && !estAdminDe(g)) return interdit('Vous ne pouvez supprimer que vos propres messages.');
+    Object.assign(message, { deleted: true, content: undefined });
+    return envoyer(res, 204) ?? true;
+  }
+  if (suite === '/read' && req.method === 'PATCH') {
+    lus.set(`${g.id}:${moi.id}`, maintenant());
+    return envoyer(res, 204) ?? true;
+  }
+  return false;
+}
+
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     let brut = '';
@@ -200,7 +737,12 @@ const traiter = (req, res) => {
       const chemin = req.url.split('?')[0];
 
       if (routesAdmin(req, res, chemin, corps)) return;
+      if (routesAnnuaire(req, res, chemin, corps)) return;
       if (routesOffres(req, res, chemin, corps)) return;
+      if (routesCandidaturesPropositions(req, res, chemin, corps)) return;
+      if (routesAnnuaires(req, res, chemin)) return;
+      if (routesCv(req, res, chemin)) return;
+      if (routesGroupes(req, res, chemin, corps)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
         const u = utilisateurs[corps.email];
@@ -303,8 +845,8 @@ const traiter = (req, res) => {
     });
 };
 
-// Un même mock sert les quatre services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084)
-[8081, 8082, 8083, 8084].forEach((port) =>
+// Un même mock sert les cinq services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084, messagerie 8085)
+[8081, 8082, 8083, 8084, 8085].forEach((port) =>
   http
     .createServer(traiter)
     .listen(port, () => console.log(`Mock API sur http://localhost:${port}/v1 (mot de passe : ${MOT_DE_PASSE})`)),

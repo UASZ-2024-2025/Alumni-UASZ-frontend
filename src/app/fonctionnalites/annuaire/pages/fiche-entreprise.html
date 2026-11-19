@@ -1,0 +1,57 @@
+<div class="page page--etroite">
+  <a class="retour" routerLink="/annuaire" [queryParams]="{ onglet: 'entreprises' }">← Retour à l'annuaire</a>
+
+  @if (chargement()) {
+    <p class="chargement">Chargement de la fiche…</p>
+  } @else if (erreur()) {
+    <app-alerte>{{ erreur() }}</app-alerte>
+  } @else if (entreprise(); as c) {
+    <div class="fiche-tete">
+      <span class="avatar avatar--grand" aria-hidden="true">{{ initiales(c.name ?? '') }}</span>
+      <div>
+        <h1>{{ c.name }}</h1>
+        <p>{{ c.sector }}</p>
+        @if (c.isPartner) { <span class="badge badge--info">Partenaire officielle</span> }
+      </div>
+    </div>
+
+    @if (c.description) {
+      <section class="fiche">
+        <h2>Présentation</h2>
+        <p class="texte">{{ c.description }}</p>
+      </section>
+    }
+
+    <section class="fiche">
+      <h2>Coordonnées</h2>
+      <dl class="donnees">
+        <dt>Site web</dt>
+        <dd>
+          @if (lienSur(c.website); as url) { <a [href]="url" target="_blank" rel="noopener noreferrer">{{ c.website }}</a> } @else { {{ c.website || '—' }} }
+        </dd>
+        <dt>Adresse</dt><dd>{{ c.address || '—' }}</dd>
+        <dt>Email</dt><dd>{{ c.contactEmail || '—' }}</dd>
+        <dt>Téléphone</dt><dd>{{ c.contactPhone || '—' }}</dd>
+      </dl>
+    </section>
+
+    <section class="fiche">
+      <h2>Alumni dans cette entreprise ({{ totalAlumni() }})</h2>
+      @if (alumniDeLEntreprise().length === 0) {
+        <p class="aide">Aucun Alumni n'a renseigné cette entreprise pour le moment.</p>
+      } @else {
+        <ul class="liste-lignes">
+          @for (a of alumniDeLEntreprise(); track a.id) {
+            <li>
+              <span class="avatar" aria-hidden="true">{{ initiales(nomComplet(a)) }}</span>
+              <span>
+                <a [routerLink]="['/annuaire', 'alumni', a.id]">{{ nomComplet(a) }}</a><br />
+                <small>{{ a.currentPosition || 'Poste non renseigné' }}</small>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>
