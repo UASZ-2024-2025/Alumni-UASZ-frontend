@@ -7,14 +7,26 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { GroupMessageType } from './groupMessageType';
 
 
 export interface GroupMessage { 
     id?: string;
     groupId?: string;
     senderId?: string;
+    /**
+     * Nom affiché de l\'expéditeur ; absent tant que l\'utilisateur ne s\'est jamais connecté au service avec un jeton portant son nom (prévoir un nom par défaut).
+     */
     senderName?: string;
+    type?: GroupMessageType;
+    /**
+     * Texte du message ; vide si le message a été supprimé.
+     */
     content?: string;
+    deleted?: boolean;
     createdAt?: string;
 }
+export namespace GroupMessage {
+}
+
 

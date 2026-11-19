@@ -12,6 +12,9 @@ import { GroupMemberRole } from './groupMemberRole';
 
 export interface GroupMember { 
     userId?: string;
+    /**
+     * Nom affiché ; absent tant que l\'utilisateur ne s\'est jamais connecté au service.
+     */
     userName?: string;
     /**
      * Rôle applicatif de l\'utilisateur (ALUMNI, ETUDIANT, ENSEIGNANT, ADMINISTRATEUR)

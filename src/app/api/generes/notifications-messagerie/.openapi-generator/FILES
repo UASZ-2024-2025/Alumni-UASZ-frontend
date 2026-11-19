@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 README.md
 api.base.service.ts
 api.module.ts
@@ -17,12 +16,18 @@ model/group.ts
 model/groupCreateRequest.ts
 model/groupMember.ts
 model/groupMemberRole.ts
+model/groupMemberRoleUpdateRequest.ts
 model/groupMembersRequest.ts
 model/groupMessage.ts
 model/groupMessagePagedResponse.ts
+model/groupMessageType.ts
+model/groupPreferences.ts
+model/groupPreferencesUpdateRequest.ts
+model/groupSettings.ts
 model/groupSummary.ts
 model/groupUpdateRequest.ts
 model/models.ts
+model/muteDuration.ts
 model/notification.ts
 model/notificationChannel.ts
 model/notificationPagedResponse.ts

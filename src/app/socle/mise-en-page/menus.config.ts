@@ -9,6 +9,8 @@ const commun: ElementMenu[] = [
   { libelle: 'Messagerie', chemin: '/messagerie' },
   { libelle: 'Notifications', chemin: '/notifications' },
 ];
+/** Groupes de discussion : étudiants, Alumni, enseignants (et administrateur), pas les entreprises. */
+const groupes: ElementMenu = { libelle: 'Groupes', chemin: '/groupes' };
 
 export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
   ALUMNI: [
@@ -16,6 +18,7 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Profil Alumni', chemin: '/espace-alumni/profil' },
     { libelle: 'Offres', chemin: '/offres-emploi' },
     { libelle: 'Propositions envoyées', chemin: '/propositions' },
+    groupes,
     ...commun,
   ],
   ETUDIANT: [
@@ -25,16 +28,19 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Offres', chemin: '/offres-emploi' },
     { libelle: 'Mes candidatures', chemin: '/candidatures' },
     { libelle: 'Correspondances', chemin: '/correspondances' },
+    groupes,
     ...commun,
   ],
   ENSEIGNANT: [
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Statistiques', chemin: '/statistiques' },
+    groupes,
     ...commun,
   ],
   ENTREPRISE: [
     { libelle: 'Annuaire', chemin: '/annuaire' },
-    { libelle: 'Mes offres', chemin: '/offres-emploi' },
+    { libelle: 'Mes offres', chemin: '/offres-emploi/mes-offres' },
+    { libelle: 'Publier une offre', chemin: '/offres-emploi/publier' },
     { libelle: 'Candidatures reçues', chemin: '/candidatures' },
     { libelle: 'Propositions envoyées', chemin: '/propositions' },
     ...commun,
@@ -45,6 +51,7 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Entreprises', chemin: '/entreprises' },
     { libelle: 'Offres', chemin: '/offres-emploi' },
     { libelle: 'Statistiques', chemin: '/statistiques' },
+    groupes,
     ...commun,
   ],
 };
