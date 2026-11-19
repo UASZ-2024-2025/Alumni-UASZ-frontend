@@ -77,11 +77,10 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/publier-offre').then((m) => m.PublierOffre),
   },
   {
+    // Entreprise : les candidatures se consultent offre par offre, depuis « Mes offres » (ALUM-208)
     path: 'candidatures',
-    title: 'Candidatures',
-    canActivate: [roleGuard],
-    data: { roles: ['ENTREPRISE'], titre: 'Candidatures', ticket: 'AL-49' },
-    loadComponent: enConstruction,
+    pathMatch: 'full',
+    redirectTo: 'offres-emploi/mes-offres',
   },
   {
     path: 'propositions',
