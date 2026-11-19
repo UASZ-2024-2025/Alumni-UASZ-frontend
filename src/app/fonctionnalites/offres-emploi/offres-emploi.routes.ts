@@ -1,6 +1,8 @@
 
 import { inject, Provider } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
+import { StudentsService } from '../../api/generes/alumni/api/students.service';
+import { BASE_PATH as BASE_PATH_ALUMNI } from '../../api/generes/alumni/variables';
 import { ApplicationsService } from '../../api/generes/offres-emploi/api/applications.service';
 import { OffersService } from '../../api/generes/offres-emploi/api/offers.service';
 import { ProposalsService } from '../../api/generes/offres-emploi/api/proposals.service';
@@ -18,9 +20,11 @@ const ROLES_OFFRES = ['ALUMNI', 'ETUDIANT', 'ENTREPRISE', 'ADMINISTRATEUR'];
 // Provisoire : à retirer quand le BASE_PATH sera déclaré dans app.config.ts
 const fournisseursOffres: Provider[] = [
   { provide: BASE_PATH_OFFRES, useValue: environment.urlsApi.offres },
+  { provide: BASE_PATH_ALUMNI, useValue: environment.urlsApi.alumni },
   OffersService,
   ApplicationsService,
   ProposalsService,
+  StudentsService, // CV de l'étudiant pour le formulaire de candidature (ALUM-204)
 ];
 
 const estEtudiant: CanMatchFn = () =>

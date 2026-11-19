@@ -41,5 +41,33 @@
     </ul>
   </app-carte>
 
-  <!-- ALUM-204 : bouton Postuler (Sprint 3) -->
+  @switch (candidature()) {
+    @case ('envoyee') {
+      <app-alerte type="succes">
+        Votre candidature a bien été envoyée. Suivez-la dans <a routerLink="/candidatures">Mes candidatures</a>.
+      </app-alerte>
+    }
+    @case ('deja') {
+      <app-alerte>
+        {{ messageDejaPostule }} Retrouvez-la dans <a routerLink="/candidatures">Mes candidatures</a>.
+      </app-alerte>
+    }
+    @default {
+      @if (peutPostuler()) {
+        <div class="postuler">
+          <app-bouton (clic)="formulaireOuvert.set(true)">Postuler</app-bouton>
+        </div>
+      }
+    }
+  }
+
+  @if (etudiantId(); as etudiant) {
+    <app-modale titre="Postuler à l'offre" [ouvert]="formulaireOuvert()" (fermer)="formulaireOuvert.set(false)">
+      @if (formulaireOuvert()) {
+        <app-formulaire-candidature [offreId]="o.id!" [etudiantId]="etudiant"
+          (envoyee)="candidatureEnvoyee($event)" (dejaPostule)="candidatureDejaFaite()"
+          (annuler)="formulaireOuvert.set(false)" />
+      }
+    </app-modale>
+  }
 }
