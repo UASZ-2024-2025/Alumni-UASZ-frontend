@@ -1,0 +1,128 @@
+<div class="page">
+  <div class="entete">
+    <div>
+      <h1>Mon CV</h1>
+      <p>Remplissez votre CV, vérifiez l'aperçu, puis téléchargez-le en PDF.</p>
+    </div>
+    <a class="btn-sec" routerLink="/mon-espace/profil">Mon profil</a>
+  </div>
+
+  @if (chargement()) {
+    <p class="chargement">Chargement de votre CV…</p>
+  } @else {
+    @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+    @if (succes()) { <app-alerte type="succes">CV enregistré.</app-alerte> }
+    @if (nouveau() && !erreur()) {
+      <app-alerte type="succes">Vous n'avez pas encore de CV : nous avons pré-rempli celui-ci avec votre profil.</app-alerte>
+    }
+
+    <div class="disposition">
+      <form [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+        <section class="fiche">
+          <h2>Général</h2>
+          <p class="lecture-seule">Nom, email et téléphone proviennent de votre compte.</p>
+          <label>
+            Titre du CV
+            <input type="text" formControlName="titre" maxlength="150" placeholder="Ex. Développeur Fullstack Java/React" />
+            @if (formulaire.controls.titre.touched && formulaire.controls.titre.invalid) {
+              <span class="invalide">Le titre est obligatoire.</span>
+            }
+          </label>
+          <div class="grille">
+            <label>
+              Modèle
+              <select formControlName="modele">
+                @for (m of modeles; track m.code) { <option [value]="m.code">{{ m.libelle }}</option> }
+              </select>
+            </label>
+            <label>
+              Langue du CV
+              <select formControlName="langue">
+                @for (l of languesCv; track l) { <option [value]="l">{{ l }}</option> }
+              </select>
+            </label>
+          </div>
+          <label>
+            Résumé
+            <textarea formControlName="resume" rows="4" maxlength="2000" placeholder="Présentez-vous en quelques lignes."></textarea>
+          </label>
+        </section>
+
+        <section class="fiche">
+          <h2>Compétences</h2>
+          <app-champ-etiquettes [(valeur)]="competences" libelle="Ajouter une compétence" placeholder="Java, Spring Boot, Docker…" />
+        </section>
+
+        <section class="fiche" formArrayName="experiences">
+          <div class="titre-ligne"><h2>Expériences</h2></div>
+          @for (g of experiences.controls; track g; let i = $index) {
+            <div class="ligne-liste" [formGroupName]="i">
+              <div class="grille">
+                <label>Poste <input type="text" formControlName="position" placeholder="Stagiaire développeur" /></label>
+                <label>Entreprise <input type="text" formControlName="companyName" placeholder="Orange Sonatel" /></label>
+                <label>Début <input type="date" formControlName="startDate" /></label>
+                <label>Fin <input type="date" formControlName="endDate" /></label>
+              </div>
+              @if (datesInvalides(g)) { <span class="invalide">La date de fin précède la date de début.</span> }
+              <label>Description <textarea formControlName="description" rows="3" maxlength="2000"></textarea></label>
+              <button type="button" class="btn-ligne" (click)="retirer(experiences, i)">Supprimer cette expérience</button>
+            </div>
+          }
+          <button type="button" class="btn-sec btn-ajout" (click)="ajouterExperience()">+ Ajouter une expérience</button>
+        </section>
+
+        <section class="fiche" formArrayName="formations">
+          <div class="titre-ligne"><h2>Formation</h2></div>
+          @for (g of formations.controls; track g; let i = $index) {
+            <div class="ligne-liste" [formGroupName]="i">
+              <div class="grille">
+                <label>Diplôme <input type="text" formControlName="degree" placeholder="Master" /></label>
+                <label>Domaine <input type="text" formControlName="fieldOfStudy" placeholder="Génie Logiciel" /></label>
+                <label>Établissement <input type="text" formControlName="institution" placeholder="UASZ" /></label>
+                <span></span>
+                <label>Début <input type="date" formControlName="startDate" /></label>
+                <label>Fin <input type="date" formControlName="endDate" /></label>
+              </div>
+              @if (datesInvalides(g)) { <span class="invalide">La date de fin précède la date de début.</span> }
+              <button type="button" class="btn-ligne" (click)="retirer(formations, i)">Supprimer cette formation</button>
+            </div>
+          }
+          <button type="button" class="btn-sec btn-ajout" (click)="ajouterFormation()">+ Ajouter une formation</button>
+        </section>
+
+        <section class="fiche" formArrayName="langues">
+          <div class="titre-ligne"><h2>Langues</h2></div>
+          @for (g of langues.controls; track g; let i = $index) {
+            <div class="ligne-liste" [formGroupName]="i">
+              <div class="grille">
+                <label>Langue <input type="text" formControlName="language" placeholder="Anglais" /></label>
+                <label>
+                  Niveau
+                  <select formControlName="proficiency">
+                    @for (n of niveaux; track n) { <option [value]="n">{{ n }}</option> }
+                  </select>
+                </label>
+              </div>
+              <button type="button" class="btn-ligne" (click)="retirer(langues, i)">Supprimer cette langue</button>
+            </div>
+          }
+          <button type="button" class="btn-sec btn-ajout" (click)="ajouterLangue()">+ Ajouter une langue</button>
+        </section>
+
+        <div class="barre-actions">
+          <button type="submit" class="btn-prim" [disabled]="enregistrement()">
+            {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer le CV' }}
+          </button>
+          <button type="button" class="btn-sec" (click)="telecharger()" [disabled]="telechargement()">
+            {{ telechargement() ? 'Génération…' : 'Télécharger en PDF' }}
+          </button>
+        </div>
+      </form>
+
+      <aside class="apercu" aria-label="Aperçu du CV">
+        <h2>Aperçu</h2>
+        <app-apercu-cv [donnees]="donnees()" />
+      </aside>
+    </div>
+  }
+</div>

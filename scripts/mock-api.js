@@ -162,6 +162,147 @@ function routesAdmin(req, res, chemin, corps) {
   return false;
 }
 
+// --- Profils étudiants, Alumni, promotions, recommandations (données en mémoire, perdues à l'arrêt) ---
+const SPECS = ['Génie Logiciel', 'Réseaux et Télécommunications', 'Informatique de Gestion', 'Intelligence Artificielle'];
+const NOMS = [['Awa', 'Sarr'], ['Cheikh', 'Fall'], ['Fatou', 'Ba'], ['Ibrahima', 'Diallo'], ['Aminata', 'Gueye'], ['Omar', 'Sy'], ['Khady', 'Ndoye'], ['Mamadou', 'Faye'], ['Ndeye', 'Thiam'], ['Abdou', 'Mbaye'], ['Mariama', 'Cissé'], ['Pape', 'Sow']];
+const COMPETENCES = ['Java', 'Spring Boot', 'Angular', 'Docker', 'SQL', 'Python', 'React', 'Linux', 'Réseaux', 'Kubernetes'];
+const DISPOS = ['AVAILABLE_FOR_INTERNSHIP', 'AVAILABLE_FOR_JOB', 'AVAILABLE_IMMEDIATELY', 'NOT_AVAILABLE'];
+
+const profilsEtudiants = {};
+NOMS.forEach(([firstName, lastName], i) => {
+  const id = `s${i + 1}`;
+  profilsEtudiants[id] = {
+    id, userId: id, firstName, lastName, email: `${firstName}.${lastName}@etu.uasz.sn`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+    specialty: SPECS[i % SPECS.length], academicYear: 2024 + (i % 3),
+    bio: i % 2 ? 'Étudiant motivé, à la recherche d’un stage de fin d’études.' : undefined,
+    interests: ['Cloud', 'IA'].slice(0, (i % 2) + 1),
+    skills: [COMPETENCES[i % 10], COMPETENCES[(i + 3) % 10], COMPETENCES[(i + 6) % 10]],
+    availabilityStatus: DISPOS[i % 4], availabilityDate: i % 4 === 3 ? undefined : '2026-09-01',
+  };
+});
+const cvsEtudiants = {
+  s1: {
+    id: 'cv-s1', studentId: 's1', title: 'Développeuse Java / Spring', template: 'MODERN_BLUE', language: 'Français',
+    summary: 'Étudiante en génie logiciel, passionnée par les API et le cloud.', skills: ['Java', 'Spring Boot', 'Docker'],
+    experiences: [{ companyName: 'Orange Sonatel', position: 'Stagiaire développeuse', startDate: '2025-07-01', endDate: '2025-09-30', description: 'API REST et déploiement Docker.' }],
+    educations: [{ institution: 'UASZ', degree: 'Licence', fieldOfStudy: 'Génie Logiciel', startDate: '2022-10-01', endDate: '2025-07-01' }],
+    languages: [{ language: 'Français', proficiency: 'Langue maternelle' }, { language: 'Anglais', proficiency: 'Avancé' }],
+  },
+};
+function profilEtudiant(id) {
+  if (!profilsEtudiants[id]) {
+    const [email, u] = Object.entries(utilisateurs).find(([, v]) => v.id === id) ?? [];
+    if (!u) return null;
+    profilsEtudiants[id] = { id, userId: id, firstName: u.firstName, lastName: u.lastName, email, interests: [], skills: [], availabilityStatus: 'NOT_AVAILABLE' };
+  }
+  return profilsEtudiants[id];
+}
+
+const profilsAlumni = {};
+const experiencesAlumni = {};
+[['Awa', 'Diop'], ['Moussa', 'Kane'], ['Fatima', 'Ndiaye'], ['Samba', 'Wade'], ['Rokhaya', 'Seck'], ['Alioune', 'Badji'], ['Coumba', 'Diouf'], ['Babacar', 'Lo']].forEach(([firstName, lastName], i) => {
+  const id = i === 0 ? '1' : `al${i}`;
+  profilsAlumni[id] = {
+    id, userId: id, firstName, lastName, email: `${firstName}.${lastName}@alumni.uasz.sn`.toLowerCase(), graduationYear: 2019 + (i % 5),
+    specialty: SPECS[i % SPECS.length], currentCompany: `Entreprise ${(i % 6) + 1}`, currentPosition: ['Ingénieur logiciel', 'Administrateur réseaux', 'Data analyst', 'Chef de projet'][i % 4],
+    linkedinUrl: i % 2 ? undefined : `https://www.linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+  };
+  experiencesAlumni[id] = [
+    { id: `e${id}-1`, companyName: profilsAlumni[id].currentCompany, position: profilsAlumni[id].currentPosition, startDate: '2023-02-01', isCurrent: true, description: 'Missions principales du poste actuel.' },
+    { id: `e${id}-2`, companyName: 'Start-up locale', position: 'Stagiaire', startDate: '2021-07-01', endDate: '2021-12-31', isCurrent: false },
+  ];
+});
+let compteurAlumni = 0;
+const promotions = [
+  { id: 'p1', academicYear: 2025, specialty: 'Génie Logiciel' },
+  { id: 'p2', academicYear: 2025, specialty: 'Réseaux et Télécommunications' },
+  { id: 'p3', academicYear: 2024, specialty: 'Génie Logiciel' },
+];
+const diplomesDe = (p) => Object.values(profilsEtudiants).filter((s) => s.academicYear === p.academicYear && s.specialty === p.specialty);
+const vue = (p) => ({ ...p, graduateCount: diplomesDe(p).length });
+const contient = (v, q) => (v ?? '').toString().toLowerCase().includes(q);
+
+function routesAnnuaire(req, res, chemin, corps) {
+  const m = chemin.match(/^\/v1\/(students|alumni|promotions)(?:\/([^/]+))?(?:\/([^/]+))?$/);
+  if (!m) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const [, ressource, id, sous] = m;
+  const q = new URL(req.url, 'http://mock').searchParams;
+  const ok = (corpsReponse, statut = 200) => envoyer(res, statut, corpsReponse) ?? true;
+  const absent = (msg) => erreur(res, 404, 'NOT_FOUND', msg) ?? true;
+  const invalide = (msg) => erreur(res, 400, 'BAD_REQUEST', msg) ?? true;
+
+  if (ressource === 'students') {
+    if (!id && req.method === 'GET') {
+      profilEtudiant('2');
+      const texte = (q.get('query') || '').trim().toLowerCase();
+      const liste = Object.values(profilsEtudiants).filter((s) =>
+        (!texte || contient(s.firstName, texte) || contient(s.lastName, texte) || (s.skills ?? []).some((c) => contient(c, texte))) &&
+        (!q.get('specialty') || (s.specialty ?? '').toLowerCase() === q.get('specialty').toLowerCase()) &&
+        (!q.get('graduationYear') || s.academicYear === Number(q.get('graduationYear'))) &&
+        (!q.get('availability') || s.availabilityStatus === q.get('availability')));
+      return ok(parPage(liste, req.url));
+    }
+    const profil = id && profilEtudiant(id);
+    if (!profil) return absent('Étudiant introuvable.');
+    if (!sous && req.method === 'GET') return ok(profil);
+    if (!sous && req.method === 'PUT') {
+      if (corps.academicYear != null && (corps.academicYear < 2000 || corps.academicYear > 2100)) return invalide("L'année doit être comprise entre 2000 et 2100.");
+      Object.assign(profil, { specialty: corps.specialty, academicYear: corps.academicYear, bio: corps.bio, interests: corps.interests ?? [], skills: corps.skills ?? [], availabilityStatus: corps.availabilityStatus ?? 'NOT_AVAILABLE', availabilityDate: corps.availabilityDate });
+      return ok(profil);
+    }
+    if (sous === 'cv' && req.method === 'GET') return cvsEtudiants[id] ? ok(cvsEtudiants[id]) : absent("Cet étudiant n'a pas encore de CV.");
+    if (sous === 'cv' && req.method === 'PUT') {
+      if (!corps.title || !corps.template || !corps.language) return invalide('Le titre, le modèle et la langue du CV sont obligatoires.');
+      cvsEtudiants[id] = { id: `cv-${id}`, studentId: id, ...corps };
+      return ok(cvsEtudiants[id]);
+    }
+  }
+
+  if (ressource === 'alumni') {
+    if (id === 'recommendations' && req.method === 'POST') {
+      if (!corps.studentId || !corps.companyId || !corps.comments?.trim()) return invalide('studentId, companyId et comments sont obligatoires.');
+      if (!profilEtudiant(corps.studentId)) return absent('Étudiant introuvable.');
+      console.log(`[recommandation] ${corps.studentId} -> ${corps.companyId} : ${corps.comments}`);
+      return ok({ id: `r${++compteurAlumni}`, recommenderId: '1', ...corps, createdAt: new Date().toISOString() }, 201);
+    }
+    if (!id && req.method === 'GET') {
+      const texte = (q.get('query') || '').trim().toLowerCase();
+      const societe = q.get('companyId') && entreprises.find((c) => c.id === q.get('companyId'))?.name;
+      const liste = Object.values(profilsAlumni).filter((a) =>
+        (!texte || [a.firstName, a.lastName, a.currentCompany, a.currentPosition].some((v) => contient(v, texte))) &&
+        (!q.get('companyId') || a.currentCompany === societe) &&
+        (!q.get('graduationYear') || a.graduationYear === Number(q.get('graduationYear'))));
+      return ok(parPage(liste, req.url));
+    }
+    const profil = id && profilsAlumni[id];
+    if (!profil) return absent('Alumni introuvable.');
+    if (!sous && req.method === 'GET') return ok({ ...profil, experiences: experiencesAlumni[id] ?? [] });
+    if (!sous && req.method === 'PUT') { Object.assign(profil, { graduationYear: corps.graduationYear, specialty: corps.specialty, currentCompany: corps.currentCompany, currentPosition: corps.currentPosition, linkedinUrl: corps.linkedinUrl }); return ok(profil); }
+    if (sous === 'experiences' && req.method === 'GET') return ok(experiencesAlumni[id] ?? []);
+    if (sous === 'experiences' && req.method === 'POST') {
+      if (!corps.companyName || !corps.position || !corps.startDate) return invalide('companyName, position et startDate sont obligatoires.');
+      const e = { id: `e${id}-${Date.now()}`, ...corps };
+      (experiencesAlumni[id] ??= []).push(e);
+      return ok(e, 201);
+    }
+  }
+
+  if (ressource === 'promotions') {
+    if (!id && req.method === 'GET') return ok(promotions.map(vue));
+    if (!id && req.method === 'POST') {
+      if (!corps.academicYear || !corps.specialty?.trim()) return invalide('academicYear et specialty sont obligatoires.');
+      if (promotions.some((p) => p.academicYear === corps.academicYear && p.specialty === corps.specialty.trim())) return erreur(res, 409, 'PROMOTION_EXISTS', 'Cette promotion existe déjà.') ?? true;
+      const p = { id: `p${promotions.length + 1}`, academicYear: corps.academicYear, specialty: corps.specialty.trim() };
+      promotions.push(p);
+      return ok(vue(p), 201);
+    }
+    const promo = promotions.find((p) => p.id === id);
+    if (sous === 'graduates' && req.method === 'GET') return promo ? ok(diplomesDe(promo)) : absent('Promotion introuvable.');
+  }
+  return false;
+}
+
 // --- Offres d'emploi (job-offer-service) ---
 // Cet id doit être identique à ID_ENTREPRISE_MOCK dans offres-entreprise.service.ts
 const ID_ENTREPRISE = '11111111-1111-4111-8111-111111111111';
@@ -353,6 +494,62 @@ function routesAnnuaires(req, res, chemin) {
       specialty: 'Génie Logiciel', ...(role === 'ALUMNI' ? { currentPosition: 'Développeur' } : {}),
     }));
   return envoyer(res, 200, parPage(liste, req.url)) ?? true;
+}
+
+// --- Notifications (notification-messaging-service, port 8085) ---
+// Chaque utilisateur a ses notifications ; une nouvelle « message reçu » arrive toutes les 45 s pour voir le compteur bouger sans recharger.
+const notifications = new Map(); // email -> Notification[]
+const TYPES_DEMO = [
+  ['APPLICATION_STATUS_CHANGED', 'Candidature mise à jour', 'Votre candidature « Stage Java » est en cours d’examen.'],
+  ['NEW_JOB_PROPOSAL', 'Nouvelle proposition', 'Ibou Ba vous propose l’offre « Dev Angular ».'],
+  ['NEW_MATCHING_OFFER', 'Offre qui vous correspond', 'Une nouvelle offre correspond à votre profil.'],
+  ['SYSTEM_ALERT', 'Maintenance', 'La plateforme sera indisponible dimanche de 2 h à 4 h.'],
+];
+let idNotification = 0;
+const creerNotification = (email, type, title, content, isRead = false) => {
+  const n = {
+    id: `00000000-0000-4000-8000-${String(++idNotification).padStart(12, '0')}`,
+    userId: utilisateurs[email].id, type, channel: 'IN_APP', title, content, isRead,
+    createdAt: new Date().toISOString(),
+  };
+  notifications.set(email, [n, ...(notifications.get(email) ?? [])]);
+  return n;
+};
+Object.keys(utilisateurs).forEach((email) =>
+  TYPES_DEMO.forEach(([type, titre, contenu], i) => creerNotification(email, type, titre, contenu, i > 1)),
+);
+setInterval(() => {
+  Object.keys(utilisateurs).forEach((email) =>
+    creerNotification(email, 'MESSAGE_RECEIVED', 'Nouveau message', `Message de test reçu à ${new Date().toLocaleTimeString('fr-FR')}.`),
+  );
+  console.log('[notifications] nouveau message pour tous les comptes');
+}, 45000);
+
+// Routes du service notifications ; renvoie true si la requête a été traitée.
+function routesNotifications(req, res, chemin) {
+  if (!/^\/v1\/notifications(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const email = accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''));
+  const miennes = notifications.get(email) ?? [];
+  if (req.method === 'GET' && chemin === '/v1/notifications/unread-count') {
+    return envoyer(res, 200, { unreadCount: miennes.filter((n) => !n.isRead).length }) ?? true;
+  }
+  if (req.method === 'GET' && chemin === '/v1/notifications') {
+    const nonLuesSeulement = new URL(req.url, 'http://mock').searchParams.get('unreadOnly') === 'true';
+    return envoyer(res, 200, parPage(nonLuesSeulement ? miennes.filter((n) => !n.isRead) : miennes, req.url)) ?? true;
+  }
+  if (req.method === 'PATCH' && chemin === '/v1/notifications/read-all') {
+    miennes.forEach((n) => (n.isRead = true));
+    return envoyer(res, 204) ?? true;
+  }
+  const m = chemin.match(/^\/v1\/notifications\/([^/]+)\/read$/);
+  if (req.method === 'PATCH' && m) {
+    const n = miennes.find((x) => x.id === m[1]);
+    if (!n) return erreur(res, 404, 'NOTIFICATION_NOT_FOUND', 'Notification introuvable.') ?? true;
+    n.isRead = true;
+    return envoyer(res, 200, n) ?? true;
+  }
+  return false;
 }
 
 // --- Groupes de discussion (service messagerie, port 8085, contrat 1.1.0) ---
@@ -674,10 +871,12 @@ const traiter = (req, res) => {
 
       if (routesAdmin(req, res, chemin, corps)) return;
       if (routesMessagerie(req, res, chemin, corps)) return;
+      if (routesAnnuaire(req, res, chemin, corps)) return;
       if (routesOffres(req, res, chemin, corps)) return;
       if (routesCandidaturesPropositions(req, res, chemin, corps)) return;
       if (routesAnnuaires(req, res, chemin)) return;
       if (routesCv(req, res, chemin)) return;
+      if (routesNotifications(req, res, chemin)) return;
       if (routesGroupes(req, res, chemin, corps)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {

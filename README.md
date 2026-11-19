@@ -96,6 +96,8 @@ Mot de passe de tous les comptes : `password123`.
 | entreprise-attente@uasz.sn | ENTREPRISE (entreprise non validée) |
 | admin@uasz.sn | ADMINISTRATEUR |
 
+Le mock sert aussi le service notifications (port 8085) : chaque compte a quatre notifications, et un nouveau message arrive toutes les 45 s pour voir le compteur de la cloche monter sans recharger.
+
 Le jeton d'accès du mock expire après 20 secondes et le refresh token est à usage unique. Pour vérifier le rafraîchissement automatique : se connecter, attendre plus de 20 s, puis cliquer sur « Appeler une ressource protégée » sur la page d'accueil. Dans l'onglet Network : un 401, un `refresh-token`, puis la requête rejouée en 200. Avec « 3 appels en parallèle », le terminal du mock ne doit afficher qu'un seul `[refresh]`.
 
 ### Données de test des offres d'emploi
@@ -395,6 +397,7 @@ Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir
 | Administration (tableau de bord, utilisateurs, entreprises partenaires) | Fait (AL-51) |
 | Squelettes des fonctionnalités, pages 403 et 404, composants communs | Fait, voir `docs/ajouter-une-fonctionnalite.md` |
 | Offres d'emploi côté entreprise : « Mes offres » et « Publier une offre » | Fait (AL-49), tests unitaires inclus |
+| Cloche et centre de notifications (ALUM-160) | Fait : compteur de non-lus avec polling toutes les 30 s, panneau, « tout marquer comme lu », lien vers l'écran concerné |
 | Autres fonctionnalités métier | À faire (AL-48, AL-50, et le reste d'AL-49 : catalogue, candidatures, propositions) |
 
 ### Fonctionnalités à développer
@@ -434,8 +437,7 @@ Les deux pages passent par `services/offres-entreprise.service.ts`, qui appelle 
 ## 11. Points ouverts
 
 - Le rôle `ENTREPRISE` n'existe pas dans le `RoleName` généré depuis `user-service.yaml` (seulement `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ADMINISTRATEUR`). Il est géré côté frontend. À confirmer avec l'équipe back.
-
-- Seuls les clients `utilisateurs` et `offres-emploi` sont configurés. Les trois autres services restent à brancher.
+- Seuls les clients `utilisateurs`, `offres-emploi` et `notifications-messagerie` sont configurés dans `app.config.ts` (le dernier pour la cloche, présente dans toute la coquille). Les autres services restent à brancher.
 - `OffresEntrepriseService` utilise un identifiant d'entreprise fixe (`ID_ENTREPRISE_MOCK`) en attendant de pouvoir lire l'id de l'entreprise connectée (session ou profil). À remplacer quand le back l'exposera.
 - Les rôles des routes `offres-emploi/*` (`ENTREPRISE`) sont à confirmer avec l'équipe back.
 - Le back doit renvoyer le même format d'erreur (`code`, `message`) pour que les messages s'affichent correctement.

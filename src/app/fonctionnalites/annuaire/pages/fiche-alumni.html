@@ -1,0 +1,50 @@
+<div class="page page--etroite">
+  <a class="retour" routerLink="/annuaire" [queryParams]="{ onglet: 'alumni' }">← Retour à l'annuaire</a>
+
+  @if (chargement()) {
+    <p class="chargement">Chargement de la fiche…</p>
+  } @else if (erreur()) {
+    <app-alerte>{{ erreur() }}</app-alerte>
+  } @else if (profil(); as p) {
+    <div class="fiche-tete">
+      <span class="avatar avatar--grand" aria-hidden="true">{{ initiales(nom()) }}</span>
+      <div>
+        <h1>{{ nom() }}</h1>
+        <p>{{ p.currentPosition || 'Poste non renseigné' }}@if (p.currentCompany) { chez {{ p.currentCompany }} }</p>
+      </div>
+      @if (estProprietaire()) {
+        <div class="actions"><a class="btn-sec" routerLink="/espace-alumni/profil">Modifier mon profil</a></div>
+      }
+    </div>
+
+    <section class="fiche">
+      <h2>Informations</h2>
+      <dl class="donnees">
+        <dt>Spécialité</dt><dd>{{ p.specialty || '—' }}</dd>
+        <dt>Année de diplôme</dt><dd>{{ p.graduationYear || '—' }}</dd>
+        <dt>Email</dt><dd>{{ p.email || '—' }}</dd>
+        <dt>LinkedIn</dt>
+        <dd>
+          @if (p.linkedinUrl) { <a [href]="p.linkedinUrl" target="_blank" rel="noopener noreferrer">{{ p.linkedinUrl }}</a> } @else { — }
+        </dd>
+      </dl>
+    </section>
+
+    <section class="fiche">
+      <h2>Parcours professionnel</h2>
+      @if (experiences().length === 0) {
+        <p class="aide">Aucune expérience renseignée.</p>
+      } @else {
+        <ol class="chronologie">
+          @for (e of experiences(); track e.id ?? $index) {
+            <li>
+              <strong>{{ e.position }} · {{ e.companyName }}</strong>
+              <p class="periode">{{ duree(e) }}@if (e.isCurrent) { · poste actuel }</p>
+              @if (e.description) { <p>{{ e.description }}</p> }
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</div>

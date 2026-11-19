@@ -1,10 +1,8 @@
 import { Component, input, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
-/** En-tête de la maquette : recherche, notifications, rôle et avatar. */
+/** En-tête de la maquette : recherche, rôle et avatar. Le contenu projeté (la cloche) s'affiche avant le rôle. */
 @Component({
   selector: 'app-entete-application',
-  imports: [RouterLink],
   templateUrl: './entete-application.html',
   styleUrl: './entete-application.scss',
 })

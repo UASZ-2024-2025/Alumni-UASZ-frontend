@@ -1,0 +1,113 @@
+<div class="page page--etroite">
+  <div class="entete">
+    <div>
+      <h1>Mon profil Alumni</h1>
+      <p>Mettez à jour votre situation et votre parcours professionnel.</p>
+    </div>
+    <a class="btn-sec" [routerLink]="['/annuaire', 'alumni', id()]">Voir ma fiche publique</a>
+  </div>
+
+  @if (chargement()) {
+    <p class="chargement">Chargement de votre profil…</p>
+  } @else {
+    @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+    @if (succes()) { <app-alerte type="succes">Profil enregistré.</app-alerte> }
+
+    <form [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+      <section class="fiche">
+        <h2>Situation actuelle</h2>
+        <div class="grille">
+          <label>
+            Année de diplôme
+            <input type="number" formControlName="graduationYear" placeholder="Ex. 2023" />
+            @if (formulaire.controls.graduationYear.touched && formulaire.controls.graduationYear.invalid) {
+              <span class="invalide">Saisissez une année entre 2000 et 2100.</span>
+            }
+          </label>
+          <label>
+            Spécialité
+            <input type="text" formControlName="specialty" placeholder="Ex. Génie Logiciel" />
+          </label>
+          <label>
+            Entreprise actuelle
+            <input type="text" formControlName="currentCompany" placeholder="Ex. Orange Sonatel" />
+          </label>
+          <label>
+            Poste actuel
+            <input type="text" formControlName="currentPosition" placeholder="Ex. Ingénieur DevOps" />
+          </label>
+        </div>
+        <label>
+          Profil LinkedIn
+          <input type="url" formControlName="linkedinUrl" placeholder="https://www.linkedin.com/in/votre-profil" />
+          @if (formulaire.controls.linkedinUrl.touched && formulaire.controls.linkedinUrl.invalid) {
+            <span class="invalide">Saisissez une adresse commençant par http:// ou https://.</span>
+          }
+        </label>
+        <div class="actions">
+          <button type="submit" class="btn-prim" [disabled]="enregistrement()">
+            {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer mon profil' }}
+          </button>
+        </div>
+      </section>
+    </form>
+
+    <section class="fiche">
+      <h2>Parcours professionnel</h2>
+      @if (experiences().length === 0) {
+        <p class="aide">Aucune expérience renseignée pour le moment.</p>
+      } @else {
+        <ol class="chronologie">
+          @for (e of experiences(); track e.id ?? $index) {
+            <li>
+              <strong>{{ e.position }} · {{ e.companyName }}</strong>
+              <p class="periode">{{ periode(e.startDate ?? '', e.isCurrent ? '' : (e.endDate ?? ''), 'Français') }}@if (e.isCurrent) { · poste actuel }</p>
+              @if (e.description) { <p>{{ e.description }}</p> }
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <form [formGroup]="experience" (ngSubmit)="ajouterExperience()" novalidate>
+      <section class="fiche">
+        <h2>Ajouter une expérience</h2>
+        @if (erreurExperience()) { <app-alerte>{{ erreurExperience() }}</app-alerte> }
+        @if (succesExperience()) { <app-alerte type="succes">Expérience ajoutée.</app-alerte> }
+        <div class="grille">
+          <label>
+            Poste
+            <input type="text" formControlName="position" placeholder="Ingénieur logiciel" />
+            @if (experience.controls.position.touched && experience.controls.position.invalid) { <span class="invalide">Le poste est obligatoire.</span> }
+          </label>
+          <label>
+            Entreprise
+            <input type="text" formControlName="companyName" placeholder="Orange Sonatel" />
+            @if (experience.controls.companyName.touched && experience.controls.companyName.invalid) { <span class="invalide">L'entreprise est obligatoire.</span> }
+          </label>
+          <label>
+            Début
+            <input type="date" formControlName="startDate" />
+            @if (experience.controls.startDate.touched && experience.controls.startDate.invalid) { <span class="invalide">La date de début est obligatoire.</span> }
+          </label>
+          <label>
+            Fin
+            <input type="date" formControlName="endDate" />
+          </label>
+        </div>
+        <label class="case">
+          <input type="checkbox" formControlName="isCurrent" />
+          C'est mon poste actuel
+        </label>
+        @if (experience.errors?.['datesIncoherentes']) { <span class="invalide">La date de fin précède la date de début.</span> }
+        <label>
+          Description
+          <textarea formControlName="description" rows="3" maxlength="2000" placeholder="Vos missions et réalisations"></textarea>
+        </label>
+        <div class="actions">
+          <button type="submit" class="btn-prim" [disabled]="ajout()">{{ ajout() ? 'Ajout…' : "Ajouter l'expérience" }}</button>
+        </div>
+      </section>
+    </form>
+  }
+</div>

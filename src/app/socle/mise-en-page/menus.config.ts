@@ -1,6 +1,9 @@
 import { RoleApplicatif } from '../authentification/modeles/session.model';
 
-export interface ElementMenu { libelle: string; chemin: string; }
+export interface ElementMenu {
+  libelle: string;
+  chemin: string;
+}
 
 const commun: ElementMenu[] = [
   { libelle: 'Messagerie', chemin: '/messagerie' },
@@ -10,9 +13,45 @@ const commun: ElementMenu[] = [
 const groupes: ElementMenu = { libelle: 'Groupes', chemin: '/groupes' };
 
 export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
-  ALUMNI: [{ libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Propositions envoyées', chemin: '/propositions' }, { libelle: 'Étudiants', chemin: '/etudiants' }, groupes, ...commun],
-  ETUDIANT: [{ libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Mes candidatures', chemin: '/candidatures' }, { libelle: 'Correspondances', chemin: '/correspondances' }, groupes, ...commun],
-  ENSEIGNANT: [{ libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Statistiques', chemin: '/statistiques' }, groupes, ...commun],
-  ENTREPRISE: [{ libelle: 'Mes offres', chemin: '/offres-emploi/mes-offres' }, { libelle: 'Publier une offre', chemin: '/offres-emploi/publier' }, { libelle: 'Candidatures reçues', chemin: '/candidatures' }, { libelle: 'Propositions envoyées', chemin: '/propositions' }, ...commun],
-  ADMINISTRATEUR: [{ libelle: 'Administration', chemin: '/administration' }, { libelle: 'Étudiants', chemin: '/etudiants' }, { libelle: 'Entreprises', chemin: '/entreprises' }, { libelle: 'Offres', chemin: '/offres-emploi' }, { libelle: 'Statistiques', chemin: '/statistiques' }, groupes, ...commun],
+  ALUMNI: [
+    { libelle: 'Annuaire', chemin: '/annuaire' },
+    { libelle: 'Profil Alumni', chemin: '/espace-alumni/profil' },
+    { libelle: 'Offres', chemin: '/offres-emploi' },
+    { libelle: 'Propositions envoyées', chemin: '/propositions' },
+    groupes,
+    ...commun,
+  ],
+  ETUDIANT: [
+    { libelle: 'Profil étudiant', chemin: '/mon-espace/profil' },
+    { libelle: 'Mon CV', chemin: '/mon-espace/cv' },
+    { libelle: 'Annuaire', chemin: '/annuaire' },
+    { libelle: 'Offres', chemin: '/offres-emploi' },
+    { libelle: 'Mes candidatures', chemin: '/candidatures' },
+    { libelle: 'Correspondances', chemin: '/correspondances' },
+    groupes,
+    ...commun,
+  ],
+  ENSEIGNANT: [
+    { libelle: 'Annuaire', chemin: '/annuaire' },
+    { libelle: 'Statistiques', chemin: '/statistiques' },
+    groupes,
+    ...commun,
+  ],
+  ENTREPRISE: [
+    { libelle: 'Annuaire', chemin: '/annuaire' },
+    { libelle: 'Mes offres', chemin: '/offres-emploi/mes-offres' },
+    { libelle: 'Publier une offre', chemin: '/offres-emploi/publier' },
+    { libelle: 'Candidatures reçues', chemin: '/candidatures' },
+    { libelle: 'Propositions envoyées', chemin: '/propositions' },
+    ...commun,
+  ],
+  ADMINISTRATEUR: [
+    { libelle: 'Administration', chemin: '/administration' },
+    { libelle: 'Annuaire', chemin: '/annuaire' },
+    { libelle: 'Entreprises', chemin: '/entreprises' },
+    { libelle: 'Offres', chemin: '/offres-emploi' },
+    { libelle: 'Statistiques', chemin: '/statistiques' },
+    groupes,
+    ...commun,
+  ],
 };

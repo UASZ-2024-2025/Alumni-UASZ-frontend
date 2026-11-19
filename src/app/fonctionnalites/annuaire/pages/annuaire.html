@@ -1,0 +1,102 @@
+<div class="page">
+  <div class="entete">
+    <div>
+      <h1>Annuaire</h1>
+      <p>Trouvez des étudiants, des Alumni et des entreprises partenaires.</p>
+    </div>
+  </div>
+
+  <div class="onglets" role="tablist" aria-label="Type de résultats">
+    @for (o of onglets; track o.code) {
+      <button type="button" role="tab" class="onglet" [attr.aria-selected]="onglet() === o.code" (click)="choisirOnglet(o.code)">
+        {{ o.libelle }}
+      </button>
+    }
+  </div>
+
+  <form class="filtres" [formGroup]="filtres" (submit)="$event.preventDefault()" role="search">
+    <label>
+      Recherche
+      <input type="search" formControlName="query"
+        [placeholder]="onglet() === 'etudiants' ? 'Nom, prénom ou compétence' : onglet() === 'alumni' ? 'Nom, entreprise ou poste' : 'Nom ou secteur'" />
+    </label>
+
+    @if (onglet() === 'etudiants') {
+      <label>
+        Spécialité
+        <input type="text" formControlName="specialty" list="liste-specialites" placeholder="Toutes" />
+        <datalist id="liste-specialites">
+          @for (s of specialites; track s) { <option [value]="s"></option> }
+        </datalist>
+      </label>
+      <label>
+        Promotion
+        <input type="number" formControlName="annee" placeholder="Ex. 2026" />
+      </label>
+      <label>
+        Disponibilité
+        <select formControlName="disponibilite">
+          <option value="">Toutes</option>
+          @for (d of disponibilites; track d[0]) { <option [value]="d[0]">{{ d[1] }}</option> }
+        </select>
+      </label>
+    }
+    @if (onglet() === 'alumni') {
+      <label>
+        Entreprise actuelle
+        <select formControlName="entrepriseId">
+          <option value="">Toutes</option>
+          @for (c of entreprises(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+        </select>
+      </label>
+      <label>
+        Année de diplôme
+        <input type="number" formControlName="annee" placeholder="Ex. 2023" />
+      </label>
+    }
+    @if (onglet() === 'entreprises') {
+      <label>
+        Partenariat
+        <select formControlName="partenaire">
+          <option value="">Toutes</option>
+          <option value="oui">Partenaires officielles</option>
+          <option value="non">Non partenaires</option>
+        </select>
+      </label>
+    }
+    <button type="button" class="btn-sec" (click)="reinitialiser()">Réinitialiser</button>
+  </form>
+
+  @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+
+  <div [attr.aria-busy]="chargement()">
+    @if (chargement() && cartes().length === 0) {
+      <p class="chargement">Recherche en cours…</p>
+    } @else if (!erreur() && cartes().length === 0) {
+      <p class="vide">Aucun résultat pour ces critères.</p>
+    } @else {
+      <p class="total" aria-live="polite">{{ total() }} résultat(s)</p>
+      <div class="grille-cartes">
+        @for (c of cartes(); track c.id) {
+          <a class="carte-profil" [routerLink]="c.lien">
+            <span class="entete-carte">
+              <span class="avatar" aria-hidden="true">{{ initiales(c.titre) }}</span>
+              <span>
+                <strong>{{ c.titre }}</strong>
+                @if (c.sousTitre) { <p class="sous-titre">{{ c.sousTitre }}</p> }
+              </span>
+            </span>
+            @if (c.badge) { <span class="badge" [class]="'badge badge--' + c.badge.ton">{{ c.badge.texte }}</span> }
+            @for (d of c.details; track d) { <p class="detail">{{ d }}</p> }
+            @if (c.etiquettes.length) {
+              <ul class="puces">
+                @for (e of c.etiquettes; track e) { <li>{{ e }}</li> }
+              </ul>
+            }
+          </a>
+        }
+      </div>
+      <app-pagination [page]="page()" [taille]="taille" [total]="total()" (changer)="charger($event)" />
+    }
+  </div>
+</div>
