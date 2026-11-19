@@ -1,4 +1,3 @@
-
 import { inject, Provider } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
 import { StudentsService } from '../../api/generes/alumni/api/students.service';
@@ -41,14 +40,6 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/liste-offres').then((m) => m.ListeOffres),
   },
   {
-    path: 'offres-emploi/:id',
-    title: "Détail de l'offre",
-    canActivate: [roleGuard],
-    data: { roles: ROLES_OFFRES, titre: "Détail de l'offre", ticket: 'AL-49' },
-    providers: fournisseursOffres,
-    loadComponent: () => import('./pages/detail-offre').then((m) => m.DetailOffre),
-  },
-  {
     path: 'candidatures',
     title: 'Mes candidatures',
     canMatch: [estEtudiant],
@@ -63,6 +54,13 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/mes-offres').then((m) => m.MesOffres),
   },
   {
+    path: 'offres-emploi/:id/candidatures',
+    title: 'Candidatures reçues',
+    canActivate: [roleGuard],
+    data: { roles: ['ENTREPRISE'], titre: 'Candidatures reçues', ticket: 'ALUM-208' },
+    loadComponent: () => import('./pages/candidatures-offre').then((m) => m.CandidaturesOffre),
+  },
+  {
     path: 'offres-emploi/publier',
     title: 'Publier une offre',
     canActivate: [roleGuard],
@@ -70,11 +68,19 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/publier-offre').then((m) => m.PublierOffre),
   },
   {
-    path: 'candidatures',
-    title: 'Candidatures',
+    // Après les routes fixes (mes-offres, publier), sinon :id les capte
+    path: 'offres-emploi/:id',
+    title: "Détail de l'offre",
     canActivate: [roleGuard],
-    data: { roles: ['ENTREPRISE'], titre: 'Candidatures', ticket: 'AL-49' },
-    loadComponent: enConstruction,
+    data: { roles: ROLES_OFFRES, titre: "Détail de l'offre", ticket: 'AL-49' },
+    providers: fournisseursOffres,
+    loadComponent: () => import('./pages/detail-offre').then((m) => m.DetailOffre),
+  },
+  {
+    // Entreprise : les candidatures se consultent offre par offre, depuis « Mes offres » (ALUM-208)
+    path: 'candidatures',
+    pathMatch: 'full',
+    redirectTo: 'offres-emploi/mes-offres',
   },
   {
     path: 'propositions',

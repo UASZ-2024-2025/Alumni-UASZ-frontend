@@ -55,6 +55,13 @@ describe('MesOffres', () => {
     expect(el.querySelector('a[href="/offres-emploi/publier"]')).not.toBeNull();
   });
 
+  it('propose pour chaque offre un lien vers ses candidatures reçues', () => {
+    const { el } = monter(of(page([OUVERTE, STAGE_CLOTURE])));
+    const liens = el.querySelectorAll('tbody a');
+    expect(liens[0].getAttribute('href')).toBe('/offres-emploi/1/candidatures');
+    expect(liens[1].getAttribute('href')).toBe('/offres-emploi/2/candidatures');
+  });
+
   it("affiche l'état vide quand l'entreprise n'a aucune offre", () => {
     const { el } = monter(of(page([])));
     expect(el.textContent).toContain("Vous n'avez publié aucune offre pour le moment.");
