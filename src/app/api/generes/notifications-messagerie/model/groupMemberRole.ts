@@ -9,8 +9,12 @@
  */
 
 
+/**
+ * Rôle dans le groupe. OWNER (un seul, le propriétaire) et ADMIN sont les « administrateurs du groupe » ; à ne pas confondre avec le rôle applicatif ADMINISTRATEUR. 
+ */
 export const GroupMemberRole = {
     Owner: 'OWNER',
+    Admin: 'ADMIN',
     Member: 'MEMBER',
 } as const;
 export type GroupMemberRole = typeof GroupMemberRole[keyof typeof GroupMemberRole];

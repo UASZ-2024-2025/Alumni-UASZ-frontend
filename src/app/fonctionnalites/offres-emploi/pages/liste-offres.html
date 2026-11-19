@@ -1,0 +1,60 @@
+<h1>Offres d'emploi et de stage</h1>
+<p aria-live="polite">{{ liste.total() }} offre(s)</p>
+
+<app-barre-recherche
+  libelle="Rechercher une offre"
+  placeholder="Intitulé, compétence, entreprise"
+  (recherche)="rechercher($event)"
+  (reinitialiser)="reinitialiser()"
+>
+  <app-champ
+    libelle="Type"
+    type="select"
+    name="type"
+    [options]="optionsType"
+    [ngModel]="type"
+    (ngModelChange)="changerType($event)"
+  />
+</app-barre-recherche>
+
+@if (liste.erreur(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+}
+
+<app-tableau
+  [colonnes]="colonnes"
+  [lignes]="liste.elements()"
+  [chargement]="liste.chargement()"
+  legende="Liste des offres"
+  messageVide="Aucune offre ne correspond à votre recherche."
+>
+  <ng-template #cellule let-ligne let-cle="cle">
+    @switch (cle) {
+      @case ('title') {
+        <span class="identite-texte">
+          <a [routerLink]="['/offres-emploi', ligne.id]"><strong>{{ ligne.title }}</strong></a>
+          <small>{{ ligne.companyName }}</small>
+        </span>
+      }
+      @case ('type') {
+        {{ libelleType(ligne.type) }}
+      }
+      @case ('location') {
+        {{ ligne.location || '—' }}
+        @if (ligne.remoteType) {
+          <small>({{ libelleMode(ligne.remoteType) }})</small>
+        }
+      }
+      @case ('deadline') {
+        {{ ligne.deadline ? (ligne.deadline | date: 'dd/MM/yyyy') : '—' }}
+      }
+      @case ('status') {
+        <app-badge [ton]="tonStatut(ligne.status)">{{ libelleStatut(ligne.status) }}</app-badge>
+      }
+    }
+  </ng-template>
+</app-tableau>
+
+@if (!liste.erreur() && liste.total() > 0) {
+  <app-pagination [page]="liste.page()" [nbPages]="liste.nbPages()" (changement)="liste.aller($event)" />
+}

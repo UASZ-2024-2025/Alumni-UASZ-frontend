@@ -110,6 +110,15 @@ Le mock contient aussi une offre d'une autre entreprise (Orange Digital Center),
 
 `scripts/mock-api.js` est un outil de test, il n'est pas inclus dans le build.
 
+Groupes de discussion (`/groupes`) : le mock applique les règles du contrat messagerie 1.1.0 (rôles OWNER/ADMIN/MEMBER, réglages, préférences, messages système).
+
+| Compte | Ce qu'il permet de vérifier |
+|---|---|
+| enseignant@uasz.sn | Propriétaire de « Promo GL 2025 » et « Annonces UFR SET » : réglages, rôles, retrait, suppression |
+| alumni@uasz.sn | Admin de « Promo GL 2025 » : retire des membres, mais pas la propriétaire, et ne gère pas les rôles |
+| etudiant@uasz.sn | Simple membre ; « Annonces UFR SET » en lecture seule ; `/groupes/g3` répond « Accès réservé aux membres » |
+| entreprise@uasz.sn | Pas d'accès aux groupes (403) |
+
 ## 5. Architecture
 
 ```
@@ -425,9 +434,11 @@ Les deux pages passent par `services/offres-entreprise.service.ts`, qui appelle 
 ## 11. Points ouverts
 
 - Le rôle `ENTREPRISE` n'existe pas dans le `RoleName` généré depuis `user-service.yaml` (seulement `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ADMINISTRATEUR`). Il est géré côté frontend. À confirmer avec l'équipe back.
+
 - Seuls les clients `utilisateurs` et `offres-emploi` sont configurés. Les trois autres services restent à brancher.
 - `OffresEntrepriseService` utilise un identifiant d'entreprise fixe (`ID_ENTREPRISE_MOCK`) en attendant de pouvoir lire l'id de l'entreprise connectée (session ou profil). À remplacer quand le back l'exposera.
 - Les rôles des routes `offres-emploi/*` (`ENTREPRISE`) sont à confirmer avec l'équipe back.
 - Le back doit renvoyer le même format d'erreur (`code`, `message`) pour que les messages s'affichent correctement.
 - Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités).
 - Le back doit autoriser CORS pour `http://localhost:4200` pour les tests en local.
+

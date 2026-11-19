@@ -15,9 +15,11 @@ const ICONES: Record<string, string> = {
   '/offres-emploi/mes-offres': 'M3 4h10M3 8h10M3 12h10',
   '/offres-emploi/publier': 'M8 3v10M3 8h10',
   '/candidatures': 'M3 2h10v12H3zM6 6h4M6 9h4',
+  '/propositions': 'M14 2L2 7l5 2 2 5zM7 9l7-7',
   '/correspondances': 'M2 8h12M9 4l4 4-4 4',
   '/statistiques': 'M2 14V8m4 6V3m4 11V6m4 8V9',
   '/messagerie': 'M2 3h12v8H6l-3 3v-3H2z',
+  '/groupes': 'M1 2h9v6H5L3 10V8H1zM12 5h3v6h-1v2l-2-2H7V10',
   '/notifications': 'M8 2a4 4 0 00-4 4c0 4-2 5-2 5h12s-2-1-2-5a4 4 0 00-4-4zM6.5 13.5a1.5 1.5 0 003 0',
 };
 const ICONE_PAR_DEFAUT = 'M8 4a4 4 0 100 8 4 4 0 000-8z';

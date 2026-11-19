@@ -3,7 +3,8 @@ export const environment = {
   urlsApi: {
     utilisateurs: 'https://api.alumni-uasz.sn/user-service/v1',
     alumni: 'https://api.alumni-uasz.sn/alumni-student-company-service/v1',
-    analyses: 'https://api.alumni-uasz.sn/analytics-matching-service/v1',
     offres: 'https://api.alumni-uasz.sn/job-offer-service/v1',
+    analyses: 'https://api.alumni-uasz.sn/analytics-matching-service/v1',
+    messagerie: 'https://api.alumni-uasz.sn/notification-messaging-service/v1',
   },
 };

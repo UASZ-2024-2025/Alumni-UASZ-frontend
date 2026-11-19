@@ -1,0 +1,79 @@
+<div class="entete-page">
+  <div>
+    <h1>Promotions</h1>
+    <p class="total" aria-live="polite">{{ promotions().length }} promotion(s)</p>
+  </div>
+  <app-bouton (clic)="ajouter()">Ajouter une promotion</app-bouton>
+</div>
+
+@if (!formulaireOuvert() && erreur(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+}
+
+<div [attr.aria-busy]="chargement()">
+  @if (chargement() && promotions().length === 0) {
+    <app-spinner libelle="Chargement des promotions…" />
+  } @else if (!erreur() && promotions().length === 0) {
+    <app-etat-vide titre="Aucune promotion">Créez la première promotion.</app-etat-vide>
+  } @else if (promotions().length > 0) {
+    <app-carte>
+    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
+      <caption class="cache">Liste des promotions</caption>
+      <thead>
+        <tr>
+          <th scope="col">Année</th>
+          <th scope="col">Spécialité</th>
+          <th scope="col">Diplômés</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of promotions(); track p.id) {
+          <tr>
+            <td data-label="Année"><strong>{{ p.academicYear }}</strong></td>
+            <td data-label="Spécialité">{{ p.specialty || '—' }}</td>
+            <td data-label="Diplômés">{{ p.graduateCount ?? 0 }}</td>
+            <td class="cellule-actions"><div class="actions">
+              <app-bouton variante="secondaire" [petit]="true"
+                [libelleAria]="'Voir les diplômés ' + p.academicYear + ' ' + p.specialty"
+                (clic)="voirDiplomes(p)">Diplômés</app-bouton>
+            </div></td>
+          </tr>
+        }
+      </tbody>
+    </table></div>
+    </app-carte>
+  }
+</div>
+
+<app-modale [ouvert]="formulaireOuvert()" titre="Ajouter une promotion" (fermer)="annuler()">
+<form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+  <app-champ libelle="Année" type="number" [requis]="true" formControlName="academicYear"
+    [erreur]="formulaire.controls.academicYear.touched && formulaire.controls.academicYear.invalid ? 'Une année entre 2000 et 2100 est obligatoire.' : null" />
+  <app-champ libelle="Spécialité" [requis]="true" formControlName="specialty"
+    [erreur]="formulaire.controls.specialty.touched && formulaire.controls.specialty.invalid ? 'La spécialité est obligatoire (150 caractères maximum).' : null" />
+  @if (erreur(); as message) {
+    <app-alerte class="pleine">{{ message }}</app-alerte>
+  }
+  <div class="pleine pied">
+    <app-bouton variante="secondaire" (clic)="annuler()">Annuler</app-bouton>
+    <app-bouton type="submit" [chargement]="envoi()">Ajouter</app-bouton>
+  </div>
+</form>
+</app-modale>
+
+<app-modale [ouvert]="consultee() !== null" [titre]="'Diplômés ' + (consultee()?.academicYear ?? '') + ' · ' + (consultee()?.specialty ?? '')" (fermer)="fermerDiplomes()">
+  @if (chargementDiplomes()) {
+    <app-spinner libelle="Chargement des diplômés…" />
+  } @else if (erreurDiplomes(); as message) {
+    <app-alerte>{{ message }}</app-alerte>
+  } @else if (diplomes().length === 0) {
+    <app-etat-vide titre="Aucun diplômé">Cette promotion n'a pas encore de diplômé.</app-etat-vide>
+  } @else {
+    <ul class="liste-diplomes">
+      @for (d of diplomes(); track d.id) {
+        <li>{{ d.firstName }} {{ d.lastName }}@if (d.email) { <small> · {{ d.email }}</small> }</li>
+      }
+    </ul>
+  }
+</app-modale>
