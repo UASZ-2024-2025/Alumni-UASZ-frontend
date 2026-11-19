@@ -10,9 +10,11 @@ import { RoleApplicatif } from '../authentification/modeles/session.model';
 export function cheminNotification(type: NotificationType | undefined, role: RoleApplicatif | undefined): string | null {
   switch (type) {
     case 'MESSAGE_RECEIVED':
+      return '/messagerie';
     case 'GROUP_MESSAGE_RECEIVED':
     case 'GROUP_INVITATION':
-      return '/messagerie';
+      // `referenceId` peut être l'id du message et non celui du groupe : on ouvre la liste des groupes.
+      return '/groupes';
     case 'APPLICATION_STATUS_CHANGED':
       return '/candidatures';
     case 'NEW_JOB_PROPOSAL':

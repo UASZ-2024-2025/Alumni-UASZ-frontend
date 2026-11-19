@@ -4,8 +4,8 @@ import { cheminNotification } from './liens-notifications';
 describe('cheminNotification', () => {
   it.each<[NotificationType, string]>([
     ['MESSAGE_RECEIVED', '/messagerie'],
-    ['GROUP_MESSAGE_RECEIVED', '/messagerie'],
-    ['GROUP_INVITATION', '/messagerie'],
+    ['GROUP_MESSAGE_RECEIVED', '/groupes'],
+    ['GROUP_INVITATION', '/groupes'],
     ['APPLICATION_STATUS_CHANGED', '/candidatures'],
   ])('%s mène à %s quel que soit le rôle', (type, chemin) => {
     expect(cheminNotification(type, 'ETUDIANT')).toBe(chemin);
