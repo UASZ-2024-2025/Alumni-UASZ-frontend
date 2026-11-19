@@ -8,11 +8,12 @@ import { DialogueConfirmation } from '../../commun/components/dialogue-confirmat
 import { Toasts } from '../../commun/components/toasts/toasts';
 import { PiedDePage } from '../../commun/components/pied-de-page/pied-de-page';
 import { AuthentificationService } from '../authentification/services/authentification.service';
+import { ClocheNotifications } from '../notifications/cloche-notifications';
 import { MENUS } from './menus.config';
 
 @Component({
   selector: 'app-coquille-principale',
-  imports: [RouterOutlet, BarreLaterale, EnteteApplication, PiedDePage, Toasts, DialogueConfirmation],
+  imports: [RouterOutlet, BarreLaterale, EnteteApplication, PiedDePage, Toasts, DialogueConfirmation, ClocheNotifications],
   template: `
     <div class="cadre">
       <div class="lateral" [class.ouvert]="menuOuvert()" (click)="menuOuvert.set(false)">
@@ -20,7 +21,7 @@ import { MENUS } from './menus.config';
       </div>
       <div class="voile" [class.ouvert]="menuOuvert()" (click)="menuOuvert.set(false)"></div>
       <div class="colonne">
-        <app-entete-application [nom]="nomComplet()" [role]="auth.role() ?? ''" (menu)="menuOuvert.set(true)" />
+        <app-entete-application [nom]="nomComplet()" [role]="auth.role() ?? ''" (menu)="menuOuvert.set(true)"><app-cloche-notifications /></app-entete-application>
         <main class="contenu"><router-outlet /></main>
         <app-pied-de-page />
       </div>

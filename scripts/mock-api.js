@@ -496,6 +496,62 @@ function routesAnnuaires(req, res, chemin) {
   return envoyer(res, 200, parPage(liste, req.url)) ?? true;
 }
 
+// --- Notifications (notification-messaging-service, port 8085) ---
+// Chaque utilisateur a ses notifications ; une nouvelle « message reçu » arrive toutes les 45 s pour voir le compteur bouger sans recharger.
+const notifications = new Map(); // email -> Notification[]
+const TYPES_DEMO = [
+  ['APPLICATION_STATUS_CHANGED', 'Candidature mise à jour', 'Votre candidature « Stage Java » est en cours d’examen.'],
+  ['NEW_JOB_PROPOSAL', 'Nouvelle proposition', 'Ibou Ba vous propose l’offre « Dev Angular ».'],
+  ['NEW_MATCHING_OFFER', 'Offre qui vous correspond', 'Une nouvelle offre correspond à votre profil.'],
+  ['SYSTEM_ALERT', 'Maintenance', 'La plateforme sera indisponible dimanche de 2 h à 4 h.'],
+];
+let idNotification = 0;
+const creerNotification = (email, type, title, content, isRead = false) => {
+  const n = {
+    id: `00000000-0000-4000-8000-${String(++idNotification).padStart(12, '0')}`,
+    userId: utilisateurs[email].id, type, channel: 'IN_APP', title, content, isRead,
+    createdAt: new Date().toISOString(),
+  };
+  notifications.set(email, [n, ...(notifications.get(email) ?? [])]);
+  return n;
+};
+Object.keys(utilisateurs).forEach((email) =>
+  TYPES_DEMO.forEach(([type, titre, contenu], i) => creerNotification(email, type, titre, contenu, i > 1)),
+);
+setInterval(() => {
+  Object.keys(utilisateurs).forEach((email) =>
+    creerNotification(email, 'MESSAGE_RECEIVED', 'Nouveau message', `Message de test reçu à ${new Date().toLocaleTimeString('fr-FR')}.`),
+  );
+  console.log('[notifications] nouveau message pour tous les comptes');
+}, 45000);
+
+// Routes du service notifications ; renvoie true si la requête a été traitée.
+function routesNotifications(req, res, chemin) {
+  if (!/^\/v1\/notifications(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const email = accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''));
+  const miennes = notifications.get(email) ?? [];
+  if (req.method === 'GET' && chemin === '/v1/notifications/unread-count') {
+    return envoyer(res, 200, { unreadCount: miennes.filter((n) => !n.isRead).length }) ?? true;
+  }
+  if (req.method === 'GET' && chemin === '/v1/notifications') {
+    const nonLuesSeulement = new URL(req.url, 'http://mock').searchParams.get('unreadOnly') === 'true';
+    return envoyer(res, 200, parPage(nonLuesSeulement ? miennes.filter((n) => !n.isRead) : miennes, req.url)) ?? true;
+  }
+  if (req.method === 'PATCH' && chemin === '/v1/notifications/read-all') {
+    miennes.forEach((n) => (n.isRead = true));
+    return envoyer(res, 204) ?? true;
+  }
+  const m = chemin.match(/^\/v1\/notifications\/([^/]+)\/read$/);
+  if (req.method === 'PATCH' && m) {
+    const n = miennes.find((x) => x.id === m[1]);
+    if (!n) return erreur(res, 404, 'NOTIFICATION_NOT_FOUND', 'Notification introuvable.') ?? true;
+    n.isRead = true;
+    return envoyer(res, 200, n) ?? true;
+  }
+  return false;
+}
+
 // --- Groupes de discussion (service messagerie, port 8085, contrat 1.1.0) ---
 // Mêmes règles que le back : OWNER/ADMIN = administrateurs, réglages, préférences personnelles, messages système.
 // L'étudiant (2) est membre de g1 et g2, pas de g3 : /groupes/g3 doit afficher « Accès réservé aux membres ».
@@ -742,6 +798,7 @@ const traiter = (req, res) => {
       if (routesCandidaturesPropositions(req, res, chemin, corps)) return;
       if (routesAnnuaires(req, res, chemin)) return;
       if (routesCv(req, res, chemin)) return;
+      if (routesNotifications(req, res, chemin)) return;
       if (routesGroupes(req, res, chemin, corps)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
