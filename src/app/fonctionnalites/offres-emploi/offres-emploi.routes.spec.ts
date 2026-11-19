@@ -1,12 +1,8 @@
-import * as routesModule from './offres-emploi.routes';
-
-type Route = { path?: string; children?: Route[] };
-
-// Récupère le tableau de routes exporté, quel que soit son nom
-const routes = Object.values(routesModule).find(Array.isArray) as Route[];
+import type { Routes } from '@angular/router';
+import { OFFRES_EMPLOI_ROUTES } from './offres-emploi.routes';
 
 // Aplatit les routes dans l'ordre de déclaration, avec leur chemin complet
-function aplatir(liste: Route[], prefixe = ''): string[] {
+function aplatir(liste: Routes, prefixe = ''): string[] {
   const resultat: string[] = [];
   for (const r of liste) {
     const chemin = [prefixe, r.path ?? ''].filter(Boolean).join('/');
@@ -19,14 +15,14 @@ function aplatir(liste: Route[], prefixe = ''): string[] {
 }
 
 describe('offres-emploi.routes', () => {
-  const chemins = aplatir(routes);
+  const chemins = aplatir(OFFRES_EMPLOI_ROUTES);
 
   const indexDe = (fin: string) => chemins.findIndex((c) => c === fin || c.endsWith('/' + fin));
   const indexDetail = chemins.findIndex((c) => /(^|\/):id$/.test(c));
 
   it('exporte un tableau de routes non vide', () => {
-    expect(Array.isArray(routes)).toBe(true);
-    expect(routes.length).toBeGreaterThan(0);
+    expect(Array.isArray(OFFRES_EMPLOI_ROUTES)).toBe(true);
+    expect(OFFRES_EMPLOI_ROUTES.length).toBeGreaterThan(0);
   });
 
   it('declare la route mes-offres', () => {
