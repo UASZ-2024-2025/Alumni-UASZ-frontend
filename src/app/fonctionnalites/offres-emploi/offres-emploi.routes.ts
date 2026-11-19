@@ -1,4 +1,3 @@
-
 import { inject, Provider } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
 import { StudentsService } from '../../api/generes/alumni/api/students.service';
@@ -41,14 +40,6 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/liste-offres').then((m) => m.ListeOffres),
   },
   {
-    path: 'offres-emploi/:id',
-    title: "Détail de l'offre",
-    canActivate: [roleGuard],
-    data: { roles: ROLES_OFFRES, titre: "Détail de l'offre", ticket: 'AL-49' },
-    providers: fournisseursOffres,
-    loadComponent: () => import('./pages/detail-offre').then((m) => m.DetailOffre),
-  },
-  {
     path: 'candidatures',
     title: 'Mes candidatures',
     canMatch: [estEtudiant],
@@ -75,6 +66,15 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { roles: ['ENTREPRISE'], titre: 'Publier une offre', ticket: 'ALUM-131' },
     loadComponent: () => import('./pages/publier-offre').then((m) => m.PublierOffre),
+  },
+  {
+    // Après les routes fixes (mes-offres, publier), sinon :id les capte
+    path: 'offres-emploi/:id',
+    title: "Détail de l'offre",
+    canActivate: [roleGuard],
+    data: { roles: ROLES_OFFRES, titre: "Détail de l'offre", ticket: 'AL-49' },
+    providers: fournisseursOffres,
+    loadComponent: () => import('./pages/detail-offre').then((m) => m.DetailOffre),
   },
   {
     // Entreprise : les candidatures se consultent offre par offre, depuis « Mes offres » (ALUM-208)
