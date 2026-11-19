@@ -1,0 +1,52 @@
+// Styles communs aux pages « Mon profil » et « Mon CV ».
+:host { display: block; }
+
+.page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.page--etroite { max-width: 760px; }
+
+.entete {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  h1 { margin: 0; font: 700 1.75rem/1.2 var(--police-titre); color: var(--g9); }
+  p { margin: 0.25rem 0 0; color: var(--mu); font-size: 0.875rem; }
+}
+
+.fiche {
+  display: flex; flex-direction: column; gap: 1rem;
+  padding: 1.25rem; margin-bottom: 1rem;
+  background: var(--sf); border: 1px solid var(--bd); border-radius: 14px;
+
+  h2 { margin: 0; font: 700 1.0625rem var(--police-titre); color: var(--g8); }
+  label { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; font-size: 0.8125rem; font-weight: 600; }
+  .libelle { font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.3rem; }
+  input, select, textarea {
+    width: 100%; box-sizing: border-box; padding: 10px 12px;
+    border: 1px solid var(--bord-champ); border-radius: var(--rayon);
+    background: var(--sf); color: var(--tx); font: 400 0.9375rem/1.5 var(--police);
+    &:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
+    &[readonly] { background: var(--g0); color: var(--mu); }
+  }
+  textarea { resize: vertical; min-height: 90px; }
+  .invalide { color: var(--dg); font-size: 0.8125rem; font-weight: 400; }
+  .aide { color: var(--mu); font-size: 0.75rem; font-weight: 400; }
+}
+
+.grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; @media (max-width: 560px) { grid-template-columns: 1fr; } }
+.grille--3 { grid-template-columns: 1fr 1fr 1fr; @media (max-width: 700px) { grid-template-columns: 1fr; } }
+
+.ligne-liste {
+  padding: 0.9rem; border: 1px dashed var(--bord-champ); border-radius: var(--rayon); background: var(--g0);
+  display: flex; flex-direction: column; gap: 0.7rem;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.btn-ligne, .btn-sec, .btn-prim {
+  padding: 10px 18px; border-radius: var(--rayon); font: 600 0.875rem var(--police); cursor: pointer; transition: 0.15s;
+  &:disabled { opacity: 0.6; cursor: wait; }
+}
+.btn-prim { border: 1px solid var(--g8); background: var(--g8); color: #fff; box-shadow: var(--ombre-bouton); &:hover:not(:disabled) { background: var(--g9); } }
+.btn-sec { border: 1px solid var(--g8); background: #fff; color: var(--g8); &:hover:not(:disabled) { background: var(--g1); } }
+.btn-ligne { align-self: flex-start; padding: 6px 12px; border: 1px solid var(--bord-champ); background: #fff; color: var(--dg); font-size: 0.8125rem; }
+.btn-ajout { align-self: flex-start; }
+
+.chargement { padding: 3rem 1rem; text-align: center; color: var(--mu); }
