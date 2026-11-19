@@ -6,7 +6,7 @@ info:
     des entreprises partenaires et des promotions académiques pour la plateforme Alumni UASZ.
   contact:
     name: Équipe Projet Intégrateur - M2 GL - UASZ
-  version: 1.0.0
+  version: 1.4.1
 servers:
   - url: https://api.alumni-uasz.sn/alumni-student-company-service/v1
     description: Serveur de production
@@ -21,6 +21,10 @@ tags:
     description: Gestion des entreprises partenaires et profils d'entreprises
   - name: Promotions
     description: Gestion des promotions académiques, spécialités et listes de diplômés
+  - name: Internal
+    description: |
+      Opérations réservées aux autres microservices (jeton de service, rôle SERVICE, voir ADR-0010).
+      Elles ne sont pas exposées au frontend.
 
 paths:
   /students:
@@ -424,6 +428,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
       security:
         - bearerAuth: []
 
@@ -473,6 +479,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
       security:
@@ -483,6 +491,10 @@ paths:
       tags:
         - Promotions
       summary: Lister les promotions académiques
+      description: |
+        Promotions triées de la plus récente à la plus ancienne, puis par spécialité.
+        `graduateCount` est calculé : nombre d'Alumni dont l'année de diplôme et la spécialité
+        (sans tenir compte de la casse) sont celles de la promotion.
       operationId: listPromotions
       responses:
         "200":
@@ -502,6 +514,9 @@ paths:
       tags:
         - Promotions
       summary: Ajouter une nouvelle promotion
+      description: |
+        Réservé aux administrateurs. `academicYear` (entre 1990 et 2100) et `specialty` (non vide) sont
+        obligatoires. Une promotion est unique par année et spécialité (sans tenir compte de la casse).
       operationId: createPromotion
       requestBody:
         required: true
@@ -520,6 +535,14 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Une promotion existe déjà pour cette année et cette spécialité
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
       security:
         - bearerAuth: []
 
@@ -528,6 +551,11 @@ paths:
       tags:
         - Promotions
       summary: Obtenir la liste des diplômés d'une promotion
+      description: |
+        Les diplômés sont les Alumni dont l'année de diplôme et la spécialité sont celles de la promotion,
+        triés par nom puis prénom ; leur nombre est égal à `graduateCount`.
+        Chaque élément reprend le schéma `StudentProfile`, mais son `id` est celui du **profil Alumni** :
+        il s'utilise avec `GET /alumni/{id}`, et non avec `GET /students/{id}` (qui répondrait 404).
       operationId: getPromotionGraduates
       parameters:
         - $ref: "#/components/parameters/EntityId"
@@ -544,6 +572,48 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+      security:
+        - bearerAuth: []
+
+  /internal/profiles:
+    post:
+      tags:
+        - Internal
+      summary: Créer le profil d'un utilisateur dont le compte vient d'être activé (usage interne)
+      description: |
+        Appelé par user-service après la confirmation de l'email d'un compte ETUDIANT ou ALUMNI.
+        Réservé aux jetons de service (rôle SERVICE, audience `alumni-student-company-service`) :
+        un JWT utilisateur reçoit 403.
+
+        **Idempotent** sur `userId` : si un profil existe déjà pour cet utilisateur, il est renvoyé
+        tel quel avec le code 200 (aucun doublon). L'appelant peut donc rejouer la requête sans risque
+        après un timeout.
+      operationId: provisionProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileProvisioningRequest"
+      responses:
+        "201":
+          description: Profil créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileProvisioningResponse"
+        "200":
+          description: Un profil existait déjà pour cet utilisateur (aucune création)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileProvisioningResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
       security:
         - bearerAuth: []
 
@@ -879,6 +949,10 @@ components:
         id:
           type: string
           format: uuid
+        ownerId:
+          type: string
+          format: uuid
+          description: Identifiant du gestionnaire de la fiche (l'utilisateur qui l'a créée)
         name:
           type: string
           example: "Gainde 2000"
@@ -953,6 +1027,7 @@ components:
           type: string
         isPartner:
           type: boolean
+          description: Réservé à l'administrateur (403 sinon)
 
     Promotion:
       type: object
@@ -1022,6 +1097,56 @@ components:
           type: integer
         size:
           type: integer
+
+    ProvisionedProfileType:
+      type: string
+      description: Type de profil à créer, déduit du rôle du compte dans user-service.
+      enum:
+        - ETUDIANT
+        - ALUMNI
+
+    ProfileProvisioningRequest:
+      type: object
+      required:
+        - userId
+        - profileType
+        - firstName
+        - lastName
+        - email
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Identifiant du compte dans user-service (claim `sub` des JWT utilisateurs)
+        profileType:
+          $ref: "#/components/schemas/ProvisionedProfileType"
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 255
+
+    ProfileProvisioningResponse:
+      type: object
+      required:
+        - profileId
+        - userId
+        - profileType
+      properties:
+        profileId:
+          type: string
+          format: uuid
+          description: Identifiant du profil (étudiant ou Alumni) dans ce service
+        userId:
+          type: string
+          format: uuid
+        profileType:
+          $ref: "#/components/schemas/ProvisionedProfileType"
 
     ErrorResponse:
       type: object
