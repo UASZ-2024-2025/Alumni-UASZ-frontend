@@ -12,6 +12,18 @@ const CANDIDATURES: Record<ApplicationStatus, { libelle: string; ton: TonBadge }
   REJECTED: { libelle: 'Non retenue', ton: 'erreur' },
 };
 
+/**
+ * Statuts que le recruteur peut choisir depuis un statut donné (ALUM-208).
+ * Reprend les transitions du service des offres : toute autre est refusée en 400 INVALID_STATUS_TRANSITION.
+ */
+export const TRANSITIONS_CANDIDATURE: Record<ApplicationStatus, ApplicationStatus[]> = {
+  SUBMITTED: ['UNDER_REVIEW', 'REJECTED'],
+  UNDER_REVIEW: ['SHORTLISTED', 'REJECTED'],
+  SHORTLISTED: ['ACCEPTED', 'REJECTED'],
+  ACCEPTED: [],
+  REJECTED: [],
+};
+
 const PROPOSITIONS: Record<ProposalStatus, { libelle: string; ton: TonBadge }> = {
   PENDING: { libelle: 'En attente de réponse', ton: 'attention' },
   ACCEPTED: { libelle: 'Acceptée', ton: 'ok' },

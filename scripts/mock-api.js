@@ -349,12 +349,23 @@ const offres = [
 const TYPES_OFFRE = ['JOB', 'INTERNSHIP'];
 
 // ALUM-204 : dépôt d'une candidature ; 409 si l'étudiant a déjà postulé (elle apparaît ensuite dans ALUM-175)
+// ALUM-208 : le recruteur liste les candidatures d'une offre ; 403 s'il n'en est pas l'auteur (sauf administrateur)
+function peutTraiter(req, offre) {
+  const u = utilisateurConnecte(req);
+  return u?.role === 'ADMINISTRATEUR' || (u && offre.publisherId === u.id);
+}
+
 function routeCandidatureOffre(req, res, chemin, corps) {
   const p = chemin.match(/^\/v1\/offers\/([^/]+)\/applications$/);
-  if (req.method !== 'POST' || !p) return false;
+  if (!p || !['GET', 'POST'].includes(req.method)) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
   const o = offres.find((x) => x.id === p[1]);
   if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
+  if (req.method === 'GET') {
+    if (!peutTraiter(req, o))
+      return erreur(res, 403, 'FORBIDDEN', "Seul l'auteur de l'offre ou un administrateur peut traiter ses candidatures") ?? true;
+    return envoyer(res, 200, candidatures.filter((a) => a.offerId === o.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))) ?? true;
+  }
   if (!corps.studentId) return erreur(res, 400, 'VALIDATION_ERROR', 'studentId est obligatoire.') ?? true;
   if (candidatures.some((a) => a.offerId === o.id && a.studentId === corps.studentId)) {
     return erreur(res, 409, 'ALREADY_APPLIED', 'Vous avez déjà postulé à cette offre.') ?? true;
@@ -431,11 +442,32 @@ function routesOffres(req, res, chemin, corps) {
 
 // --- Données de test des candidatures et propositions (étudiant 2 ; recruteurs : alumni 1, entreprise 4) ---
 const STATUTS_CANDIDATURE = ['SUBMITTED', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'ACCEPTED'];
+// Mêmes transitions que le service des offres (JobApplication.ALLOWED_TRANSITIONS)
+const TRANSITIONS_CANDIDATURE = {
+  SUBMITTED: ['UNDER_REVIEW', 'REJECTED'], UNDER_REVIEW: ['SHORTLISTED', 'REJECTED'],
+  SHORTLISTED: ['ACCEPTED', 'REJECTED'], ACCEPTED: [], REJECTED: [],
+};
 const candidatures = Array.from({ length: 12 }, (_, i) => ({
   id: `a${i + 1}`, offerId: `o${i + 1}`, offerTitle: `Stage développeur ${i + 1}`, studentId: '2',
   studentName: 'Moussa Ndiaye', status: STATUTS_CANDIDATURE[i % STATUTS_CANDIDATURE.length],
   createdAt: `2026-10-${String(i + 10).padStart(2, '0')}T09:00:00Z`,
 }));
+// ALUM-208 : candidatures reçues sur les offres. Celles de l'étudiant 2 apparaissent aussi dans « Mes candidatures » (ALUM-175),
+// où le nouveau statut choisi par le recruteur doit se retrouver. L'offre d'une autre entreprise (offres[0]) sert au test du 403.
+const LETTRE = 'Madame, Monsieur,\n\nTrès motivé par votre offre, je serais heureux de rejoindre votre équipe.\n\nCordialement.';
+[
+  [1, '2', 'Moussa Ndiaye', 'SUBMITTED', LETTRE, '2026-11-15T09:00:00Z'],
+  [1, 'etu-aminata', 'Aminata Sow', 'UNDER_REVIEW', LETTRE, '2026-11-14T14:30:00Z'],
+  [1, 'etu-cheikh', 'Cheikh Diallo', 'SHORTLISTED', undefined, '2026-11-13T08:15:00Z'],
+  [2, 'etu-fatou', 'Fatou Ba', 'SUBMITTED', LETTRE, '2026-11-16T10:00:00Z'],
+  [0, 'etu-ibrahima', 'Ibrahima Faye', 'SUBMITTED', LETTRE, '2026-11-12T11:00:00Z'],
+  // l'offre 3 (DevOps) n'a aucune candidature : elle montre l'état vide
+].forEach(([offre, studentId, studentName, status, coverLetter, createdAt], i) =>
+  candidatures.push({
+    id: `r${i + 1}`, offerId: offres[offre].id, offerTitle: offres[offre].title, studentId, studentName,
+    cvId: studentId === 'etu-cheikh' ? undefined : randomUUID(), coverLetter, status, createdAt,
+  }),
+);
 const propositions = [
   { id: 'p1', offerId: 'o20', offerTitle: 'Développeur Angular', studentId: '2', studentName: 'Moussa Ndiaye',
     recruiterId: '4', recruiterName: 'Ibou Ba', message: 'Votre profil correspond à notre équipe front.', status: 'PENDING', createdAt: '2026-11-10T09:00:00Z' },
@@ -456,6 +488,21 @@ function routesCandidaturesPropositions(req, res, chemin, corps) {
   }
   if (req.method === 'GET' && chemin === '/v1/proposals') {
     return envoyer(res, 200, propositions.filter(filtre('studentId')).filter(filtre('recruiterId')).filter(filtre('status'))) ?? true;
+  }
+  const c = chemin.match(/^\/v1\/applications\/([^/]+)\/status$/);
+  if (req.method === 'PATCH' && c) {
+    const a = candidatures.find((x) => x.id === c[1]);
+    if (!a) return erreur(res, 404, 'APPLICATION_NOT_FOUND', 'Candidature introuvable.') ?? true;
+    const o = offres.find((x) => x.id === a.offerId);
+    if (!o || !peutTraiter(req, o))
+      return erreur(res, 403, 'FORBIDDEN', "Seul l'auteur de l'offre ou un administrateur peut traiter ses candidatures") ?? true;
+    if (!STATUTS_CANDIDATURE.includes(corps.status))
+      return erreur(res, 400, 'VALIDATION_ERROR', 'status est obligatoire et doit être un statut valide.') ?? true;
+    if (!TRANSITIONS_CANDIDATURE[a.status].includes(corps.status))
+      return erreur(res, 400, 'INVALID_STATUS_TRANSITION', `Transition de statut interdite : ${a.status} -> ${corps.status}`) ?? true;
+    a.status = corps.status;
+    console.log(`[applications] ${a.id} -> ${a.status}`);
+    return envoyer(res, 200, a) ?? true;
   }
   const m = chemin.match(/^\/v1\/proposals\/([^/]+)\/status$/);
   if (req.method === 'PATCH' && m) {
