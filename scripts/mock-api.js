@@ -9,18 +9,22 @@ const utilisateurs = {
   'enseignant@uasz.sn': { id: '3', firstName: 'Fatou', lastName: 'Sow', role: 'ENSEIGNANT' },
   'entreprise@uasz.sn': { id: '4', firstName: 'Ibou', lastName: 'Ba', role: 'ENTREPRISE' },
   'admin@uasz.sn': { id: '5', firstName: 'Admin', lastName: 'UASZ', role: 'ADMINISTRATEUR' },
+  'entreprise-attente@uasz.sn': { id: '6', firstName: 'Mariama', lastName: 'Sy', role: 'ENTREPRISE' },
 };
+
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
 };
 const accessValides = new Map(); // token -> expiration (ms)
-const accessEmails = new Map(); // token -> email (identifie l'utilisateur connecté)
+const accessEmails = new Map(); // token -> email (identifie l'utilisateur connecté / son rôle)
 const refreshValides = new Map(); // token -> email
 const jetonsConfirmation = new Map(); // token -> email
 const jetonsReset = new Map(); // token -> email
 let compteur = 0;
+const { randomUUID } = require('crypto');
 
 const envoyer = (res, statut, corps) => {
   res.writeHead(statut, { 'Content-Type': 'application/json', ...CORS });
@@ -34,11 +38,13 @@ function emettre(email) {
   const accessToken = `acc-${++compteur}`;
   const refreshToken = `ref-${++compteur}`;
   accessValides.set(accessToken, Date.now() + DUREE_ACCESS_S * 1000);
-  accessEmails.set(accessToken, email);
+  accessEmails.set(accessToken, email); // à qui appartient le token
+
   refreshValides.set(refreshToken, email);
   const { motDePasse, ...publicUser } = u;
   return { accessToken, refreshToken, expiresIn: DUREE_ACCESS_S, user: { ...publicUser, email, status: 'ACTIF' } };
 }
+const entreprisesNonValidees = new Set(['entreprise-attente@uasz.sn']);
 
 // --- Données de test de l'administration (utilisateurs, statistiques, entreprises) ---
 const STATUTS = ['ACTIF', 'ACTIF', 'EN_ATTENTE', 'SUSPENDU', 'INACTIF'];
@@ -156,71 +162,128 @@ function routesAdmin(req, res, chemin, corps) {
   return false;
 }
 
-// --- Données de test des offres d'emploi (job-offer-service, port 8083) ---
-const TYPES_OFFRE = ['JOB', 'INTERNSHIP'];
-const MODES = ['ON_SITE', 'HYBRID', 'REMOTE'];
-const LIEUX = ['Ziguinchor', 'Dakar', 'Thiès', 'Remote'];
-const COMPETENCES = ['Angular', 'Java', 'Spring Boot', 'SQL', 'Docker', 'Réseaux'];
-const offres = Array.from({ length: 27 }, (_, i) => ({
-  id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`,
-  title: `${i % 2 ? 'Stage' : 'Poste'} ${COMPETENCES[i % COMPETENCES.length]} n°${i + 1}`,
-  type: TYPES_OFFRE[i % 2],
-  description: `Description de l'offre ${i + 1}.`,
-  companyId: `c${(i % 5) + 1}`,
-  companyName: `Entreprise ${(i % 5) + 1}`,
-  publisherId: '4',
-  publisherName: 'Ibou Ba',
-  location: LIEUX[i % LIEUX.length],
-  remoteType: MODES[i % MODES.length],
-  requiredSkills: [COMPETENCES[i % COMPETENCES.length], COMPETENCES[(i + 2) % COMPETENCES.length]],
-  durationMonths: i % 2 ? 6 : undefined,
-  salaryRange: i % 2 ? undefined : '400 000 - 600 000 FCFA',
-  deadline: '2026-12-31',
-  status: i % 9 === 8 ? 'CLOSED' : 'OPEN',
-  createdAt: `2026-11-${String((i % 17) + 1).padStart(2, '0')}T09:00:00Z`,
-}));
+// --- Offres d'emploi (job-offer-service) ---
+// Cet id doit être identique à ID_ENTREPRISE_MOCK dans offres-entreprise.service.ts
+const ID_ENTREPRISE = '11111111-1111-4111-8111-111111111111';
+const ID_AUTRE_ENTREPRISE = '22222222-2222-4222-8222-222222222222';
+const nomsEntreprises = { [ID_ENTREPRISE]: 'Sonatel', [ID_AUTRE_ENTREPRISE]: 'Orange Digital Center' };
+const offres = [
+  // Une offre d'une AUTRE entreprise : elle ne doit jamais apparaître dans « Mes offres »
+  {
+    id: randomUUID(), title: 'Développeur Java', type: 'JOB', description: 'Backend Spring.',
+    companyId: ID_AUTRE_ENTREPRISE, companyName: nomsEntreprises[ID_AUTRE_ENTREPRISE],
+    publisherId: '99', publisherName: 'RH Orange', location: 'Dakar', remoteType: 'HYBRID',
+    requiredSkills: ['Java', 'Spring'], status: 'OPEN', createdAt: '2026-11-01T09:00:00Z',
+  },
 
-// Routes des offres ; renvoie true si la requête a été traitée.
-function routesOffres(req, res, chemin, corps) {
-  if (!/^\/v1\/offers(\/|$)/.test(chemin)) return false;
+  // --- Offres simulées, publiées par entreprise@uasz.sn ---
+  {
+    id: randomUUID(), title: 'Développeur Full Stack Angular / Spring', type: 'JOB',
+    description: "Conception et développement d'applications web pour nos clients.",
+    companyId: ID_ENTREPRISE, companyName: nomsEntreprises[ID_ENTREPRISE],
+    publisherId: utilisateurs['entreprise@uasz.sn'].id,
+    publisherName: `${utilisateurs['entreprise@uasz.sn'].firstName} ${utilisateurs['entreprise@uasz.sn'].lastName}`,
+    location: 'Dakar', remoteType: 'HYBRID',
+    requiredSkills: ['Angular', 'Spring Boot', 'SQL'], status: 'OPEN', createdAt: '2026-11-10T09:00:00Z',
+  },
+  {
+    id: randomUUID(), title: 'Stage Data Analyst', type: 'INTERNSHIP',
+    description: 'Stage de 6 mois : analyse de données et tableaux de bord.',
+    companyId: ID_ENTREPRISE, companyName: nomsEntreprises[ID_ENTREPRISE],
+    publisherId: utilisateurs['entreprise@uasz.sn'].id,
+    publisherName: `${utilisateurs['entreprise@uasz.sn'].firstName} ${utilisateurs['entreprise@uasz.sn'].lastName}`,
+    location: 'Ziguinchor', remoteType: 'ONSITE',
+    requiredSkills: ['Python', 'SQL', 'Power BI'], status: 'OPEN', createdAt: '2026-11-12T09:00:00Z',
+  },
+  {
+    id: randomUUID(), title: 'Ingénieur DevOps', type: 'JOB',
+    description: 'Mise en place de pipelines CI/CD et gestion de conteneurs.',
+    companyId: ID_ENTREPRISE, companyName: nomsEntreprises[ID_ENTREPRISE],
+    publisherId: utilisateurs['entreprise@uasz.sn'].id,
+    publisherName: `${utilisateurs['entreprise@uasz.sn'].firstName} ${utilisateurs['entreprise@uasz.sn'].lastName}`,
+    location: 'Dakar', remoteType: 'REMOTE',
+    requiredSkills: ['Docker', 'Jenkins', 'GitHub Actions'], status: 'OPEN', createdAt: '2026-11-14T09:00:00Z',
+  },
+];
+const TYPES_OFFRE = ['JOB', 'INTERNSHIP'];
+
+// ALUM-204 : dépôt d'une candidature ; 409 si l'étudiant a déjà postulé (elle apparaît ensuite dans ALUM-175)
+function routeCandidatureOffre(req, res, chemin, corps) {
+  const p = chemin.match(/^\/v1\/offers\/([^/]+)\/applications$/);
+  if (req.method !== 'POST' || !p) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const o = offres.find((x) => x.id === p[1]);
+  if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
+  if (!corps.studentId) return erreur(res, 400, 'VALIDATION_ERROR', 'studentId est obligatoire.') ?? true;
+  if (candidatures.some((a) => a.offerId === o.id && a.studentId === corps.studentId)) {
+    return erreur(res, 409, 'ALREADY_APPLIED', 'Vous avez déjà postulé à cette offre.') ?? true;
+  }
+  const candidature = {
+    id: `a${candidatures.length + 1}`, offerId: o.id, offerTitle: o.title, studentId: corps.studentId,
+    studentName: nomDe(corps.studentId), cvId: corps.cvId, coverLetter: corps.coverLetter,
+    status: 'SUBMITTED', createdAt: new Date().toISOString(),
+  };
+  candidatures.unshift(candidature);
+  console.log(`[applications] ${candidature.id} : étudiant ${corps.studentId} -> offre ${o.id}`);
+  return envoyer(res, 201, candidature) ?? true;
+}
+
+function routesOffres(req, res, chemin, corps) {
+  if (routeCandidatureOffre(req, res, chemin, corps)) return true;
+  const m = chemin.match(/^\/v1\/offers(?:\/([^/]+))?$/);
+  if (!m) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const email = accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''));
+  const utilisateur = utilisateurs[email];
   const q = new URL(req.url, 'http://mock').searchParams;
 
-  if (req.method === 'GET' && chemin === '/v1/offers') {
-    const requete = (q.get('query') || '').toLowerCase();
+  if (req.method === 'GET' && !m[1]) {
+    const terme = (q.get('query') || '').toLowerCase();
     const liste = offres.filter(
       (o) =>
-        (!requete || `${o.title} ${o.companyName} ${o.requiredSkills.join(' ')}`.toLowerCase().includes(requete)) &&
+        (!q.get('companyId') || o.companyId === q.get('companyId')) &&
         (!q.get('type') || o.type === q.get('type')) &&
-        (!q.get('location') || o.location === q.get('location')) &&
+        (!q.get('status') || o.status === q.get('status')) &&
         (!q.get('remoteType') || o.remoteType === q.get('remoteType')) &&
-        (!q.get('status') || o.status === q.get('status')),
+        (!q.get('location') || o.location.toLowerCase().includes(q.get('location').toLowerCase())) &&
+        o.title.toLowerCase().includes(terme),
     );
     return envoyer(res, 200, parPage(liste, req.url)) ?? true;
   }
-  const m = chemin.match(/^\/v1\/offers\/([^/]+)$/);
-  if (req.method === 'GET' && m) {
+
+  if (req.method === 'GET' && m[1]) {
     const o = offres.find((x) => x.id === m[1]);
     if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
     return envoyer(res, 200, o) ?? true;
   }
-  // ALUM-204 : dépôt d'une candidature ; 409 si l'étudiant a déjà postulé (elle apparaît ensuite dans ALUM-175)
-  const p = chemin.match(/^\/v1\/offers\/([^/]+)\/applications$/);
-  if (req.method === 'POST' && p) {
-    const o = offres.find((x) => x.id === p[1]);
-    if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
-    if (!corps.studentId) return erreur(res, 400, 'VALIDATION_ERROR', 'studentId est obligatoire.') ?? true;
-    if (candidatures.some((a) => a.offerId === o.id && a.studentId === corps.studentId)) {
-      return erreur(res, 409, 'ALREADY_APPLIED', 'Vous avez déjà postulé à cette offre.') ?? true;
-    }
-    const candidature = {
-      id: `a${candidatures.length + 1}`, offerId: o.id, offerTitle: o.title, studentId: corps.studentId,
-      studentName: nomDe(corps.studentId), cvId: corps.cvId, coverLetter: corps.coverLetter,
-      status: 'SUBMITTED', createdAt: new Date().toISOString(),
+
+  if (req.method === 'POST' && !m[1]) {
+    if (utilisateur?.role !== 'ENTREPRISE')
+      return erreur(res, 403, 'FORBIDDEN', 'Seules les entreprises peuvent publier une offre.') ?? true;
+    if (entreprisesNonValidees.has(email))
+      return erreur(res, 403, 'COMPANY_NOT_VALIDATED', "Votre entreprise n'est pas encore validée.") ?? true;
+
+    const invalide =
+      !corps.title?.trim() || !TYPES_OFFRE.includes(corps.type) || !corps.description?.trim() ||
+      !corps.companyId || !corps.location?.trim() ||
+      !Array.isArray(corps.requiredSkills) || corps.requiredSkills.length === 0;
+    if (invalide)
+      return erreur(res, 400, 'VALIDATION_ERROR', 'title, type, description, companyId, location et requiredSkills sont obligatoires.') ?? true;
+    if (!nomsEntreprises[corps.companyId])
+      return erreur(res, 404, 'COMPANY_NOT_FOUND', 'Entreprise introuvable.') ?? true;
+
+    const offre = {
+      ...corps,
+      id: randomUUID(),
+      companyName: nomsEntreprises[corps.companyId],
+      publisherId: utilisateur.id,
+      publisherName: `${utilisateur.firstName} ${utilisateur.lastName}`,
+      status: 'OPEN',
+      createdAt: new Date().toISOString(),
     };
-    candidatures.unshift(candidature);
-    console.log(`[applications] ${candidature.id} : étudiant ${corps.studentId} -> offre ${o.id}`);
-    return envoyer(res, 201, candidature) ?? true;
+    offres.unshift(offre); // la plus récente en premier
+    console.log(`[offers] publiée par ${email} : ${offre.title}`);
+    return envoyer(res, 201, offre) ?? true;
   }
   return false;
 }
@@ -640,7 +703,7 @@ const traiter = (req, res) => {
     });
 };
 
-// Un même mock sert les cinq services
+// Un même mock sert les cinq services (ports par défaut des contrats : user 8081, alumni 8082, offres 8083, analytics 8084, messagerie 8085)
 [8081, 8082, 8083, 8084, 8085].forEach((port) =>
   http
     .createServer(traiter)

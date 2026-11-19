@@ -56,6 +56,20 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/mes-candidatures').then((m) => m.MesCandidatures),
   },
   {
+    path: 'offres-emploi/mes-offres',
+    title: 'Mes offres',
+    canActivate: [roleGuard],
+    data: { roles: ['ENTREPRISE'], titre: 'Mes offres', ticket: 'ALUM-131' },
+    loadComponent: () => import('./pages/mes-offres').then((m) => m.MesOffres),
+  },
+  {
+    path: 'offres-emploi/publier',
+    title: 'Publier une offre',
+    canActivate: [roleGuard],
+    data: { roles: ['ENTREPRISE'], titre: 'Publier une offre', ticket: 'ALUM-131' },
+    loadComponent: () => import('./pages/publier-offre').then((m) => m.PublierOffre),
+  },
+  {
     path: 'candidatures',
     title: 'Candidatures',
     canActivate: [roleGuard],

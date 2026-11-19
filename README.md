@@ -49,16 +49,41 @@ npm install
 | Commande | Rôle |
 |---|---|
 | `npm start` | Lance l'application sur http://localhost:4200 (configuration `development`) |
-| `npm run mock` | Lance le faux back sur http://localhost:8081/v1 |
+| `npm run mock` | Lance le faux back (ports 8081 à 8084, voir section 4) |
 | `npm run build` | Build de production |
 | `npm test` | Lance les tests Vitest |
 | `npm run api:generate` | Régénère les clients depuis les contrats |
 
 L'adresse du back vient de `src/environments/` : `environment.development.ts` en local, `environment.ts` en production. Le remplacement est déclaré dans `angular.json` (`fileReplacements`, configuration `development`). Après toute modification de `angular.json`, relancer `npm start`.
 
+### Lancer les tests
+
+| Commande | Rôle |
+|---|---|
+| `npx ng test --watch=false` | Lance toute la suite Vitest une fois |
+| `npx ng test` | Mode « watch » : relance les tests à chaque modification |
+| `npx ng test --watch=false --include="src/app/fonctionnalites/offres-emploi/**/*.spec.ts"` | Lance seulement les tests des offres d'emploi |
+| `npx ng test --coverage --watch=false` | Tests avec rapport de couverture (voir section 9.4) |
+
+Un test est un fichier `*.spec.ts` placé à côté du code qu'il vérifie. Avant de pousser, lancer `npm run build` puis `npx ng test --watch=false`, comme le fait la CI.
+
+**Simuler une erreur de l'API dans un test.** Les composants ne reçoivent jamais un `HttpErrorResponse` brut : `erreur.interceptor.ts` le transforme en `ErreurApi`. Dans un test de composant, il faut donc faire lancer une `ErreurApi` :
+
+```ts
+import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+
+service.mesOffres.mockReturnValue(
+  throwError(() => new ErreurApi(403, 'COMPANY_NOT_VALIDATED', 'Message du back.')),
+);
+```
+
+Avec un `HttpErrorResponse`, `messageErreur()` renvoie toujours « Une erreur est survenue. ». Les tests du **service** (qui passent par `HttpTestingController`, sans intercepteur) vérifient, eux, le statut HTTP brut.
+
 ## 4. Tester sans le back (mock)
 
 Dans deux terminaux : `npm run mock`, puis `npm start`.
+
+Le mock écoute sur les ports `8081` à `8084` (un même programme sert les quatre services, ports par défaut des contrats). Le service des offres d'emploi répond sur `http://localhost:8083/v1`.
 
 Mot de passe de tous les comptes : `password123`.
 
@@ -68,9 +93,20 @@ Mot de passe de tous les comptes : `password123`.
 | etudiant@uasz.sn | ETUDIANT |
 | enseignant@uasz.sn | ENSEIGNANT |
 | entreprise@uasz.sn | ENTREPRISE |
+| entreprise-attente@uasz.sn | ENTREPRISE (entreprise non validée) |
 | admin@uasz.sn | ADMINISTRATEUR |
 
 Le jeton d'accès du mock expire après 20 secondes et le refresh token est à usage unique. Pour vérifier le rafraîchissement automatique : se connecter, attendre plus de 20 s, puis cliquer sur « Appeler une ressource protégée » sur la page d'accueil. Dans l'onglet Network : un 401, un `refresh-token`, puis la requête rejouée en 200. Avec « 3 appels en parallèle », le terminal du mock ne doit afficher qu'un seul `[refresh]`.
+
+### Données de test des offres d'emploi
+
+| Compte | Comportement |
+|---|---|
+| `entreprise@uasz.sn` | Possède 3 offres (Sonatel) visibles dans « Mes offres » ; peut en publier de nouvelles |
+| `entreprise-attente@uasz.sn` | Entreprise non validée : `POST /offers` renvoie `403 COMPANY_NOT_VALIDATED` ; sert à tester ce refus |
+| Autres rôles | `403 FORBIDDEN` à la publication |
+
+Le mock contient aussi une offre d'une autre entreprise (Orange Digital Center), qui ne doit **jamais** apparaître dans « Mes offres ». Les données sont en mémoire : relancer `npm run mock` les remet à zéro.
 
 `scripts/mock-api.js` est un outil de test, il n'est pas inclus dans le build.
 
@@ -241,6 +277,8 @@ Les clients générés sont commités pour que chacun travaille sur les mêmes f
 
 Chaque client a son propre `BASE_PATH`. Pour brancher un nouveau service : ajouter son URL dans `urlsApi` des environnements (ce qui l'inclut automatiquement dans le filtre des intercepteurs), puis déclarer son `BASE_PATH` dans `app.config.ts` avec un alias d'import.
 
+Le client `offres-emploi` est branché : son `BASE_PATH` est déclaré dans `app.config.ts` (alias `BASE_PATH_OFFRES`) et son URL se trouve dans `urlsApi.offres` des fichiers `environment*.ts` (`http://localhost:8083/v1` en développement). Sans ce `BASE_PATH`, le client généré appelle le premier serveur du contrat (la production) et la page affiche « Serveur injoignable ».
+
 ## 9. Qualité du code avec SonarQube
 
 SonarQube tourne en local dans Docker. Un scanner envoie le code, et un rapport de couverture issu des tests Vitest renseigne la couverture.
@@ -356,7 +394,8 @@ Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir
 | Tests unitaires et SonarQube | Fait (suite Vitest, analyse locale) |
 | Administration (tableau de bord, utilisateurs, entreprises partenaires) | Fait (AL-51) |
 | Squelettes des fonctionnalités, pages 403 et 404, composants communs | Fait, voir `docs/ajouter-une-fonctionnalite.md` |
-| Autres fonctionnalités métier | À faire (AL-48, AL-49, AL-50) |
+| Offres d'emploi côté entreprise : « Mes offres » et « Publier une offre » | Fait (AL-49), tests unitaires inclus |
+| Autres fonctionnalités métier | À faire (AL-48, AL-50, et le reste d'AL-49 : catalogue, candidatures, propositions) |
 
 ### Fonctionnalités à développer
 
@@ -364,16 +403,42 @@ Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir
 |---|---|
 | Utilisateurs | Inscription, confirmation d'email, mot de passe oublié, administration des comptes et des statuts |
 | Alumni, étudiants, entreprises | Annuaire, profils, CV, expériences, promotions, recommandations |
-| Offres d'emploi | Catalogue, publication, candidatures, propositions |
+| Offres d'emploi | Catalogue, candidatures, propositions (la publication et « Mes offres » côté entreprise sont faites) |
 | Messagerie et notifications | Notifications, messages privés, groupes de discussion |
 | Correspondances et statistiques | Matching offres et candidats, tableau de bord, rapport d'insertion, écart de compétences |
 | Transverse | Composants communs, pages 403 et 404, toasts d'erreur, tests |
 
 Les rôles associés à chaque fonctionnalité sont des propositions à confirmer avec l'équipe back.
 
+### Offres d'emploi (espace entreprise) : ce qui est fait
+
+Rôle concerné : `ENTREPRISE` (route protégée par `roleGuard`).
+
+| Route | Page | Contenu |
+|---|---|---|
+| `/offres-emploi/mes-offres` | `pages/mes-offres.ts` | Tableau paginé (10 par page) des offres de l'entreprise : intitulé, type (Emploi/Stage), lieu, statut (badge Ouverte/Clôturée/Archivée), date de publication. États de chargement, vide et erreur gérés |
+| `/offres-emploi/publier` | `pages/publier-offre.ts` | Formulaire réactif : intitulé, type, mode de travail, lieu, description, compétences requises (puces), durée en mois (visible uniquement pour un stage), fourchette salariale, date limite. Validation côté front, toast de succès et redirection vers « Mes offres » |
+
+Les deux pages passent par `services/offres-entreprise.service.ts`, qui appelle le client généré `OffersService` (`searchOffers` filtré par `companyId`, et `createOffer`). Les messages d'erreur sont propres à chaque écran :
+
+| Statut | Message affiché |
+|---|---|
+| 400 | Certaines informations sont invalides (publication) |
+| 401 | Votre session a expiré, reconnectez-vous |
+| 403 | Entreprise non encore validée |
+| 404 | Entreprise introuvable |
+| 0 | Serveur injoignable (réseau) |
+
+**Tests** (`*.spec.ts` dans le même dossier) : affichage et libellés du tableau, pagination, états vide et chargement, validation du formulaire, durée réservée aux stages, redirection après publication, et un test par code d'erreur. Le service est testé avec `HttpTestingController` (URL, méthode, paramètres `companyId`, `page`, `size`, propagation des erreurs). Voir la section 3 pour lancer les tests.
+
 ## 11. Points ouverts
 
 - Le rôle `ENTREPRISE` n'existe pas dans le `RoleName` généré depuis `user-service.yaml` (seulement `ALUMNI`, `ETUDIANT`, `ENSEIGNANT`, `ADMINISTRATEUR`). Il est géré côté frontend. À confirmer avec l'équipe back.
-- Seul le client `utilisateurs` est configuré. Les quatre autres services restent à brancher.
-- Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités). En attendant, pour régénérer un client avec les options par défaut (identiques aux clients commités) : `npx openapi-generator-cli generate -i contrat/notification-messaging-service.yaml -g typescript-angular -o src/app/api/generes/notifications-messagerie`.
+
+- Seuls les clients `utilisateurs` et `offres-emploi` sont configurés. Les trois autres services restent à brancher.
+- `OffresEntrepriseService` utilise un identifiant d'entreprise fixe (`ID_ENTREPRISE_MOCK`) en attendant de pouvoir lire l'id de l'entreprise connectée (session ou profil). À remplacer quand le back l'exposera.
+- Les rôles des routes `offres-emploi/*` (`ENTREPRISE`) sont à confirmer avec l'équipe back.
+- Le back doit renvoyer le même format d'erreur (`code`, `message`) pour que les messages s'affichent correctement.
+- Le script `scripts/generate-api.js` appelé par `npm run api:generate` n'est pas dans le dépôt (les clients sont déjà générés et commités).
 - Le back doit autoriser CORS pour `http://localhost:4200` pour les tests en local.
+
