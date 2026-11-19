@@ -1,0 +1,156 @@
+<div class="infos">
+  <section class="presentation">
+    <app-avatar class="grand" [nom]="groupe().name ?? ''" />
+    @if (edition()) {
+      <form class="formulaire" (ngSubmit)="enregistrer()">
+        <app-champ libelle="Nom du groupe" name="nom" [requis]="true" [(ngModel)]="nom" [erreur]="erreurNom()" />
+        <app-champ libelle="Description" type="textarea" name="description" [lignes]="2" [(ngModel)]="description" />
+        <div class="actions">
+          <app-bouton variante="secondaire" [petit]="true" (clic)="edition.set(false)">Annuler</app-bouton>
+          <app-bouton type="submit" [petit]="true" [chargement]="enCours() === 'edition'">Enregistrer</app-bouton>
+        </div>
+      </form>
+    } @else {
+      <h3>{{ groupe().name }}</h3>
+      <p class="sous-titre">Groupe · {{ membres().length }} participant{{ membres().length > 1 ? 's' : '' }}</p>
+      @if (groupe().description) {
+        <p class="description">{{ groupe().description }}</p>
+      } @else if (peutModifierInfos()) {
+        <p class="description vide">Ajoutez une description pour présenter le groupe.</p>
+      }
+      @if (peutModifierInfos()) {
+        <button type="button" class="lien" (click)="modifier()">Modifier le nom ou la description</button>
+      }
+    }
+  </section>
+
+  @if (erreur(); as message) {
+    <app-alerte>{{ message }}</app-alerte>
+  }
+
+  <section class="carte-section" aria-labelledby="titre-preferences">
+    <h4 id="titre-preferences">Pour moi</h4>
+    <label class="ligne-reglage">
+      <span class="texte">
+        <strong>Notifications</strong>
+        <small>{{ preferences().muted ? libelleSourdine(preferences().mutedUntil) : 'Activées' }}</small>
+      </span>
+      <select class="selection" aria-label="Couper les notifications" [disabled]="enCours() === 'sourdine'"
+        (change)="sourdine($any($event.target).value)">
+        <option value="NONE" [selected]="etatSourdine() === 'NONE'">Activées</option>
+        @if (etatSourdine() === 'TEMPORAIRE') {
+          <!-- Le contrat ne renvoie que l'échéance : on l'affiche comme choix courant. -->
+          <option value="" disabled selected>Coupées pour l'instant</option>
+        }
+        @for (d of durees; track d.valeur) {
+          <option [value]="d.valeur" [selected]="etatSourdine() === d.valeur">Couper · {{ d.libelle }}</option>
+        }
+      </select>
+    </label>
+    <label class="ligne-reglage">
+      <span class="texte">
+        <strong>Épingler en haut de la liste</strong>
+      </span>
+      <input type="checkbox" role="switch" class="interrupteur" [checked]="preferences().pinned"
+        [disabled]="enCours() === 'pinned'" (change)="basculerPreference('pinned')" />
+    </label>
+    <label class="ligne-reglage">
+      <span class="texte">
+        <strong>Archiver</strong>
+        <small>Rangé dans « Archivées », à l'écart de la liste principale.</small>
+      </span>
+      <input type="checkbox" role="switch" class="interrupteur" [checked]="preferences().archived"
+        [disabled]="enCours() === 'archived'" (change)="basculerPreference('archived')" />
+    </label>
+  </section>
+
+  @if (estAdmin()) {
+    <section class="carte-section" aria-labelledby="titre-reglages">
+      <h4 id="titre-reglages">Réglages du groupe</h4>
+      <p class="aide">Activé : seuls les administrateurs peuvent le faire. Désactivé : tous les participants.</p>
+      @for (r of reglages; track r.cle) {
+        <label class="ligne-reglage">
+          <span class="texte">
+            <strong>{{ r.titre }}</strong>
+            <small>{{ adminsSeulement(r.cle) ? 'Administrateurs seulement' : 'Tous les participants' }}</small>
+          </span>
+          <input type="checkbox" role="switch" class="interrupteur" [checked]="adminsSeulement(r.cle)"
+            [attr.aria-label]="r.titre + ' : administrateurs seulement'" [disabled]="enCours() === r.cle"
+            (change)="basculerReglage(r.cle)" />
+        </label>
+      }
+    </section>
+  }
+
+  <section class="carte-section" aria-labelledby="titre-participants">
+    <h4 id="titre-participants">{{ membres().length }} participant{{ membres().length > 1 ? 's' : '' }}</h4>
+
+    @if (peutAjouter()) {
+      @if (ajout()) {
+        <div class="ajout">
+          <app-choix-membres [exclus]="idsMembres()" [(selection)]="nouveaux" />
+          <div class="actions">
+            <app-bouton variante="secondaire" [petit]="true" (clic)="ajout.set(false)">Annuler</app-bouton>
+            <app-bouton [petit]="true" [desactive]="!nouveaux().length" [chargement]="enCours() === 'ajout'" (clic)="ajouter()">
+              Ajouter au groupe
+            </app-bouton>
+          </div>
+        </div>
+      } @else {
+        <button type="button" class="ligne-action" (click)="ouvrirAjout()">
+          <span class="pastille-action">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M12.5 5v5M10 7.5h5" /></svg>
+          </span>
+          Ajouter des participants
+        </button>
+      }
+    }
+
+    <ul class="membres">
+      @for (m of membres(); track m.userId) {
+        <li [class.ouvert]="membreOuvert() === m.userId">
+          <button type="button" class="membre" [class.gerable]="peutGererRole(m) || peutRetirer(m)"
+            [attr.aria-expanded]="peutGererRole(m) || peutRetirer(m) ? membreOuvert() === m.userId : null"
+            (click)="basculerMembre(m)">
+            <app-avatar [nom]="m.userName ?? ''" />
+            <span class="texte">
+              <strong>{{ m.userId === moiId() ? 'Vous' : (m.userName || 'Participant') }}</strong>
+              <small>{{ m.userRole ? libelleRole(m.userRole) : 'Pas encore connecté à la messagerie' }}</small>
+            </span>
+            @if (m.groupRole === 'OWNER') {
+              <app-badge ton="ok">Propriétaire</app-badge>
+            } @else if (m.groupRole === 'ADMIN') {
+              <app-badge ton="ok">Admin du groupe</app-badge>
+            }
+          </button>
+          @if (membreOuvert() === m.userId) {
+            <div class="actions-membre">
+              @if (peutGererRole(m)) {
+                <app-bouton variante="secondaire" [petit]="true" [chargement]="enCours() === m.userId" (clic)="changerRole(m)">
+                  {{ m.groupRole === 'ADMIN' ? 'Retirer des administrateurs' : 'Nommer administrateur' }}
+                </app-bouton>
+              }
+              @if (peutRetirer(m)) {
+                <app-bouton variante="danger" [petit]="true" [chargement]="enCours() === m.userId"
+                  [libelleAria]="'Retirer ' + (m.userName ?? 'ce participant')" (clic)="retirer(m)">Retirer du groupe</app-bouton>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="zone-danger">
+    <button type="button" class="ligne-action danger" [disabled]="enCours() === 'quitter'" (click)="quitter()">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2H3v12h3M10 5l3 3-3 3M13 8H6" /></svg>
+      Quitter le groupe
+    </button>
+    @if (peutSupprimerGroupe()) {
+      <button type="button" class="ligne-action danger" [disabled]="enCours() === 'supprimer'" (click)="supprimer()">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
+        Supprimer le groupe
+      </button>
+    }
+  </section>
+</div>

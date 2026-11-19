@@ -8,6 +8,8 @@
  * Do not edit the class manually.
  */
 import { GroupMember } from './groupMember';
+import { GroupSettings } from './groupSettings';
+import { GroupPreferences } from './groupPreferences';
 
 
 export interface Group { 
@@ -16,6 +18,8 @@ export interface Group {
     description?: string;
     ownerId?: string;
     members?: Array<GroupMember>;
+    settings?: GroupSettings;
+    preferences?: GroupPreferences;
     createdAt?: string;
 }
 
