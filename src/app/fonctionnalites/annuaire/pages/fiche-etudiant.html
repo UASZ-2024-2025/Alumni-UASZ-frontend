@@ -16,6 +16,9 @@
       @if (estProprietaire()) {
         <div class="actions"><a class="btn-sec" routerLink="/mon-espace/profil">Modifier mon profil</a></div>
       }
+      @if (p.userId && !estProprietaire()) {
+        <div class="actions"><a class="btn-sec" [routerLink]="['/messagerie', p.userId]">Contacter</a></div>
+      }
     </div>
 
     @if (estAlumni()) {
