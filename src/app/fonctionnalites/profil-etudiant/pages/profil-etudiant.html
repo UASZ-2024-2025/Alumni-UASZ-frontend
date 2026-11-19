@@ -1,0 +1,79 @@
+<div class="page page--etroite">
+  <div class="entete">
+    <div>
+      <h1>Mon profil</h1>
+      <p>{{ nom() || 'Étudiant' }}@if (profil()?.email) { · {{ profil()?.email }} }</p>
+    </div>
+    <a class="btn-sec" routerLink="/mon-espace/cv">Éditer mon CV</a>
+  </div>
+
+  @if (chargement()) {
+    <p class="chargement">Chargement de votre profil…</p>
+  } @else {
+    @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+    @if (succes()) { <app-alerte type="succes">Profil enregistré.</app-alerte> }
+
+    <form [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+      <section class="fiche">
+        <h2>Parcours</h2>
+        <div class="grille">
+          <label>
+            Spécialité
+            <input type="text" formControlName="specialty" list="specialites" placeholder="Ex. Génie Logiciel" />
+            <datalist id="specialites">
+              @for (s of specialites; track s) { <option [value]="s"></option> }
+            </datalist>
+          </label>
+          <label>
+            Année de promotion
+            <input type="number" formControlName="academicYear" placeholder="Ex. 2026" />
+            @if (formulaire.controls.academicYear.touched && formulaire.controls.academicYear.invalid) {
+              <span class="invalide">Saisissez une année entre 2000 et 2100.</span>
+            }
+          </label>
+        </div>
+        <label>
+          Présentation
+          <textarea formControlName="bio" rows="4" maxlength="2000" placeholder="Quelques lignes sur vous, vos projets, vos objectifs…"></textarea>
+        </label>
+      </section>
+
+      <section class="fiche">
+        <h2>Compétences et centres d'intérêt</h2>
+        <div>
+          <span class="libelle">Compétences</span>
+          <app-champ-etiquettes [(valeur)]="competences" libelle="Ajouter une compétence" placeholder="Java, Spring Boot, Docker…" />
+        </div>
+        <div>
+          <span class="libelle">Centres d'intérêt</span>
+          <app-champ-etiquettes [(valeur)]="interets" libelle="Ajouter un centre d'intérêt" placeholder="DevOps, Cloud, IA…" />
+        </div>
+      </section>
+
+      <section class="fiche">
+        <h2>Disponibilité</h2>
+        <div class="grille">
+          <label>
+            Je suis
+            <select formControlName="availabilityStatus">
+              @for (d of disponibilites; track d[0]) { <option [value]="d[0]">{{ d[1] }}</option> }
+            </select>
+          </label>
+          @if (datePertinente()) {
+            <label>
+              À partir du
+              <input type="date" formControlName="availabilityDate" />
+            </label>
+          }
+        </div>
+        <span class="aide">Ces informations sont visibles par les autres membres de la plateforme.</span>
+      </section>
+
+      <div class="actions">
+        <button type="submit" class="btn-prim" [disabled]="enregistrement()">
+          {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer mon profil' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

@@ -1,0 +1,73 @@
+<a class="retour" routerLink="/offres-emploi">← Retour à la liste</a>
+
+@if (chargement()) {
+  <app-spinner />
+} @else if (erreur(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+} @else if (offre(); as o) {
+  <h1>{{ o.title }}</h1>
+  <p class="entreprise">{{ o.companyName }}</p>
+
+  <app-carte titre="Informations">
+    <dl>
+      <dt>Type</dt>
+      <dd>{{ libelleType(o.type) }}</dd>
+      <dt>Lieu</dt>
+      <dd>{{ o.location || '—' }}</dd>
+      <dt>Mode</dt>
+      <dd>{{ libelleMode(o.remoteType) }}</dd>
+      <dt>Durée</dt>
+      <dd>{{ o.durationMonths ? o.durationMonths + ' mois' : '—' }}</dd>
+      <dt>Rémunération</dt>
+      <dd>{{ o.salaryRange || '—' }}</dd>
+      <dt>Date limite</dt>
+      <dd>{{ o.deadline ? (o.deadline | date: 'dd/MM/yyyy') : '—' }}</dd>
+      <dt>Statut</dt>
+      <dd><app-badge [ton]="tonStatut(o.status)">{{ libelleStatut(o.status) }}</app-badge></dd>
+    </dl>
+  </app-carte>
+
+  <app-carte titre="Description">
+    <p>{{ o.description || 'Aucune description.' }}</p>
+  </app-carte>
+
+  <app-carte titre="Compétences requises">
+    <ul class="competences">
+      @for (c of o.requiredSkills; track c) {
+        <li><app-badge>{{ c }}</app-badge></li>
+      } @empty {
+        <li>Aucune compétence précisée.</li>
+      }
+    </ul>
+  </app-carte>
+
+  @switch (candidature()) {
+    @case ('envoyee') {
+      <app-alerte type="succes">
+        Votre candidature a bien été envoyée. Suivez-la dans <a routerLink="/candidatures">Mes candidatures</a>.
+      </app-alerte>
+    }
+    @case ('deja') {
+      <app-alerte>
+        {{ messageDejaPostule }} Retrouvez-la dans <a routerLink="/candidatures">Mes candidatures</a>.
+      </app-alerte>
+    }
+    @default {
+      @if (peutPostuler()) {
+        <div class="postuler">
+          <app-bouton (clic)="formulaireOuvert.set(true)">Postuler</app-bouton>
+        </div>
+      }
+    }
+  }
+
+  @if (etudiantId(); as etudiant) {
+    <app-modale titre="Postuler à l'offre" [ouvert]="formulaireOuvert()" (fermer)="formulaireOuvert.set(false)">
+      @if (formulaireOuvert()) {
+        <app-formulaire-candidature [offreId]="o.id!" [etudiantId]="etudiant"
+          (envoyee)="candidatureEnvoyee($event)" (dejaPostule)="candidatureDejaFaite()"
+          (annuler)="formulaireOuvert.set(false)" />
+      }
+    </app-modale>
+  }
+}

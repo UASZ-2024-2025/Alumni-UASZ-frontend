@@ -7,14 +7,25 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { GroupPreferences } from './groupPreferences';
+import { GroupMessageType } from './groupMessageType';
 
 
 export interface GroupSummary { 
     id?: string;
     name?: string;
     memberCount?: number;
+    /**
+     * Contenu du dernier message (vide s\'il a été supprimé).
+     */
     lastMessage?: string;
+    lastMessageSenderName?: string;
+    lastMessageType?: GroupMessageType;
     lastMessageTime?: string;
     unreadCount?: number;
+    preferences?: GroupPreferences;
 }
+export namespace GroupSummary {
+}
+
 

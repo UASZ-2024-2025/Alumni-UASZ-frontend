@@ -2,7 +2,7 @@
 
 Microservice responsable de la messagerie privée 1-à-1 entre utilisateurs, des groupes de discussion, ainsi que de la gestion et de la distribution des notifications (In-App, Email, Push). 
 
-The version of the OpenAPI document: 1.0.0
+The version of the OpenAPI document: 1.1.0
 
 ## Building
 

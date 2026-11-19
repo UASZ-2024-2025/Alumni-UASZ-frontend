@@ -23,11 +23,19 @@ import { Group } from '../model/group';
 // @ts-ignore
 import { GroupCreateRequest } from '../model/groupCreateRequest';
 // @ts-ignore
+import { GroupMemberRoleUpdateRequest } from '../model/groupMemberRoleUpdateRequest';
+// @ts-ignore
 import { GroupMembersRequest } from '../model/groupMembersRequest';
 // @ts-ignore
 import { GroupMessage } from '../model/groupMessage';
 // @ts-ignore
 import { GroupMessagePagedResponse } from '../model/groupMessagePagedResponse';
+// @ts-ignore
+import { GroupPreferences } from '../model/groupPreferences';
+// @ts-ignore
+import { GroupPreferencesUpdateRequest } from '../model/groupPreferencesUpdateRequest';
+// @ts-ignore
+import { GroupSettings } from '../model/groupSettings';
 // @ts-ignore
 import { GroupSummary } from '../model/groupSummary';
 // @ts-ignore
@@ -52,7 +60,8 @@ export class GroupMessagingService extends BaseService {
     }
 
     /**
-     * Ajouter des membres à un groupe (propriétaire uniquement)
+     * Ajouter des membres à un groupe
+     * Réservé aux administrateurs du groupe (OWNER ou ADMIN) tant que &#x60;settings.onlyAdminsCanAddMembers&#x60; vaut true ; sinon ouvert à tous les membres. On ne rejoint pas un groupe de soi-même : il faut y être ajouté. Les personnes déjà membres sont ignorées ; les nouveaux entrent comme MEMBER. Ajoute un message système. 
      * @endpoint post /messages/groups/{groupId}/members
      * @param groupId 
      * @param groupMembersRequest 
@@ -126,7 +135,7 @@ export class GroupMessagingService extends BaseService {
 
     /**
      * Créer un groupe de discussion
-     * L\&#39;utilisateur connecté devient propriétaire (OWNER) du groupe.
+     * L\&#39;utilisateur connecté devient propriétaire (OWNER) du groupe ; les &#x60;memberIds&#x60; y entrent comme MEMBER (doublons et créateur ignorés). Réglages par défaut : voir &#x60;GroupSettings&#x60;. Un message système « X a créé le groupe » ouvre le fil. 
      * @endpoint post /messages/groups
      * @param groupCreateRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -195,7 +204,8 @@ export class GroupMessagingService extends BaseService {
     }
 
     /**
-     * Supprimer un groupe (propriétaire ou administrateur)
+     * Supprimer un groupe (propriétaire ou ADMINISTRATEUR de la plateforme)
+     * Supprime le groupe, ses membres, ses messages et les préférences associées.
      * @endpoint delete /messages/groups/{groupId}
      * @param groupId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -254,7 +264,71 @@ export class GroupMessagingService extends BaseService {
     }
 
     /**
-     * Obtenir le détail d\&#39;un groupe et la liste de ses membres
+     * Supprimer un message pour tous
+     * L\&#39;auteur peut supprimer son message ; OWNER et ADMIN peuvent supprimer celui de n\&#39;importe quel membre. Le message reste dans le fil avec &#x60;deleted&#x60; à true et un contenu vide. Les messages système ne se suppriment pas (400). 
+     * @endpoint delete /messages/groups/{groupId}/messages/{messageId}
+     * @param groupId 
+     * @param messageId 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public deleteGroupMessage(groupId: string, messageId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public deleteGroupMessage(groupId: string, messageId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public deleteGroupMessage(groupId: string, messageId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public deleteGroupMessage(groupId: string, messageId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupId === null || groupId === undefined) {
+            throw new Error('Required parameter groupId was null or undefined when calling deleteGroupMessage.');
+        }
+        if (messageId === null || messageId === undefined) {
+            throw new Error('Required parameter messageId was null or undefined when calling deleteGroupMessage.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/messages/groups/${this.configuration.encodeParam({name: "groupId", value: groupId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/messages/${this.configuration.encodeParam({name: "messageId", value: messageId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Obtenir le détail d\&#39;un groupe et la liste de ses membres (membres uniquement)
      * @endpoint get /messages/groups/{groupId}
      * @param groupId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -313,7 +387,8 @@ export class GroupMessagingService extends BaseService {
     }
 
     /**
-     * Historique des messages d\&#39;un groupe
+     * Historique des messages d\&#39;un groupe (membres uniquement)
+     * La page 0 contient les messages les plus récents ; chaque page est renvoyée dans l\&#39;ordre chronologique (du plus ancien au plus récent), les pages suivantes remontent dans le temps. 
      * @endpoint get /messages/groups/{groupId}/messages
      * @param groupId 
      * @param page 
@@ -396,6 +471,7 @@ export class GroupMessagingService extends BaseService {
 
     /**
      * Lister les groupes de discussion de l\&#39;utilisateur connecté
+     * Groupes dont l\&#39;utilisateur est membre, archivés compris (voir &#x60;preferences.archived&#x60;), triés : épinglés d\&#39;abord, puis du plus récent au plus ancien (dernier message ou création). 
      * @endpoint get /messages/groups
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -510,7 +586,7 @@ export class GroupMessagingService extends BaseService {
 
     /**
      * Retirer un membre du groupe ou quitter le groupe
-     * Le propriétaire peut retirer n\&#39;importe quel membre ; un membre peut se retirer lui-même (quitter le groupe).
+     * - Un membre peut toujours se retirer lui-même (quitter le groupe). - Le propriétaire peut retirer n\&#39;importe quel membre ; un ADMIN peut retirer les ADMIN et MEMBER, jamais le propriétaire. - Si le propriétaire quitte, la propriété passe à l\&#39;ADMIN le plus ancien, à défaut au membre le plus ancien ;   si plus personne ne reste, le groupe est supprimé. Ajoute un message système. 
      * @endpoint delete /messages/groups/{groupId}/members/{userId}
      * @param groupId 
      * @param userId 
@@ -574,6 +650,7 @@ export class GroupMessagingService extends BaseService {
 
     /**
      * Envoyer un message dans un groupe
+     * Membres uniquement ; si &#x60;settings.onlyAdminsCanSend&#x60; vaut true, seuls OWNER et ADMIN peuvent écrire (403 sinon). Le contenu ne peut pas être vide et fait au plus 4000 caractères (400). 
      * @endpoint post /messages/groups/{groupId}/messages
      * @param groupId 
      * @param sendMessageRequest 
@@ -646,7 +723,8 @@ export class GroupMessagingService extends BaseService {
     }
 
     /**
-     * Modifier le nom ou la description d\&#39;un groupe (propriétaire uniquement)
+     * Modifier le nom ou la description d\&#39;un groupe
+     * Réservé aux administrateurs du groupe (OWNER ou ADMIN) tant que &#x60;settings.onlyAdminsCanEditInfo&#x60; vaut true ; sinon ouvert à tous les membres. Ajoute un message système. 
      * @endpoint put /messages/groups/{groupId}
      * @param groupId 
      * @param groupUpdateRequest 
@@ -708,6 +786,232 @@ export class GroupMessagingService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: groupUpdateRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Nommer ou retirer un administrateur du groupe (propriétaire uniquement)
+     * Passe un membre de MEMBER à ADMIN ou l\&#39;inverse. Le rôle OWNER ne s\&#39;attribue pas ainsi et le propriétaire ne peut pas changer son propre rôle (400). Ajoute un message système. 
+     * @endpoint patch /messages/groups/{groupId}/members/{userId}
+     * @param groupId 
+     * @param userId 
+     * @param groupMemberRoleUpdateRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateGroupMemberRole(groupId: string, userId: string, groupMemberRoleUpdateRequest: GroupMemberRoleUpdateRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Group>;
+    public updateGroupMemberRole(groupId: string, userId: string, groupMemberRoleUpdateRequest: GroupMemberRoleUpdateRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Group>>;
+    public updateGroupMemberRole(groupId: string, userId: string, groupMemberRoleUpdateRequest: GroupMemberRoleUpdateRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Group>>;
+    public updateGroupMemberRole(groupId: string, userId: string, groupMemberRoleUpdateRequest: GroupMemberRoleUpdateRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupId === null || groupId === undefined) {
+            throw new Error('Required parameter groupId was null or undefined when calling updateGroupMemberRole.');
+        }
+        if (userId === null || userId === undefined) {
+            throw new Error('Required parameter userId was null or undefined when calling updateGroupMemberRole.');
+        }
+        if (groupMemberRoleUpdateRequest === null || groupMemberRoleUpdateRequest === undefined) {
+            throw new Error('Required parameter groupMemberRoleUpdateRequest was null or undefined when calling updateGroupMemberRole.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/messages/groups/${this.configuration.encodeParam({name: "groupId", value: groupId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/members/${this.configuration.encodeParam({name: "userId", value: userId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Group>('patch', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: groupMemberRoleUpdateRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Modifier ses préférences personnelles sur un groupe (épingler, archiver, mettre en sourdine)
+     * Préférences propres à l\&#39;utilisateur connecté (membres uniquement), invisibles des autres membres. Seuls les champs fournis sont modifiés. 
+     * @endpoint patch /messages/groups/{groupId}/preferences
+     * @param groupId 
+     * @param groupPreferencesUpdateRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateGroupPreferences(groupId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<GroupPreferences>;
+    public updateGroupPreferences(groupId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<GroupPreferences>>;
+    public updateGroupPreferences(groupId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<GroupPreferences>>;
+    public updateGroupPreferences(groupId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupId === null || groupId === undefined) {
+            throw new Error('Required parameter groupId was null or undefined when calling updateGroupPreferences.');
+        }
+        if (groupPreferencesUpdateRequest === null || groupPreferencesUpdateRequest === undefined) {
+            throw new Error('Required parameter groupPreferencesUpdateRequest was null or undefined when calling updateGroupPreferences.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/messages/groups/${this.configuration.encodeParam({name: "groupId", value: groupId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/preferences`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<GroupPreferences>('patch', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: groupPreferencesUpdateRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Modifier les réglages d\&#39;un groupe (administrateurs du groupe uniquement)
+     * Seuls les champs fournis sont modifiés. Réservé à OWNER et ADMIN. Ajoute un message système.
+     * @endpoint patch /messages/groups/{groupId}/settings
+     * @param groupId 
+     * @param groupSettings 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateGroupSettings(groupId: string, groupSettings: GroupSettings, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Group>;
+    public updateGroupSettings(groupId: string, groupSettings: GroupSettings, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Group>>;
+    public updateGroupSettings(groupId: string, groupSettings: GroupSettings, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Group>>;
+    public updateGroupSettings(groupId: string, groupSettings: GroupSettings, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupId === null || groupId === undefined) {
+            throw new Error('Required parameter groupId was null or undefined when calling updateGroupSettings.');
+        }
+        if (groupSettings === null || groupSettings === undefined) {
+            throw new Error('Required parameter groupSettings was null or undefined when calling updateGroupSettings.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/messages/groups/${this.configuration.encodeParam({name: "groupId", value: groupId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/settings`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Group>('patch', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: groupSettings,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
