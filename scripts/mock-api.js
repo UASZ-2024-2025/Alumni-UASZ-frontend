@@ -207,7 +207,29 @@ const offres = [
 ];
 const TYPES_OFFRE = ['JOB', 'INTERNSHIP'];
 
+// ALUM-204 : dépôt d'une candidature ; 409 si l'étudiant a déjà postulé (elle apparaît ensuite dans ALUM-175)
+function routeCandidatureOffre(req, res, chemin, corps) {
+  const p = chemin.match(/^\/v1\/offers\/([^/]+)\/applications$/);
+  if (req.method !== 'POST' || !p) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const o = offres.find((x) => x.id === p[1]);
+  if (!o) return erreur(res, 404, 'OFFER_NOT_FOUND', 'Offre introuvable.') ?? true;
+  if (!corps.studentId) return erreur(res, 400, 'VALIDATION_ERROR', 'studentId est obligatoire.') ?? true;
+  if (candidatures.some((a) => a.offerId === o.id && a.studentId === corps.studentId)) {
+    return erreur(res, 409, 'ALREADY_APPLIED', 'Vous avez déjà postulé à cette offre.') ?? true;
+  }
+  const candidature = {
+    id: `a${candidatures.length + 1}`, offerId: o.id, offerTitle: o.title, studentId: corps.studentId,
+    studentName: nomDe(corps.studentId), cvId: corps.cvId, coverLetter: corps.coverLetter,
+    status: 'SUBMITTED', createdAt: new Date().toISOString(),
+  };
+  candidatures.unshift(candidature);
+  console.log(`[applications] ${candidature.id} : étudiant ${corps.studentId} -> offre ${o.id}`);
+  return envoyer(res, 201, candidature) ?? true;
+}
+
 function routesOffres(req, res, chemin, corps) {
+  if (routeCandidatureOffre(req, res, chemin, corps)) return true;
   const m = chemin.match(/^\/v1\/offers(?:\/([^/]+))?$/);
   if (!m) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
@@ -303,6 +325,19 @@ function routesCandidaturesPropositions(req, res, chemin, corps) {
     return envoyer(res, 200, p) ?? true;
   }
   return false;
+}
+
+// --- CV des étudiants (ALUM-204) : seul l'étudiant de test (2) en a un ; les autres reçoivent un 404 ---
+const cvs = {
+  '2': { id: 'cv-2', studentId: '2', title: 'Développeur Fullstack Java/Angular', template: 'MODERN_BLUE', language: 'Français',
+    skills: ['Java', 'Spring Boot', 'Angular'] },
+};
+function routesCv(req, res, chemin) {
+  const m = chemin.match(/^\/v1\/students\/([^/]+)\/cv$/);
+  if (req.method !== 'GET' || !m) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const cv = cvs[m[1]];
+  return (cv ? envoyer(res, 200, cv) : erreur(res, 404, 'CV_NOT_FOUND', 'CV introuvable.')) ?? true;
 }
 
 // --- Annuaires étudiants et Alumni (recherche de participants) : profils construits depuis l'annuaire des comptes ---
@@ -564,6 +599,7 @@ const traiter = (req, res) => {
       if (routesOffres(req, res, chemin, corps)) return;
       if (routesCandidaturesPropositions(req, res, chemin, corps)) return;
       if (routesAnnuaires(req, res, chemin)) return;
+      if (routesCv(req, res, chemin)) return;
       if (routesGroupes(req, res, chemin, corps)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
