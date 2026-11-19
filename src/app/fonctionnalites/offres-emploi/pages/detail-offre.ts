@@ -1,20 +1,26 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { OffersService } from '../../../api/generes/offres-emploi/api/offers.service';
 import { JobOffer } from '../../../api/generes/offres-emploi/model/jobOffer';
+import { Application } from '../../../api/generes/offres-emploi/model/application';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Badge, TonBadge } from '../../../commun/components/badge/badge';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Carte } from '../../../commun/components/carte/carte';
+import { Modale } from '../../../commun/components/modale/modale';
 import { Spinner } from '../../../commun/components/spinner/spinner';
+import { ToastService } from '../../../commun/services/toast.service';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
+import { FormulaireCandidature, MESSAGE_DEJA_POSTULE } from '../composants/formulaire-candidature';
 import { MODES, STATUTS, TYPES } from '../offres-libelles';
 
-/** Détail d'une offre (ALUM-156). Le bouton Postuler arrive au Sprint 3 avec ALUM-204. */
+/** Détail d'une offre (ALUM-156) et candidature de l'étudiant connecté (ALUM-204). */
 @Component({
   selector: 'app-detail-offre',
-  imports: [DatePipe, RouterLink, Alerte, Badge, Carte, Spinner],
+  imports: [DatePipe, RouterLink, Alerte, Badge, Bouton, Carte, FormulaireCandidature, Modale, Spinner],
   templateUrl: './detail-offre.html',
   styles: `
     .retour { display: inline-block; margin-bottom: 12px; }
@@ -23,14 +29,28 @@ import { MODES, STATUTS, TYPES } from '../offres-libelles';
     dt { color: var(--mu); }
     dd { margin: 0; }
     .competences { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+    .postuler { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
+    app-alerte { display: block; margin: 16px 0 0; }
   `,
 })
 export class DetailOffre {
   private readonly api = inject(OffersService);
+  private readonly auth = inject(AuthentificationService);
+  private readonly toast = inject(ToastService);
 
   protected readonly offre = signal<JobOffer | null>(null);
   protected readonly chargement = signal(true);
   protected readonly erreur = signal<string | null>(null);
+
+  protected readonly etudiantId = computed(() =>
+    this.auth.role() === 'ETUDIANT' ? (this.auth.utilisateur()?.id ?? null) : null,
+  );
+  /** Le bouton Postuler n'apparaît que pour un étudiant connecté, sur une offre ouverte. */
+  protected readonly peutPostuler = computed(() => !!this.etudiantId() && this.offre()?.status === 'OPEN');
+  protected readonly formulaireOuvert = signal(false);
+  /** 'envoyee' après un 201, 'deja' après un 409 : le bouton Postuler disparaît. */
+  protected readonly candidature = signal<'envoyee' | 'deja' | null>(null);
+  protected readonly messageDejaPostule = MESSAGE_DEJA_POSTULE;
 
   constructor() {
     const id = inject(ActivatedRoute).snapshot.paramMap.get('id');
@@ -52,6 +72,17 @@ export class DetailOffre {
           this.chargement.set(false);
         },
       });
+  }
+
+  protected candidatureEnvoyee(_: Application): void {
+    this.formulaireOuvert.set(false);
+    this.candidature.set('envoyee');
+    this.toast.succes('Votre candidature a été envoyée.');
+  }
+
+  protected candidatureDejaFaite(): void {
+    this.formulaireOuvert.set(false);
+    this.candidature.set('deja');
   }
 
   protected libelleType = (t?: string) => (t ? (TYPES[t] ?? t) : '—');
