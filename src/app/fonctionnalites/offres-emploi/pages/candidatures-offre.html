@@ -1,0 +1,79 @@
+<div class="entete-page">
+  <div>
+    <h1>Candidatures reçues</h1>
+    @if (titreOffre(); as titre) {
+      <p class="meta">Offre : <strong>{{ titre }}</strong></p>
+    }
+  </div>
+  <a class="btn btn--secondaire btn--auto" routerLink="/offres-emploi/mes-offres">Retour à mes offres</a>
+</div>
+
+@if (erreur(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+}
+@if (erreurStatut(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+}
+
+<div [attr.aria-busy]="chargement()">
+  @if (chargement()) {
+    <app-spinner libelle="Chargement des candidatures…" />
+  } @else if (!erreur() && candidatures().length === 0) {
+    <app-etat-vide titre="Aucune candidature">Les candidatures reçues pour cette offre apparaîtront ici.</app-etat-vide>
+  } @else if (candidatures().length > 0) {
+    <p class="total" aria-live="polite">{{ candidatures().length }} candidature(s)</p>
+    <app-carte>
+      <div class="tableau-conteneur"><table class="tableau tableau--cartes">
+        <caption class="cache">Candidatures reçues pour l'offre</caption>
+        <thead>
+          <tr>
+            <th scope="col">Étudiant</th>
+            <th scope="col">Reçue le</th>
+            <th scope="col">CV</th>
+            <th scope="col">Lettre</th>
+            <th scope="col">Statut</th>
+            <th scope="col">Changer le statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of candidatures(); track c.id) {
+            <tr>
+              <td><strong>{{ c.studentName || '—' }}</strong></td>
+              <td data-label="Reçue le">{{ c.createdAt ? (c.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
+              <td data-label="CV">{{ c.cvId ? 'CV joint' : 'Aucun CV' }}</td>
+              <td data-label="Lettre">
+                @if (c.coverLetter) {
+                  <details>
+                    <summary>Lire la lettre</summary>
+                    <blockquote>{{ c.coverLetter }}</blockquote>
+                  </details>
+                } @else {
+                  —
+                }
+              </td>
+              <td data-label="Statut">
+                <app-badge [ton]="tonCandidature(c.status)">{{ libelleCandidature(c.status) }}</app-badge>
+              </td>
+              <td data-label="Changer le statut">
+                @if (suivants(c).length > 0) {
+                  <div class="changement-statut">
+                    <select #choix class="champ-statut" [attr.aria-label]="'Nouveau statut de ' + (c.studentName || 'la candidature')">
+                      <option value="">Choisir…</option>
+                      @for (s of suivants(c); track s) {
+                        <option [value]="s">{{ libelleCandidature(s) }}</option>
+                      }
+                    </select>
+                    <app-bouton [petit]="true" [chargement]="enCours() === c.id" [desactive]="enCours() === c.id"
+                      (clic)="changer(c, choix.value)">Appliquer</app-bouton>
+                  </div>
+                } @else {
+                  Décision finale
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table></div>
+    </app-carte>
+  }
+</div>
