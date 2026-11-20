@@ -1,11 +1,37 @@
 :host { display: block; }
 
 .message {
-  padding: 0.65rem 0.8rem;
+  --teinte: var(--dg);
+  --fond: var(--erreur-fond);
+
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  border-left: 4px solid var(--teinte);
   border-radius: var(--rayon);
-  background: var(--erreur-fond);
-  color: var(--dg);
+  background: var(--fond);
+  color: var(--teinte);
   font-size: 0.875rem;
   font-weight: 500;
+  line-height: 1.45;
+
+  // pastille d'icône : « ! » pour une erreur
+  &::before {
+    content: '!';
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--teinte);
+    color: var(--fond);
+    font: 700 0.75rem / 20px var(--police);
+    text-align: center;
+  }
 }
-.message--succes { background: var(--succes-fond); color: var(--ok); }
+.message--succes {
+  --teinte: var(--ok);
+  --fond: var(--succes-fond);
+
+  &::before { content: '✓'; }
+}

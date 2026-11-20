@@ -1,13 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>AlumniFrontend</title>
+  <title>Alumni UASZ</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#073d27">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Écran de chargement : affiché avant le démarrage d'Angular, d'où les valeurs de secours
+       en dur (la charte globale n'est pas encore chargée à ce moment-là). -->
+  <style>
+    #splash { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 24px; box-sizing: border-box; text-align: center; color: #fff; font-family: 'Public Sans', system-ui, sans-serif;
+      background: radial-gradient(circle at 85% 8%, rgba(200, 162, 58, .38), transparent 42%), radial-gradient(circle at 0 100%, rgba(255, 255, 255, .14), transparent 45%), linear-gradient(160deg, var(--g9, #073d27), var(--g7, #13734b));
+      transition: opacity .5s ease, visibility .5s; }
+    #splash.masque { opacity: 0; visibility: hidden; }
+    .splash-logo { position: relative; display: grid; place-items: center; width: 104px; height: 104px; }
+    .splash-logo::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .2); border-top-color: var(--ac, #c8a23a); animation: splash-tour 1s linear infinite; }
+    .splash-logo img, .splash-logo svg { width: 72px; height: 72px; padding: 5px; box-sizing: border-box; border-radius: 50%; background: #fff; object-fit: contain; animation: splash-pouls 2s ease-in-out infinite; }
+    .splash-titre { margin: 0; font: 700 1.75rem/1.1 Fraunces, Georgia, serif; letter-spacing: .02em; animation: splash-entree .7s .1s both; }
+    .splash-sous { margin: 4px 0 0; font-size: .8125rem; opacity: .85; animation: splash-entree .7s .25s both; }
+    .splash-barre { width: min(220px, 60vw); height: 3px; overflow: hidden; border-radius: 3px; background: rgba(255, 255, 255, .2); }
+    .splash-barre::after { content: ''; display: block; width: 40%; height: 100%; border-radius: 3px; background: var(--ac, #c8a23a); animation: splash-barre 1.2s ease-in-out infinite; }
+    @keyframes splash-tour { to { transform: rotate(360deg); } }
+    @keyframes splash-pouls { 50% { transform: scale(.94); } }
+    @keyframes splash-entree { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes splash-barre { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+    @media (prefers-reduced-motion: reduce) { #splash *, #splash *::before, #splash *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+  </style>
 </head>
 <body>
+  <div id="splash" role="status" aria-live="polite">
+    <div class="splash-logo">
+      <img src="/public/logo-uasz.png" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+      <svg hidden viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#fff" stroke="#c8a23a" stroke-width="2"/><path fill="#0b5d3b" d="M10 11v12a10 10 0 0 0 20 0V11h-5v12a5 5 0 0 1-10 0V11z"/></svg>
+    </div>
+    <div>
+      <p class="splash-titre">UASZ</p>
+      <p class="splash-sous">Université Assane Seck de Ziguinchor</p>
+    </div>
+    <div class="splash-barre"></div>
+    <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Chargement de l'application…</span>
+  </div>
+
   <app-root></app-root>
 </body>
 </html>

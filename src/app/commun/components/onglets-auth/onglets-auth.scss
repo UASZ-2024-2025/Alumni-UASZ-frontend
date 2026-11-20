@@ -5,13 +5,36 @@ nav {
   gap: 4px;
   border-bottom: 1px solid var(--bd);
   overflow-x: auto;
+  scrollbar-width: none;
 }
 a {
-  padding: 8px 14px;
-  border-bottom: 3px solid transparent;
+  position: relative;
+  padding: 10px 16px;
+  border-radius: var(--rayon) var(--rayon) 0 0;
   color: var(--mu);
   text-decoration: none;
   white-space: nowrap;
+  transition: color 0.2s, background-color 0.2s;
 
-  &.actif { border-color: var(--g8); color: var(--g8); font-weight: 600; }
+  // trait d'onglet actif qui se dessine
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(90deg, var(--g8), var(--g7));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  &:hover { color: var(--g8); background: var(--g0); }
+  &.actif {
+    color: var(--g8);
+    font-weight: 600;
+
+    &::after { transform: scaleX(1); animation: trace 0.45s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  }
 }
