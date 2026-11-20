@@ -1,0 +1,26 @@
+:host { display: block; }
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--police-titre);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+
+  small { display: block; margin-top: 2px; font: 400 10px var(--police); opacity: 0.85; }
+  svg circle { fill: #fff; stroke-width: 2; }
+  svg path { fill: var(--g8); }
+}
+.logo-image {
+  flex: none;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #fff; // pastille blanche : le logo reste lisible sur le fond vert
+  padding: 3px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.35);
+}
+.logo--clair { color: #fff; svg circle { stroke: var(--ac); } }
+.logo--fonce { color: var(--g8); svg circle { stroke: var(--g8); } .logo-image { box-shadow: var(--ombre-carte); } }
