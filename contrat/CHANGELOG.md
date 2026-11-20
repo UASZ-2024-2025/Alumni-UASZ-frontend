@@ -1,5 +1,26 @@
 # Journal des modifications des contrats OpenAPI
 
+## 1.5.0 (rattachement d'un compte ENTREPRISE à sa fiche, ALUM-168)
+
+Évolution compatible : aucune opération ni aucun champ retiré ; seuls des champs, des opérations et des réponses sont ajoutés.
+
+### user-service
+- **Ajout** du champ `User.companyId` (uuid, facultatif) : fiche entreprise rattachée au compte ENTREPRISE. Également
+  présent dans le jeton d'accès (claim `companyId`).
+- **Ajout** du tag `Internal` et de `PUT /internal/users/{id}/company` (`linkCompanyAccount`, `UserCompanyLinkRequest`) :
+  rattachement idempotent, jeton de service uniquement (ADR-0010). 409 si le compte n'est pas ENTREPRISE ou déjà rattaché
+  à une autre fiche.
+- `info.version` passe de 1.0.0 à **1.5.0** pour s'aligner sur les SPI.
+
+### alumni-student-company-service
+- **Ajout** de la réponse `409` sur `createCompany` (un compte ENTREPRISE ne gère qu'une seule fiche).
+- **Ajout** de `PUT /companies/{id}/owner` (`assignCompanyOwner`, `CompanyOwnerRequest`) : rattachement d'une fiche à un
+  compte ENTREPRISE par un administrateur (409, 503).
+- **Ajout** de `GET /internal/companies/{id}` (`getCompanyForService`) : lecture de la fiche par un autre service.
+- `info.version` passe de 1.4.1 à **1.5.0**.
+
+SPI `user-service-spi` et `alumni-student-company-service-spi` publiés en **1.5.0** (pom parent `alumni-spis` 1.5.0).
+
 ## alumni-student-company-service 1.4.1 (précision sur les diplômés, ALUM-88)
 
 Évolution compatible : seule une description change.
@@ -46,6 +67,27 @@
 - SPI `notification-messaging-service-spi` publié en **1.2.0** (version du pom parent `alumni-spis`, déjà passée à 1.2.0
   par alumni-student-company-service).
 
+## 1.3.0
+
+### alumni-student-company-service
+- **Ajout** du champ `Company.ownerId` (uuid) : gestionnaire de la fiche entreprise (ALUM-96).
+- **Ajout** de la réponse `403` sur `createCompany` et `updateCompany`.
+- **Précision** : seul l'administrateur peut modifier `isPartner` (`CompanyUpdateRequest`).
+- SPI `alumni-student-company-service-spi` publié en **1.3.0** : réunit les changements de la 1.2.0 (profils internes, ALUM-83)
+  et `Company.ownerId`. La 1.1.0 de la branche AL-28 est abandonnée.
+
+## 1.2.0
+
+### alumni-student-company-service
+- **Ajout** du tag `Internal` et de `POST /internal/profiles` (`provisionProfile`) : création du profil
+  d'un compte ETUDIANT ou ALUMNI après la confirmation de son email, appelée par user-service avec un
+  jeton de service (ADR-0010). Idempotent sur `userId` (201 si créé, 200 si déjà présent) ; 403 pour un
+  JWT utilisateur (ALUM-83).
+- **Ajout** des schémas `ProvisionedProfileType`, `ProfileProvisioningRequest`, `ProfileProvisioningResponse`.
+- SPI `alumni-student-company-service-spi` publié en **1.2.0** (version du pom parent `alumni-spis` passée à 1.2.0).
+  La branche AL-28 publie de son côté une 1.1.0 (`Company.ownerId`) : la seconde PR fusionnée devra
+  régénérer le SPI pour réunir les deux changements.
+
 ## 1.0.0 (en attente de revue croisée puis tag `contracts-v1.0.0`)
 
 ### notification-messaging-service
@@ -59,6 +101,11 @@
 - **Ajout** de `GROUP_INVITATION` et `GROUP_MESSAGE_RECEIVED` dans `NotificationType`.
 
 ### user-service
+- **Ajout** du rôle `ENTREPRISE` dans `RoleName`.
+- **Ajout** du schéma partagé `Gender` (remplace les enums inline de `User` et `UserUpdateRequest`).
+- **Ajout** de `POST /auth/change-password` (`changePassword`, `ChangePasswordRequest`) et de `POST /users` (`createUser`, `UserCreateRequest`).
+- **Précisions** : 423 sur `/auth/login` ; 403 sur `GET /users/{id}` (soi-même ou ADMINISTRATEUR) ; 400/409 sur `PATCH /users/{id}/status` ; 409 sur `PUT`/`DELETE /users/{id}` ; changement d'email réservé à ADMINISTRATEUR ; réponse `Conflict`.
+- SPI `user-service-spi` passé en **1.1.0**.
 - **Suppression** du serveur `virtserver.swaggerhub.com` (mock automatique non pertinent).
 - **Renommage** des schémas auto-générés, afin d'obtenir des classes lisibles à la génération :
 
@@ -75,3 +122,7 @@
 
 ### Tous les contrats
 - Fins de ligne normalisées en LF.
+- **Précision** (AL-13) : `security: []` sur les opérations publiques, pour que le lint Redocly de la CI passe
+  (règle `security-defined`). Aucun changement de comportement ni de code généré.
+  - user-service : `registerUser`, `loginUser`, `refreshToken`, `forgotPassword`, `resetPassword`, `confirmEmail`, `resendConfirmation` ;
+  - job-offer-service : `searchOffers`, `getOfferById`.
