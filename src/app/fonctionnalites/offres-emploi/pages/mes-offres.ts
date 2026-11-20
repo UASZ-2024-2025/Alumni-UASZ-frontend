@@ -69,13 +69,14 @@ export class MesOffres implements OnInit {
   private readonly service = inject(OffresEntrepriseService);
 
   protected readonly typeStage = OfferType.Internship;
-  protected readonly colonnes: ColonneTableau[] = [
-    { cle: 'title', libelle: 'Intitulé' },
-    { cle: 'type', libelle: 'Type' },
-    { cle: 'location', libelle: 'Lieu' },
-    { cle: 'status', libelle: 'Statut' },
-    { cle: 'createdAt', libelle: 'Publiée le' },
-  ];
+ protected readonly colonnes: ColonneTableau[] = [
+  { cle: 'title', libelle: 'Intitulé' },
+  { cle: 'type', libelle: 'Type' },
+  { cle: 'location', libelle: 'Lieu' },
+  { cle: 'status', libelle: 'Statut' },
+  { cle: 'createdAt', libelle: 'Publiée le' },
+  { cle: 'candidatures', libelle: 'Candidatures' },
+];
 
   protected readonly offres = signal<JobOffer[]>([]);
   protected readonly chargement = signal(true);
