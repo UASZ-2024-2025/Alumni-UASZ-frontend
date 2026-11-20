@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { finalize, timeout, TimeoutError } from 'rxjs';
 import { JobOffer, OfferStatus, OfferType } from '../../../api/generes/offres-emploi';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Badge, TonBadge } from '../../../commun/components/badge/badge';
@@ -11,6 +12,19 @@ import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { OffresEntrepriseService } from '../services/offres-entreprise.service';
 
 const TAILLE_PAGE = 10;
+/** Au-delà, on considère que le serveur ne répond pas (évite un chargement infini). */
+const DELAI_MS = 20_000;
+
+const MESSAGE_SERVEUR = "Le serveur a rencontré un problème. Réessayez dans un instant ou contactez l'équipe.";
+const MESSAGES_LISTE: Record<number, string> = {
+  401: 'Votre session a expiré. Reconnectez-vous.',
+  403: "Accès refusé : votre entreprise n'est pas encore validée.",
+  404: 'Entreprise introuvable.',
+  500: MESSAGE_SERVEUR,
+  502: MESSAGE_SERVEUR,
+  503: MESSAGE_SERVEUR,
+  504: MESSAGE_SERVEUR,
+};
 
 @Component({
   selector: 'app-mes-offres',
@@ -38,8 +52,7 @@ const TAILLE_PAGE = 10;
             }
             @case ('createdAt') { {{ ligne.createdAt | date: 'dd/MM/yyyy' }} }
             @case ('candidatures') {
-              <a [routerLink]="['/offres-emploi', ligne.id, 'candidatures']"
-                [attr.aria-label]="'Voir les candidatures de ' + ligne.title">Voir</a>
+              <a [routerLink]="['/offres-emploi', ligne.id, 'candidatures']">Voir</a>
             }
             @default { {{ ligne[cle] }} }
           }
@@ -81,25 +94,34 @@ export class MesOffres implements OnInit {
   protected charger(page: number): void {
     this.chargement.set(true);
     this.erreur.set(null);
-    this.service.mesOffres(page, TAILLE_PAGE).subscribe({
-      next: (reponse) => {
-        this.offres.set(reponse.content ?? []);
-        this.page.set(page);
-        this.nbPages.set(Math.max(1, Math.ceil((reponse.totalElements ?? 0) / TAILLE_PAGE)));
-        this.chargement.set(false);
-      },
-      error: (e) => {
-        this.offres.set([]);
-        this.chargement.set(false);
-        this.erreur.set(
-          messageErreur(e, {
-            401: 'Votre session a expiré. Reconnectez-vous.',
-            403: "Accès refusé : votre entreprise n'est pas encore validée.",
-            404: 'Entreprise introuvable.',
-          }),
-        );
-      },
-    });
+
+    try {
+      this.service
+        .mesOffres(page, TAILLE_PAGE)
+        .pipe(
+          timeout(DELAI_MS),
+          finalize(() => this.chargement.set(false)),
+        )
+        .subscribe({
+          next: (reponse) => {
+            this.offres.set(reponse.content ?? []);
+            this.page.set(page);
+            this.nbPages.set(Math.max(1, Math.ceil((reponse.totalElements ?? 0) / TAILLE_PAGE)));
+          },
+          error: (e: unknown) => {
+            this.offres.set([]);
+            this.erreur.set(
+              e instanceof TimeoutError
+                ? 'Le serveur met trop de temps à répondre. Réessayez dans un instant.'
+                : messageErreur(e, MESSAGES_LISTE),
+            );
+          },
+        });
+    } catch {
+      this.chargement.set(false);
+      this.offres.set([]);
+      this.erreur.set('Impossible de charger vos offres. Réessayez.');
+    }
   }
 
   protected ton(statut?: OfferStatus): TonBadge {
