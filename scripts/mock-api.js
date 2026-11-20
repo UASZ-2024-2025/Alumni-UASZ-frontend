@@ -831,6 +831,83 @@ function routesGroupes(req, res, chemin, corps) {
   return false;
 }
 
+// --- Messagerie privée (service notification-messaging, port 8085) ---
+const msgMinutes = (n) => new Date(Date.now() - n * 60000).toISOString();
+const messagesPrives = [
+  { id: 'm1', senderId: '1', recipientId: '2', content: 'Bonjour Moussa, as-tu vu le stage chez Orange ?', isRead: true, createdAt: msgMinutes(120) },
+  { id: 'm2', senderId: '2', recipientId: '1', content: 'Bonjour Awa, non pas encore, tu peux me donner le lien ?', isRead: true, createdAt: msgMinutes(110) },
+  { id: 'm3', senderId: '1', recipientId: '2', content: 'Je te le renvoie ce soir. Bonne chance pour ta candidature !', isRead: false, createdAt: msgMinutes(30) },
+  { id: 'm4', senderId: '4', recipientId: '2', content: 'Bonjour, votre profil nous intéresse.', isRead: false, createdAt: msgMinutes(15) },
+];
+const msgUtilisateur = (id) => Object.values(utilisateurs).find((u) => u.id === id);
+const msgNom = (u) => `${u.firstName} ${u.lastName}`;
+const msgMoi = (req) => utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))]?.id;
+const msgEnrichir = (m) => ({
+  ...m,
+  senderName: msgNom(msgUtilisateur(m.senderId)),
+  recipientName: msgNom(msgUtilisateur(m.recipientId)),
+});
+const msgEntre = (a, b) => (m) =>
+  (m.senderId === a && m.recipientId === b) || (m.senderId === b && m.recipientId === a);
+
+// Routes de la messagerie privée ; renvoie true si la requête a été traitée.
+// L'historique est renvoyé du plus récent au plus ancien (page 0 = les derniers messages).
+function routesMessagerie(req, res, chemin, corps) {
+  if (!/^\/v1\/messages\/conversations(\/|$)/.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const moi = msgMoi(req);
+
+  if (req.method === 'GET' && chemin === '/v1/messages/conversations') {
+    const autres = new Set(
+      messagesPrives
+        .filter((m) => m.senderId === moi || m.recipientId === moi)
+        .map((m) => (m.senderId === moi ? m.recipientId : m.senderId)),
+    );
+    const liste = [...autres]
+      .map((id) => {
+        const fil = messagesPrives.filter(msgEntre(moi, id));
+        const dernier = fil.reduce((a, b) => (a.createdAt > b.createdAt ? a : b));
+        const autre = msgUtilisateur(id);
+        return {
+          recipientId: id,
+          recipientName: msgNom(autre),
+          recipientRole: autre.role,
+          lastMessage: dernier.content,
+          lastMessageTime: dernier.createdAt,
+          unreadCount: fil.filter((m) => m.senderId === id && !m.isRead).length,
+        };
+      })
+      .sort((a, b) => b.lastMessageTime.localeCompare(a.lastMessageTime));
+    return envoyer(res, 200, liste) ?? true;
+  }
+
+  const m = chemin.match(/^\/v1\/messages\/conversations\/([^/]+)(\/read)?$/);
+  if (!m) return false;
+  const autreId = m[1];
+
+  if (req.method === 'PATCH' && m[2]) {
+    messagesPrives.filter((x) => x.senderId === autreId && x.recipientId === moi).forEach((x) => (x.isRead = true));
+    return envoyer(res, 204) ?? true;
+  }
+  if (req.method === 'GET' && !m[2]) {
+    if (!msgUtilisateur(autreId)) return erreur(res, 404, 'USER_NOT_FOUND', 'Utilisateur introuvable.') ?? true;
+    const fil = messagesPrives.filter(msgEntre(moi, autreId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const page = parPage(fil, req.url);
+    return envoyer(res, 200, { ...page, content: page.content.map(msgEnrichir) }) ?? true;
+  }
+  if (req.method === 'POST' && !m[2]) {
+    const texte = typeof corps.content === 'string' ? corps.content.trim() : '';
+    if (!texte) return erreur(res, 400, 'VALIDATION_ERROR', 'Le message ne peut pas être vide.') ?? true;
+    if (autreId === moi || !msgUtilisateur(autreId))
+      return erreur(res, 400, 'INVALID_RECIPIENT', 'Destinataire invalide.') ?? true;
+    const nouveau = { id: `m${messagesPrives.length + 1}`, senderId: moi, recipientId: autreId, content: texte, isRead: false, createdAt: new Date().toISOString() };
+    messagesPrives.push(nouveau);
+    console.log(`[messages] ${moi} -> ${autreId}`);
+    return envoyer(res, 201, msgEnrichir(nouveau)) ?? true;
+  }
+  return false;
+}
+
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     let brut = '';
@@ -840,6 +917,7 @@ const traiter = (req, res) => {
       const chemin = req.url.split('?')[0];
 
       if (routesAdmin(req, res, chemin, corps)) return;
+      if (routesMessagerie(req, res, chemin, corps)) return;
       if (routesAnnuaire(req, res, chemin, corps)) return;
       if (routesOffres(req, res, chemin, corps)) return;
       if (routesCandidaturesPropositions(req, res, chemin, corps)) return;

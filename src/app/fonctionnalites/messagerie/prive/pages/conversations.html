@@ -1,0 +1,49 @@
+<div class="entete-page">
+  <h1>Messagerie</h1>
+</div>
+
+<div class="messagerie" [class.fil-ouvert]="filOuvert()">
+  <section class="liste" aria-label="Conversations">
+    @if (store.erreur(); as message) {
+      <app-alerte>{{ message }}</app-alerte>
+    }
+
+    <div [attr.aria-busy]="store.chargement()">
+      @if (store.chargement() && !store.charge()) {
+        <app-spinner libelle="Chargement des conversations…" />
+      } @else if (store.liste().length > 0) {
+        <ul class="conversations">
+          @for (c of store.liste(); track c.recipientId) {
+            <li>
+              <a class="conversation" [routerLink]="['/messagerie', c.recipientId]" routerLinkActive="active"
+                ariaCurrentWhenActive="page" [class.non-lue]="(c.unreadCount ?? 0) > 0">
+                <app-avatar [nom]="c.recipientName ?? ''" />
+                <span class="texte">
+                  <span class="ligne">
+                    <strong class="nom">{{ c.recipientName || 'Utilisateur' }}</strong>
+                    <time class="heure" [attr.datetime]="c.lastMessageTime">{{ horodatage(c.lastMessageTime) }}</time>
+                  </span>
+                  <span class="ligne">
+                    <span class="apercu">{{ c.lastMessage }}</span>
+                    <app-compteur [valeur]="c.unreadCount ?? 0" libelle="messages non lus" />
+                  </span>
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      } @else if (store.charge()) {
+        <app-etat-vide titre="Aucune conversation">Vos échanges avec les étudiants, Alumni et enseignants apparaîtront ici.</app-etat-vide>
+      }
+    </div>
+  </section>
+
+  <section class="zone-fil" aria-label="Conversation ouverte">
+    @if (filOuvert()) {
+      <a class="retour" routerLink="/messagerie">← Conversations</a>
+    } @else {
+      <app-etat-vide titre="Sélectionnez une conversation">Choisissez un interlocuteur dans la liste pour lire et envoyer des messages.</app-etat-vide>
+    }
+    <router-outlet (activate)="filOuvert.set(true)" (deactivate)="filOuvert.set(false)" />
+  </section>
+</div>
