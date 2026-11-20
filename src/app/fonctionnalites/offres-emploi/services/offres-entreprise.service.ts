@@ -1,32 +1,43 @@
 import { inject, Injectable } from '@angular/core';
+import { Observable, throwError } from 'rxjs';
 import {
   ApplicationsService,
   ApplicationStatus,
+  JobOffer,
   JobOfferCreateRequest,
+  JobOfferPagedResponse,
   OffersService,
 } from '../../../api/generes/offres-emploi';
-
-// TODO : remplacer par l'id de l'entreprise connectée (session/profil) quand il sera connu.
-const ID_ENTREPRISE_MOCK = '11111111-1111-4111-8111-111111111111';
+import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 
 export type NouvelleOffre = Omit<JobOfferCreateRequest, 'companyId'>;
+
+/** Même code que le job-offer-service quand un compte ENTREPRISE n'a pas de fiche (ALUM-168). */
+export const CODE_COMPTE_NON_RATTACHE = 'ACCOUNT_NOT_LINKED';
 
 @Injectable({ providedIn: 'root' })
 export class OffresEntrepriseService {
   private readonly api = inject(OffersService);
   private readonly candidatures = inject(ApplicationsService);
+  private readonly auth = inject(AuthentificationService);
 
-  idEntreprise(): string {
-    return ID_ENTREPRISE_MOCK;
+  /** Fiche entreprise rattachée au compte connecté (`User.companyId`), absente tant que le compte n'est pas rattaché. */
+  idEntreprise(): string | null {
+    return this.auth.utilisateur()?.companyId ?? null;
   }
 
-  publier(offre: NouvelleOffre) {
-    return this.api.createOffer({ ...offre, companyId: this.idEntreprise() });
+  publier(offre: NouvelleOffre): Observable<JobOffer> {
+    const companyId = this.idEntreprise();
+    if (!companyId) return compteNonRattache();
+    return this.api.createOffer({ ...offre, companyId });
   }
 
-  mesOffres(page = 0, size = 20) {
+  mesOffres(page = 0, size = 20): Observable<JobOfferPagedResponse> {
+    const companyId = this.idEntreprise();
+    if (!companyId) return compteNonRattache();
     return this.api.searchOffers(
-      undefined, undefined, this.idEntreprise(), undefined, undefined, undefined, page, size,
+      undefined, undefined, companyId, undefined, undefined, undefined, page, size,
     );
   }
 
@@ -43,4 +54,16 @@ export class OffresEntrepriseService {
   changerStatut(candidatureId: string, status: ApplicationStatus) {
     return this.candidatures.updateApplicationStatus(candidatureId, { status });
   }
+}
+
+/** Sans fiche rattachée, on n'appelle pas l'API : le back refuserait de toute façon (403). */
+function compteNonRattache(): Observable<never> {
+  return throwError(
+    () =>
+      new ErreurApi(
+        403,
+        CODE_COMPTE_NON_RATTACHE,
+        "Votre compte n'est rattaché à aucune fiche entreprise. Créez votre fiche entreprise ou contactez l'administration.",
+      ),
+  );
 }
