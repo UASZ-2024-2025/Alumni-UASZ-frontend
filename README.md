@@ -110,6 +110,16 @@ Le jeton d'accès du mock expire après 20 secondes et le refresh token est à u
 
 Le mock contient aussi une offre d'une autre entreprise (Orange Digital Center), qui ne doit **jamais** apparaître dans « Mes offres ». Les données sont en mémoire : relancer `npm run mock` les remet à zéro.
 
+**Candidatures reçues (ALUM-208).** Depuis « Mes offres », le lien « Voir » ouvre `/offres-emploi/<id>/candidatures`. Le mock applique les règles du service des offres :
+
+| Cas | Comportement |
+|---|---|
+| Offre « Développeur Full Stack » | 3 candidatures (dont Moussa Ndiaye, visible aussi dans « Mes candidatures » du compte `etudiant@uasz.sn`) |
+| Offre « Stage Data Analyst » | 1 candidature |
+| Offre « Ingénieur DevOps » | Aucune candidature : état vide |
+| Offre « Développeur Java » (Orange Digital Center) | `403 FORBIDDEN` pour `entreprise@uasz.sn` : à ouvrir en collant son id dans l'URL |
+| Changement de statut | Transitions du back : `SUBMITTED` vers `UNDER_REVIEW` ou `REJECTED`, `UNDER_REVIEW` vers `SHORTLISTED` ou `REJECTED`, `SHORTLISTED` vers `ACCEPTED` ou `REJECTED` ; toute autre renvoie `400 INVALID_STATUS_TRANSITION` |
+
 `scripts/mock-api.js` est un outil de test, il n'est pas inclus dans le build.
 
 Groupes de discussion (`/groupes`) : le mock applique les règles du contrat messagerie 1.1.0 (rôles OWNER/ADMIN/MEMBER, réglages, préférences, messages système).
@@ -397,6 +407,7 @@ Le build et les tests sont lancés automatiquement sur chaque Pull Request (voir
 | Administration (tableau de bord, utilisateurs, entreprises partenaires) | Fait (AL-51) |
 | Squelettes des fonctionnalités, pages 403 et 404, composants communs | Fait, voir `docs/ajouter-une-fonctionnalite.md` |
 | Offres d'emploi côté entreprise : « Mes offres » et « Publier une offre » | Fait (AL-49), tests unitaires inclus |
+| Candidatures reçues par offre et changement de statut par le recruteur (ALUM-208) | Fait : `/offres-emploi/:id/candidatures`, refus 403 géré, tests unitaires inclus |
 | Cloche et centre de notifications (ALUM-160) | Fait : compteur de non-lus avec polling toutes les 30 s, panneau, « tout marquer comme lu », lien vers l'écran concerné |
 | Autres fonctionnalités métier | À faire (AL-48, AL-50, et le reste d'AL-49 : catalogue, candidatures, propositions) |
 

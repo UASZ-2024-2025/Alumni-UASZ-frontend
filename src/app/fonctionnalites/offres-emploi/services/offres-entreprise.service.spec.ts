@@ -65,4 +65,41 @@ describe('OffresEntrepriseService', () => {
       expect(erreur.mock.calls[0][0].status).toBe(status);
     }),
   );
+
+  it("liste les candidatures d'une offre avec GET /offers/{id}/applications", () => {
+    const suivant = vi.fn();
+    service.candidaturesRecues('o1').subscribe(suivant);
+
+    const req = http.expectOne(`${BASE}/offers/o1/applications`);
+    expect(req.request.method).toBe('GET');
+    req.flush([{ id: 'a1', studentName: 'Moussa Ndiaye', status: 'SUBMITTED' }]);
+    expect(suivant).toHaveBeenCalledWith([expect.objectContaining({ id: 'a1' })]);
+  });
+
+  it("change le statut d'une candidature avec PATCH /applications/{id}/status", () => {
+    const suivant = vi.fn();
+    service.changerStatut('a1', 'UNDER_REVIEW').subscribe(suivant);
+
+    const req = http.expectOne(`${BASE}/applications/a1/status`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ status: 'UNDER_REVIEW' });
+    req.flush({ id: 'a1', status: 'UNDER_REVIEW' });
+    expect(suivant).toHaveBeenCalledWith(expect.objectContaining({ status: 'UNDER_REVIEW' }));
+  });
+
+  [400, 403, 404].forEach((status) =>
+    it(`propage le refus ${status} lors du changement de statut`, () => {
+      const erreur = vi.fn();
+      service.changerStatut('a1', 'REJECTED').subscribe({ error: erreur });
+      http.expectOne(`${BASE}/applications/a1/status`).flush({ code: 'ERREUR' }, { status, statusText: 'Erreur' });
+      expect(erreur.mock.calls[0][0].status).toBe(status);
+    }),
+  );
+
+  it("propage le refus 403 lors de la liste des candidatures d'une offre d'un autre", () => {
+    const erreur = vi.fn();
+    service.candidaturesRecues('o2').subscribe({ error: erreur });
+    http.expectOne(`${BASE}/offers/o2/applications`).flush({ code: 'FORBIDDEN' }, { status: 403, statusText: 'Forbidden' });
+    expect(erreur.mock.calls[0][0].status).toBe(403);
+  });
 });

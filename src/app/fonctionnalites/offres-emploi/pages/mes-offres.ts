@@ -37,6 +37,10 @@ const TAILLE_PAGE = 10;
               <app-badge [ton]="ton(ligne.status)">{{ libelleStatut(ligne.status) }}</app-badge>
             }
             @case ('createdAt') { {{ ligne.createdAt | date: 'dd/MM/yyyy' }} }
+            @case ('candidatures') {
+              <a [routerLink]="['/offres-emploi', ligne.id, 'candidatures']"
+                [attr.aria-label]="'Voir les candidatures de ' + ligne.title">Voir</a>
+            }
             @default { {{ ligne[cle] }} }
           }
         </ng-template>
@@ -61,6 +65,7 @@ export class MesOffres implements OnInit {
     { cle: 'location', libelle: 'Lieu' },
     { cle: 'status', libelle: 'Statut' },
     { cle: 'createdAt', libelle: 'Publiée le' },
+    { cle: 'candidatures', libelle: 'Candidatures' },
   ];
 
   protected readonly offres = signal<JobOffer[]>([]);
