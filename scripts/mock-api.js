@@ -7,9 +7,9 @@ const utilisateurs = {
   'alumni@uasz.sn': { id: '1', firstName: 'Awa', lastName: 'Diop', role: 'ALUMNI' },
   'etudiant@uasz.sn': { id: '2', firstName: 'Moussa', lastName: 'Ndiaye', role: 'ETUDIANT' },
   'enseignant@uasz.sn': { id: '3', firstName: 'Fatou', lastName: 'Sow', role: 'ENSEIGNANT' },
-  'entreprise@uasz.sn': { id: '4', firstName: 'Ibou', lastName: 'Ba', role: 'ENTREPRISE' },
+  'entreprise@uasz.sn': { id: '4', firstName: 'Ibou', lastName: 'Ba', role: 'ENTREPRISE', companyId: '11111111-1111-4111-8111-111111111111' },
   'admin@uasz.sn': { id: '5', firstName: 'Admin', lastName: 'UASZ', role: 'ADMINISTRATEUR' },
-  'entreprise-attente@uasz.sn': { id: '6', firstName: 'Mariama', lastName: 'Sy', role: 'ENTREPRISE' },
+  'entreprise-attente@uasz.sn': { id: '6', firstName: 'Mariama', lastName: 'Sy', role: 'ENTREPRISE', companyId: '33333333-3333-4333-8333-333333333333' },
 };
 
 
@@ -304,7 +304,7 @@ function routesAnnuaire(req, res, chemin, corps) {
 }
 
 // --- Offres d'emploi (job-offer-service) ---
-// Cet id doit être identique à ID_ENTREPRISE_MOCK dans offres-entreprise.service.ts
+// Cet id doit être identique au companyId du compte entreprise@uasz.sn (en haut du fichier)
 const ID_ENTREPRISE = '11111111-1111-4111-8111-111111111111';
 const ID_AUTRE_ENTREPRISE = '22222222-2222-4222-8222-222222222222';
 const nomsEntreprises = { [ID_ENTREPRISE]: 'Sonatel', [ID_AUTRE_ENTREPRISE]: 'Orange Digital Center' };

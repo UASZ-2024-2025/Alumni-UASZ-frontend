@@ -22,4 +22,8 @@ export interface User {
     phone?: string;
     gender?: Gender;
     birthDate?: string;
+    /**
+     * Fiche entreprise rattachée au compte (comptes ENTREPRISE uniquement). Absent tant que le compte n'est pas rattaché. Également présent dans le jeton d'accès (claim `companyId`).
+     */
+    companyId?: string;
 }

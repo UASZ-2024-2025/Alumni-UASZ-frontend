@@ -1,10 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BASE_PATH } from '../../../api/generes/offres-emploi/variables';
-import { NouvelleOffre, OffresEntrepriseService } from './offres-entreprise.service';
+import { User } from '../../../api/generes/utilisateurs/model/user';
+import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
+import { CODE_COMPTE_NON_RATTACHE, NouvelleOffre, OffresEntrepriseService } from './offres-entreprise.service';
 
 const BASE = 'http://test/v1';
+const ID_ENTREPRISE = 'c0ffee00-0000-4000-8000-000000000001';
 const NOUVELLE: NouvelleOffre = {
   title: 'Développeur Angular', type: 'JOB', description: 'Mission',
   location: 'Ziguinchor', requiredSkills: ['Angular'],
@@ -13,10 +18,17 @@ const NOUVELLE: NouvelleOffre = {
 describe('OffresEntrepriseService', () => {
   let service: OffresEntrepriseService;
   let http: HttpTestingController;
+  const utilisateur = signal<User | null>(null);
 
   beforeEach(() => {
+    utilisateur.set({ id: 'u4', role: 'ENTREPRISE', companyId: ID_ENTREPRISE });
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: BASE_PATH, useValue: BASE }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: BASE_PATH, useValue: BASE },
+        { provide: AuthentificationService, useValue: { utilisateur } },
+      ],
     });
     service = TestBed.inject(OffresEntrepriseService);
     http = TestBed.inject(HttpTestingController);
@@ -29,7 +41,7 @@ describe('OffresEntrepriseService', () => {
 
     const req = http.expectOne(`${BASE}/offers`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ ...NOUVELLE, companyId: service.idEntreprise() });
+    expect(req.request.body).toEqual({ ...NOUVELLE, companyId: ID_ENTREPRISE });
     req.flush({ id: 'o1', title: 'Développeur Angular', status: 'OPEN' }, { status: 201, statusText: 'Created' });
     expect(suivant).toHaveBeenCalledWith(expect.objectContaining({ id: 'o1', status: 'OPEN' }));
   });
@@ -40,11 +52,38 @@ describe('OffresEntrepriseService', () => {
 
     const req = http.expectOne((r) => r.url === `${BASE}/offers`);
     expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('companyId')).toBe(service.idEntreprise());
+    expect(req.request.params.get('companyId')).toBe(ID_ENTREPRISE);
     expect(req.request.params.get('page')).toBe('2');
     expect(req.request.params.get('size')).toBe('10');
     req.flush({ content: [{ id: 'o1' }], totalElements: 1, page: 2, size: 10 });
     expect(suivant).toHaveBeenCalledWith(expect.objectContaining({ totalElements: 1 }));
+  });
+
+  it("lit l'id de l'entreprise dans la session (User.companyId), sans valeur en dur", () => {
+    expect(service.idEntreprise()).toBe(ID_ENTREPRISE);
+    utilisateur.set({ id: 'u9', role: 'ENTREPRISE', companyId: 'autre-fiche' });
+    expect(service.idEntreprise()).toBe('autre-fiche');
+  });
+
+  it("refuse de publier sans appeler l'API quand le compte n'est rattaché à aucune fiche", () => {
+    utilisateur.set({ id: 'u6', role: 'ENTREPRISE' });
+    const erreur = vi.fn();
+    service.publier(NOUVELLE).subscribe({ error: erreur });
+
+    http.expectNone(`${BASE}/offers`);
+    const e = erreur.mock.calls[0][0] as ErreurApi;
+    expect(e).toBeInstanceOf(ErreurApi);
+    expect(e.statut).toBe(403);
+    expect(e.code).toBe(CODE_COMPTE_NON_RATTACHE);
+  });
+
+  it("ne liste rien sans appeler l'API quand le compte n'est rattaché à aucune fiche", () => {
+    utilisateur.set(null);
+    const erreur = vi.fn();
+    service.mesOffres().subscribe({ error: erreur });
+
+    http.expectNone((r) => r.url === `${BASE}/offers`);
+    expect((erreur.mock.calls[0][0] as ErreurApi).code).toBe(CODE_COMPTE_NON_RATTACHE);
   });
 
   [400, 401, 403, 404].forEach((status) =>
