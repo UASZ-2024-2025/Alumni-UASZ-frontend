@@ -24,6 +24,7 @@ div.pleine { display: flex; gap: .5rem; }
 .pied { position: sticky; bottom: -22px; margin: 0 -22px -22px; padding: 12px 22px; border-top: 1px solid var(--bd); background: var(--sf); justify-content: flex-end; }
 
 .total { margin: 2px 0 0; color: var(--mu); font-size: 0.875rem; }
+.lien-attente { padding: 0; border: 0; background: none; color: var(--g7, #13734b); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .filtres--barre { align-items: end; }
 .puces { margin: 0; padding: 0 0 2px; border: 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .puce { padding: 6px 14px; border: 1px solid var(--bord-champ); border-radius: 99px; background: var(--sf); color: var(--tx); font: inherit; font-size: 0.8125rem; cursor: pointer; }

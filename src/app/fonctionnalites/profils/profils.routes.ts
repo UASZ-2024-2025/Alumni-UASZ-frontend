@@ -1,16 +1,9 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from '../../socle/gardes-routes/role.guard';
 
-const enConstruction = () =>
-  import('../../commun/components/page-en-construction/page-en-construction').then((m) => m.PageEnConstruction);
-
-/** Squelette (AL-48) : remplacer chaque `enConstruction` par la vraie page. Rôles à confirmer avec l'équipe back. */
+/**
+ * Ancienne adresse de la gestion des entreprises (squelette AL-48). La vraie page est dans l'administration
+ * (validation, rattachement, ALUM-224) : on y redirige, la garde de rôle de /administration s'applique.
+ */
 export const PROFILS_ROUTES: Routes = [
-  {
-    path: 'entreprises',
-    title: 'Entreprises',
-    canActivate: [roleGuard],
-    data: { roles: ['ADMINISTRATEUR'], titre: 'Entreprises', ticket: 'AL-48' },
-    loadComponent: enConstruction,
-  },
+  { path: 'entreprises', pathMatch: 'full', redirectTo: '/administration/entreprises' },
 ];

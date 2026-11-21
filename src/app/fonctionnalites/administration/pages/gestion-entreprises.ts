@@ -38,12 +38,14 @@ export class GestionEntreprises {
   protected readonly erreur = signal<string | null>(null);
   protected readonly optionsPartenaire: OptionChamp[] = [
     { valeur: '', libelle: 'Toutes' },
-    { valeur: 'oui', libelle: 'Partenaires' },
-    { valeur: 'non', libelle: 'Non partenaires' },
+    { valeur: 'oui', libelle: 'Validées (partenaires)' },
+    { valeur: 'non', libelle: 'En attente de validation' },
   ];
   protected texteRecherche = '';
   protected choixPartenaire = '';
   protected readonly enCours = signal<string | null>(null);
+  /** Fiches créées par les entreprises et pas encore validées : ce sont elles qui attendent l'administrateur. */
+  protected readonly enAttente = signal<number | null>(null);
   protected readonly enEdition = signal<Company | null>(null);
   protected readonly formulaireOuvert = signal(false);
   protected readonly envoi = signal(false);
@@ -79,7 +81,20 @@ export class GestionEntreprises {
 
   constructor() {
     this.charger();
+    this.compterEnAttente();
     this.chargerComptesEntreprise();
+  }
+
+  private compterEnAttente(): void {
+    this.api.searchCompanies(undefined, false, 0, 1).subscribe({
+      next: (r) => this.enAttente.set(r.totalElements ?? 0),
+      error: () => this.enAttente.set(null),
+    });
+  }
+
+  protected voirEnAttente(): void {
+    this.choixPartenaire = 'non';
+    this.rechercher(this.texteRecherche, 'non');
   }
 
   /** Nom du gestionnaire s'il s'agit d'un compte ENTREPRISE, sinon null (fiche gérée par l'administration ou un Alumni). */
@@ -176,6 +191,7 @@ export class GestionEntreprises {
         this.enCours.set(null);
         this.entreprises.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
         this.toast.succes(`${maj.name} ${estPartenaire ? 'est' : "n'est plus"} partenaire.`);
+        this.compterEnAttente();
       },
       error: (e) => {
         this.enCours.set(null);
@@ -237,6 +253,7 @@ export class GestionEntreprises {
         this.toast.succes(`${c.name} est ${edition ? 'modifiée' : 'créée'}.`);
         this.annuler();
         this.charger();
+        this.compterEnAttente();
       },
       error: (e) => {
         this.envoi.set(false);

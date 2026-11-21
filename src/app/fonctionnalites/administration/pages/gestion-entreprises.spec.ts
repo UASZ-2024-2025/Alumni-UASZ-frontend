@@ -18,7 +18,7 @@ describe('GestionEntreprises', () => {
   let toast: { succes: ReturnType<typeof vi.fn> };
 
   const ouvrirAjout = () => {
-    el.querySelector<HTMLButtonElement>('.entete-page button')!.click();
+    el.querySelector<HTMLButtonElement>('.entete-page app-bouton button')!.click();
     fixture.detectChanges();
   };
   const saisir = (nom: string, valeur: string) => {
@@ -52,6 +52,20 @@ describe('GestionEntreprises', () => {
     fixture = TestBed.createComponent(GestionEntreprises);
     fixture.detectChanges();
     el = fixture.nativeElement;
+  });
+
+  it('compte les fiches en attente de validation et filtre sur elles', () => {
+    api.searchCompanies.mockImplementation((_q: unknown, partenaire: unknown, _p: unknown, taille: number) =>
+      of(partenaire === false && taille === 1 ? { ...page([orange]), totalElements: 3 } : page([orange])));
+    fixture = TestBed.createComponent(GestionEntreprises);
+    fixture.detectChanges();
+    el = fixture.nativeElement;
+
+    expect(api.searchCompanies).toHaveBeenCalledWith(undefined, false, 0, 1);
+    const lien = el.querySelector<HTMLButtonElement>('.lien-attente')!;
+    expect(lien.textContent).toContain('3 en attente de validation');
+    lien.click();
+    expect(api.searchCompanies).toHaveBeenLastCalledWith(undefined, false, 0, 20);
   });
 
   it('charge la liste au démarrage', () => {
@@ -151,7 +165,9 @@ describe('GestionEntreprises', () => {
       name: 'Sonatel', sector: 'Télécoms', contactEmail: 'rh@sonatel.sn',
       website: undefined, contactPhone: undefined, address: undefined, description: undefined,
     });
-    expect(api.searchCompanies).toHaveBeenCalledTimes(2);
+    // liste rechargée (2e appel de la liste) et compteur « en attente » recalculé
+    expect(api.searchCompanies.mock.calls.filter((c: unknown[]) => c[3] === 20)).toHaveLength(2);
+    expect(api.searchCompanies.mock.calls.filter((c: unknown[]) => c[3] === 1)).toHaveLength(2);
     expect(toast.succes).toHaveBeenCalledWith('Sonatel est créée.');
   });
 

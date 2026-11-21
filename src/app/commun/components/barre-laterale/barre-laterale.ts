@@ -10,7 +10,7 @@ export interface ElementNavigation {
 const ICONES: Record<string, string> = {
   '/administration': 'M2 14V8m4 6V3m4 11V6m4 8V9',
   '/etudiants': 'M5 6a2 2 0 100-4 2 2 0 000 4zM1 14c0-3 2-5 4-5s4 2 4 5M11 7a2 2 0 100-4M12 9c2 0 3 2 3 5',
-  '/entreprises': 'M2 5h12v9H2zM6 5V3h4v2',
+  '/administration/entreprises': 'M2 5h12v9H2zM6 5V3h4v2',
   '/offres-emploi': 'M2 5h12v9H2zM6 5V3h4v2',
   '/offres-emploi/mes-offres': 'M3 4h10M3 8h10M3 12h10',
   '/offres-emploi/publier': 'M8 3v10M3 8h10',
