@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, model, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, debounceTime, distinctUntilChanged, forkJoin, map, Observable, of, Subject, switchMap, tap } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, forkJoin, map, Observable, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { AlumniService } from '../../../../api/generes/alumni/api/alumni.service';
 import { StudentsService } from '../../../../api/generes/alumni/api/students.service';
 import { Avatar } from '../../../../commun/components/avatar/avatar';
@@ -12,6 +12,8 @@ const TAILLE = 6;
 
 /**
  * Recherche dans les annuaires étudiants et Alumni, puis sélection sous forme de puces.
+ * Dès l'ouverture, des suggestions (premiers étudiants et Alumni) sont proposées : la liste n'est jamais vide
+ * en attendant la saisie ; à partir de 2 lettres, elle devient le résultat de la recherche.
  * `GET /users` est réservé à l'administrateur : les annuaires sont la seule recherche ouverte à tous.
  */
 @Component({
@@ -29,6 +31,8 @@ export class ChoixMembres {
   readonly selection = model<Membre[]>([]);
 
   protected readonly requete = signal('');
+  /** Vrai tant que la liste affichée est faite de suggestions (moins de 2 lettres saisies). */
+  protected readonly suggestions = signal(true);
   protected readonly recherche = signal(false);
   protected readonly erreur = signal<string | null>(null);
   private readonly resultatsBruts = signal<Membre[]>([]);
@@ -44,17 +48,19 @@ export class ChoixMembres {
       .pipe(
         map((q) => q.trim()),
         debounceTime(300),
+        // moins de 2 lettres : une seule et même requête de suggestions
+        map((q) => (q.length < 2 ? '' : q)),
+        startWith(''),
         distinctUntilChanged(),
         tap((q) => {
           this.erreur.set(null);
-          this.recherche.set(q.length >= 2);
-          if (q.length < 2) this.resultatsBruts.set([]);
+          this.suggestions.set(!q);
+          this.recherche.set(true);
         }),
-        switchMap((q) => (q.length < 2 ? of(null) : this.chercher(q))),
+        switchMap((q) => this.chercher(q)),
         takeUntilDestroyed(),
       )
       .subscribe((membres) => {
-        if (!membres) return;
         this.recherche.set(false);
         this.resultatsBruts.set(membres);
       });
@@ -74,11 +80,12 @@ export class ChoixMembres {
   }
 
   private chercher(q: string): Observable<Membre[]> {
-    const etudiants = this.etudiantsApi.searchStudents(q, undefined, undefined, undefined, 0, TAILLE).pipe(
+    const texte = q || undefined;
+    const etudiants = this.etudiantsApi.searchStudents(texte, undefined, undefined, undefined, 0, TAILLE).pipe(
       map((r) => (r.content ?? []).map((s) => this.membre(s.userId, s.firstName, s.lastName, `Étudiant${s.specialty ? ' · ' + s.specialty : ''}`))),
       catchError(() => of(null)),
     );
-    const alumni = this.alumniApi.searchAlumni(q, undefined, undefined, undefined, 0, TAILLE).pipe(
+    const alumni = this.alumniApi.searchAlumni(texte, undefined, undefined, undefined, 0, TAILLE).pipe(
       map((r) => (r.content ?? []).map((a) => this.membre(a.userId, a.firstName, a.lastName, `Alumni${a.currentPosition ? ' · ' + a.currentPosition : ''}`))),
       catchError(() => of(null)),
     );

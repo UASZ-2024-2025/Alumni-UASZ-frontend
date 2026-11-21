@@ -1,7 +1,7 @@
 <div class="choix">
   <label class="champ">
     Ajouter des participants
-    <input type="search" placeholder="Nom, prénom ou compétence (2 lettres minimum)" autocomplete="off"
+    <input type="search" placeholder="Rechercher par nom, prénom ou compétence" autocomplete="off"
       [value]="requete()" (input)="saisir($any($event.target).value)" />
   </label>
 
@@ -21,9 +21,12 @@
       <p class="info info--erreur">{{ message }}</p>
     } @else if (recherche()) {
       <p class="info">Recherche…</p>
-    } @else if (requete().trim().length >= 2 && resultats().length === 0) {
-      <p class="info">Aucune personne trouvée.</p>
-    } @else if (resultats().length) {
+    } @else if (resultats().length === 0) {
+      <p class="info">{{ suggestions() ? 'Aucune autre personne à proposer pour le moment.' : 'Aucune personne trouvée.' }}</p>
+    } @else {
+      @if (suggestions()) {
+        <p class="info">Suggestions : tapez un nom pour chercher parmi tous les étudiants et Alumni.</p>
+      }
       <ul class="liste">
         @for (m of resultats(); track m.userId) {
           <li>

@@ -40,9 +40,19 @@ describe('ChoixMembres', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it('ne cherche qu’à partir de 2 lettres', () => {
+  it('propose des suggestions dès l’ouverture, sans attendre la saisie', () => {
+    vi.advanceTimersByTime(0);
+    fixture.detectChanges();
+    expect(etudiants.searchStudents).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 0, 6);
+    expect(alumni.searchAlumni).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 0, 6);
+    expect(noms()).toEqual(['Moussa Ndiaye', 'Awa Diop']);
+    expect(el.textContent).toContain('Suggestions');
+  });
+
+  it('une seule lettre garde les suggestions, sans nouvelle requête', () => {
     chercher('a');
-    expect(etudiants.searchStudents).not.toHaveBeenCalled();
+    expect(etudiants.searchStudents).toHaveBeenCalledTimes(1);
+    expect(noms()).toEqual(['Moussa Ndiaye', 'Awa Diop']);
   });
 
   it('cherche dans les deux annuaires, sans les personnes déjà membres', () => {
