@@ -48,7 +48,7 @@ describe('ChoixMembres', () => {
   it('cherche dans les deux annuaires, sans les personnes déjà membres', () => {
     chercher(' aw ');
     expect(etudiants.searchStudents).toHaveBeenCalledWith('aw', undefined, undefined, undefined, 0, 6);
-    expect(alumni.searchAlumni).toHaveBeenCalledWith('aw', undefined, undefined, 0, 6);
+    expect(alumni.searchAlumni).toHaveBeenCalledWith('aw', undefined, undefined, undefined, 0, 6);
     expect(noms()).toEqual(['Moussa Ndiaye', 'Awa Diop']);
     expect(el.textContent).toContain('Alumni · Développeuse');
   });

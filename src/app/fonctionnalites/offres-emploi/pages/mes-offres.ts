@@ -9,6 +9,7 @@ import { Carte } from '../../../commun/components/carte/carte';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
+import { estCompteNonRattache } from '../services/offres-entreprise.service';
 import { OffresEntrepriseService } from '../services/offres-entreprise.service';
 
 const TAILLE_PAGE = 10;
@@ -35,7 +36,12 @@ const MESSAGES_LISTE: Record<number, string> = {
         <a class="btn btn--principal btn--auto" routerLink="/offres-emploi/publier">Publier une offre</a>
       </p>
 
-      @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+      @if (erreur()) {
+        <app-alerte>
+          {{ erreur() }}
+          @if (sansFiche()) { <a routerLink="/entreprise/ma-fiche">Ma fiche entreprise</a> }
+        </app-alerte>
+      }
 
       <app-tableau
         [colonnes]="colonnes"
@@ -84,6 +90,8 @@ export class MesOffres implements OnInit {
   protected readonly offres = signal<JobOffer[]>([]);
   protected readonly chargement = signal(true);
   protected readonly erreur = signal<string | null>(null);
+  /** Compte ENTREPRISE sans fiche : on propose de la créer (ALUM-224). */
+  protected readonly sansFiche = signal(false);
   protected readonly page = signal(0);
   protected readonly nbPages = signal(1);
 
@@ -110,6 +118,7 @@ export class MesOffres implements OnInit {
           },
           error: (e: unknown) => {
             this.offres.set([]);
+            this.sansFiche.set(estCompteNonRattache(e));
             this.erreur.set(
               e instanceof TimeoutError
                 ? 'Le serveur met trop de temps à répondre. Réessayez dans un instant.'

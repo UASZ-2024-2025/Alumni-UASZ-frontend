@@ -30,6 +30,7 @@
           <th scope="col">Entreprise</th>
           <th scope="col">Secteur</th>
           <th scope="col">Contact</th>
+          <th scope="col">Gestionnaire</th>
           <th scope="col">Partenaire</th>
           <th scope="col">Actions</th>
         </tr>
@@ -51,6 +52,7 @@
                 @if (c.contactPhone) { <small>{{ c.contactPhone }}</small> }
               </span>
             </td>
+            <td data-label="Gestionnaire">{{ gestionnaire(c) || 'Aucun compte entreprise' }}</td>
             <td data-label="Partenaire">
               <label class="interrupteur">
                 <input #partenaire type="checkbox" [checked]="c.isPartner" [disabled]="enCours() === c.id"
@@ -62,6 +64,8 @@
             <td class="cellule-actions"><div class="actions">
               <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Modifier ' + c.name"
                 (clic)="modifier(c)">Modifier</app-bouton>
+              <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Rattacher ' + c.name + ' à un compte'"
+                (clic)="ouvrirRattachement(c)">Rattacher</app-bouton>
             </div></td>
           </tr>
         }
@@ -91,6 +95,27 @@
   <div class="pleine pied">
     <app-bouton variante="secondaire" (clic)="annuler()">Annuler</app-bouton>
     <app-bouton type="submit" [chargement]="envoi()">{{ enEdition() ? 'Enregistrer' : 'Ajouter' }}</app-bouton>
+  </div>
+</form>
+</app-modale>
+
+<app-modale [ouvert]="aRattacher() !== null" titre="Rattacher à un compte entreprise" (fermer)="fermerRattachement()">
+<form class="formulaire" (ngSubmit)="rattacher()" novalidate>
+  <p class="pleine">
+    Le compte choisi devient le gestionnaire de <strong>{{ aRattacher()?.name }}</strong> : il pourra modifier la fiche
+    et publier des offres au nom de l'entreprise une fois celle-ci validée.
+  </p>
+  @if (comptesEntreprise().length === 0) {
+    <app-alerte class="pleine">Aucun compte ENTREPRISE inscrit pour l'instant.</app-alerte>
+  }
+  <app-champ class="pleine" libelle="Compte ENTREPRISE" type="select" [options]="optionsComptes()" name="compte"
+    [ngModel]="compteChoisi()" (ngModelChange)="compteChoisi.set($event)" />
+  @if (erreurRattachement(); as message) {
+    <app-alerte class="pleine">{{ message }}</app-alerte>
+  }
+  <div class="pleine pied">
+    <app-bouton variante="secondaire" (clic)="fermerRattachement()">Annuler</app-bouton>
+    <app-bouton type="submit" [chargement]="rattachement()">Rattacher</app-bouton>
   </div>
 </form>
 </app-modale>

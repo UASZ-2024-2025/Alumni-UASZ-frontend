@@ -43,6 +43,7 @@ export class PromotionsService extends BaseService {
 
     /**
      * Ajouter une nouvelle promotion
+     * Réservé aux administrateurs. &#x60;academicYear&#x60; (entre 1990 et 2100) et &#x60;specialty&#x60; (non vide) sont obligatoires. Une promotion est unique par année et spécialité (sans tenir compte de la casse). 
      * @endpoint post /promotions
      * @param promotionCreateRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -112,6 +113,7 @@ export class PromotionsService extends BaseService {
 
     /**
      * Obtenir la liste des diplômés d\&#39;une promotion
+     * Les diplômés sont les Alumni dont l\&#39;année de diplôme et la spécialité sont celles de la promotion, triés par nom puis prénom ; leur nombre est égal à &#x60;graduateCount&#x60;. Chaque élément reprend le schéma &#x60;StudentProfile&#x60;, mais son &#x60;id&#x60; est celui du **profil Alumni** : il s\&#39;utilise avec &#x60;GET /alumni/{id}&#x60;, et non avec &#x60;GET /students/{id}&#x60; (qui répondrait 404). 
      * @endpoint get /promotions/{id}/graduates
      * @param id 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -171,6 +173,7 @@ export class PromotionsService extends BaseService {
 
     /**
      * Lister les promotions académiques
+     * Promotions triées de la plus récente à la plus ancienne, puis par spécialité. &#x60;graduateCount&#x60; est calculé : nombre d\&#39;Alumni dont l\&#39;année de diplôme et la spécialité (sans tenir compte de la casse) sont celles de la promotion. 
      * @endpoint get /promotions
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.

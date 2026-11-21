@@ -18,6 +18,9 @@ export interface CompanyUpdateRequest {
     contactEmail?: string;
     contactPhone?: string;
     logoUrl?: string;
+    /**
+     * Réservé à l\'administrateur (403 sinon)
+     */
     isPartner?: boolean;
 }
 

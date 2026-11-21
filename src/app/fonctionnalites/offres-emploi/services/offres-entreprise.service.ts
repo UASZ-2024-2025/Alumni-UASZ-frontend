@@ -56,6 +56,11 @@ export class OffresEntrepriseService {
   }
 }
 
+/** Vrai si l'erreur signale un compte ENTREPRISE sans fiche (côté front ou renvoyé par le job-offer-service). */
+export function estCompteNonRattache(e: unknown): boolean {
+  return e instanceof ErreurApi && e.code === CODE_COMPTE_NON_RATTACHE;
+}
+
 /** Sans fiche rattachée, on n'appelle pas l'API : le back refuserait de toute façon (403). */
 function compteNonRattache(): Observable<never> {
   return throwError(

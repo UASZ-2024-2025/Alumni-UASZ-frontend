@@ -21,6 +21,8 @@ import { Company } from '../model/company';
 // @ts-ignore
 import { CompanyCreateRequest } from '../model/companyCreateRequest';
 // @ts-ignore
+import { CompanyOwnerRequest } from '../model/companyOwnerRequest';
+// @ts-ignore
 import { CompanyPagedResponse } from '../model/companyPagedResponse';
 // @ts-ignore
 import { CompanyUpdateRequest } from '../model/companyUpdateRequest';
@@ -41,6 +43,80 @@ export class CompaniesService extends BaseService {
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Rattacher la fiche à un compte ENTREPRISE (administrateur)
+     * Réservé à l\&#39;ADMINISTRATEUR. Désigne le compte gestionnaire de la fiche et rattache ce compte à la fiche dans user-service (&#x60;User.companyId&#x60;). Idempotent : rejouer l\&#39;appel avec le même compte rattrape un rattachement qui n\&#39;aurait pas abouti à la création de la fiche. 409 si le compte n\&#39;est pas un compte ENTREPRISE ou s\&#39;il est déjà rattaché à une autre fiche ; 503 si user-service est indisponible. 
+     * @endpoint put /companies/{id}/owner
+     * @param id 
+     * @param companyOwnerRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public assignCompanyOwner(id: string, companyOwnerRequest: CompanyOwnerRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Company>;
+    public assignCompanyOwner(id: string, companyOwnerRequest: CompanyOwnerRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Company>>;
+    public assignCompanyOwner(id: string, companyOwnerRequest: CompanyOwnerRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Company>>;
+    public assignCompanyOwner(id: string, companyOwnerRequest: CompanyOwnerRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling assignCompanyOwner.');
+        }
+        if (companyOwnerRequest === null || companyOwnerRequest === undefined) {
+            throw new Error('Required parameter companyOwnerRequest was null or undefined when calling assignCompanyOwner.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/companies/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/owner`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Company>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: companyOwnerRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -157,6 +233,62 @@ export class CompaniesService extends BaseService {
         }
 
         let localVarPath = `/companies/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Company>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Fiche entreprise du compte connecté
+     * Réservé au rôle ENTREPRISE. Renvoie la fiche dont le compte connecté est le gestionnaire (&#x60;ownerId&#x60;). 404 tant que le compte n\&#39;a pas créé sa fiche (l\&#39;écran propose alors de la créer). Si le jeton ne porte pas encore de &#x60;companyId&#x60;, le rattachement du compte à la fiche dans user-service est relancé en arrière-plan (idempotent) : un rattachement manqué à la création se rattrape ainsi. 
+     * @endpoint get /companies/me
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getMyCompany(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Company>;
+    public getMyCompany(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Company>>;
+    public getMyCompany(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Company>>;
+    public getMyCompany(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/companies/me`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Company>('get', `${basePath}${localVarPath}`,
             {

@@ -11,6 +11,10 @@
 
 export interface Company { 
     id?: string;
+    /**
+     * Identifiant du gestionnaire de la fiche (l\'utilisateur qui l\'a créée)
+     */
+    ownerId?: string;
     name?: string;
     sector?: string;
     description?: string;

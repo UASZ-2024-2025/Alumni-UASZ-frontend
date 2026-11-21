@@ -359,6 +359,7 @@ export class StudentsService extends BaseService {
 
     /**
      * Mettre à jour le profil d\&#39;un étudiant
+     * Les champs skills et interests sont remplacés à chaque appel PUT. Lorsqu\&#39;ils sont absents de la requête, ils sont considérés comme des listes vides et les anciennes valeurs sont effacées. 
      * @endpoint put /students/{id}
      * @param id 
      * @param studentProfileUpdateRequest 

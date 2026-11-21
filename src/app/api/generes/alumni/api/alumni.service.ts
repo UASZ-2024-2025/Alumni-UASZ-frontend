@@ -315,16 +315,17 @@ export class AlumniService extends BaseService {
      * @param query Recherche par nom, entreprise ou poste
      * @param companyId Filtrer par entreprise actuelle
      * @param graduationYear Année de diplôme
+     * @param specialty Filtrer par spécialité (le « secteur » de l\&#39;écran)
      * @param page 
      * @param size 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, page?: number, size?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<AlumniPagedResponse>;
-    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, page?: number, size?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AlumniPagedResponse>>;
-    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, page?: number, size?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AlumniPagedResponse>>;
-    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, page?: number, size?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, specialty?: string, page?: number, size?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<AlumniPagedResponse>;
+    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, specialty?: string, page?: number, size?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AlumniPagedResponse>>;
+    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, specialty?: string, page?: number, size?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AlumniPagedResponse>>;
+    public searchAlumni(query?: string, companyId?: string, graduationYear?: number, specialty?: string, page?: number, size?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -350,6 +351,15 @@ export class AlumniService extends BaseService {
             localVarQueryParameters,
             'graduationYear',
             <any>graduationYear,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'specialty',
+            <any>specialty,
             QueryParamStyle.Form,
             true,
         );

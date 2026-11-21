@@ -107,4 +107,15 @@ describe('MesOffres', () => {
     );
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Serveur injoignable');
   });
+
+  it("propose « Ma fiche entreprise » quand le compte n'est rattaché à aucune fiche", () => {
+    const { el } = monter(throwError(() => new ErreurApi(403, 'ACCOUNT_NOT_LINKED', "Votre compte n'est rattaché à aucune fiche entreprise.")));
+    expect(el.textContent).toContain("Votre compte n'est rattaché à aucune fiche entreprise.");
+    expect(el.querySelector('a[href="/entreprise/ma-fiche"]')).not.toBeNull();
+  });
+
+  it("ne propose pas la fiche pour un autre refus 403", () => {
+    const { el } = monter(throwError(() => new ErreurApi(403, 'COMPANY_NOT_VALIDATED', 'non validée')));
+    expect(el.querySelector('a[href="/entreprise/ma-fiche"]')).toBeNull();
+  });
 });
