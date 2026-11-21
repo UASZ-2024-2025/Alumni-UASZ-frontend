@@ -59,10 +59,21 @@ const annuaire = [
     createdAt: '2026-10-15T09:00:00Z',
   })),
 ];
-const entreprises = Array.from({ length: 23 }, (_, i) => ({
-  id: `c${i + 1}`, name: `Entreprise ${i + 1}`, sector: i % 2 ? 'Télécoms' : 'Banque',
-  contactEmail: `contact${i + 1}@entreprise.sn`, isPartner: i % 3 === 0, createdAt: '2026-09-01T09:00:00Z',
-}));
+const entreprises = [
+  // Fiches des deux comptes ENTREPRISE de test (ALUM-224) : leur id est le companyId du compte (en haut du fichier).
+  { id: '11111111-1111-4111-8111-111111111111', ownerId: '4', name: 'Sonatel', sector: 'Télécoms',
+    contactEmail: 'rh@sonatel.sn', isPartner: true, createdAt: '2026-09-01T09:00:00Z' },
+  { id: '33333333-3333-4333-8333-333333333333', ownerId: '6', name: 'Casamance Digital', sector: 'Services numériques',
+    contactEmail: 'contact@casamance-digital.sn', isPartner: false, createdAt: '2026-09-01T09:00:00Z' },
+  ...Array.from({ length: 23 }, (_, i) => ({
+    id: `c${i + 1}`, name: `Entreprise ${i + 1}`, sector: i % 2 ? 'Télécoms' : 'Banque',
+    contactEmail: `contact${i + 1}@entreprise.sn`, isPartner: i % 3 === 0, createdAt: '2026-09-01T09:00:00Z',
+  })),
+];
+// Rattache un compte ENTREPRISE à sa fiche, comme user-service (User.companyId), dans les deux listes du mock.
+const rattacherCompte = (userId, companyId) => {
+  for (const u of [...Object.values(utilisateurs), ...annuaire]) if (u.id === userId) u.companyId = companyId;
+};
 const rapportInsertion = [
   { graduationYear: 2023, specialty: 'Génie Logiciel', totalGraduates: 40, employedCount: 29, insertionRate: 72.5, averageMonthsToFirstJob: 4 },
   { graduationYear: 2023, specialty: 'Réseaux', totalGraduates: 30, employedCount: 18, insertionRate: 60, averageMonthsToFirstJob: 6 },
@@ -143,14 +154,40 @@ function routesAdmin(req, res, chemin, corps) {
     );
     return envoyer(res, 200, parPage(liste, req.url)) ?? true;
   }
+  const moi = utilisateurConnecte(req);
+  if (req.method === 'GET' && chemin === '/v1/companies/me') {
+    if (moi?.role !== 'ENTREPRISE') return erreur(res, 403, 'FORBIDDEN', 'Réservé aux comptes entreprise.') ?? true;
+    const c = entreprises.find((x) => x.ownerId === moi.id);
+    if (!c) return erreur(res, 404, 'COMPANY_NOT_FOUND', "Vous n'avez pas encore de fiche entreprise") ?? true;
+    return envoyer(res, 200, c) ?? true;
+  }
   if (req.method === 'POST' && chemin === '/v1/companies') {
     if (!corps.name || !corps.sector || !corps.contactEmail)
       return erreur(res, 400, 'VALIDATION_ERROR', 'name, sector et contactEmail sont obligatoires.') ?? true;
-    if (entreprises.some((c) => c.name === corps.name))
-      return erreur(res, 409, 'COMPANY_EXISTS', 'Une entreprise porte déjà ce nom.') ?? true;
-    const c = { ...corps, id: `c${entreprises.length + 1}`, isPartner: false, createdAt: new Date().toISOString() };
+    if (moi?.role === 'ENTREPRISE' && entreprises.some((c) => c.ownerId === moi.id))
+      return erreur(res, 409, 'COMPANY_ALREADY_EXISTS', "Un compte ENTREPRISE ne gère qu'une seule fiche entreprise") ?? true;
+    const c = {
+      ...corps, id: randomUUID(), ownerId: moi?.id, isPartner: false, createdAt: new Date().toISOString(),
+    };
     entreprises.unshift(c);
+    nomsEntreprises[c.id] = c.name; // pour que les offres du mock retrouvent la fiche
+    if (moi?.role === 'ENTREPRISE') rattacherCompte(moi.id, c.id);
     return envoyer(res, 201, c) ?? true;
+  }
+  m = chemin.match(/^\/v1\/companies\/([^/]+)\/owner$/);
+  if (req.method === 'PUT' && m) {
+    if (moi?.role !== 'ADMINISTRATEUR')
+      return erreur(res, 403, 'FORBIDDEN', "Seul l'administrateur peut rattacher une fiche à un compte") ?? true;
+    const c = entreprises.find((x) => x.id === m[1]);
+    if (!c) return erreur(res, 404, 'COMPANY_NOT_FOUND', 'Entreprise introuvable.') ?? true;
+    const compte = annuaire.find((u) => u.id === corps.ownerId);
+    if (!compte) return erreur(res, 404, 'USER_NOT_FOUND', 'Compte introuvable.') ?? true;
+    if (compte.role !== 'ENTREPRISE' || (compte.companyId && compte.companyId !== c.id))
+      return erreur(res, 409, 'ACCOUNT_NOT_LINKABLE',
+        "Ce compte n'est pas un compte ENTREPRISE ou est déjà rattaché à une autre fiche") ?? true;
+    c.ownerId = compte.id;
+    rattacherCompte(compte.id, c.id);
+    return envoyer(res, 200, c) ?? true;
   }
   m = chemin.match(/^\/v1\/companies\/([^/]+)$/);
   if (m && (req.method === 'PUT' || req.method === 'GET')) {

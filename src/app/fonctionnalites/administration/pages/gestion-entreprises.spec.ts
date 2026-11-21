@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { CompaniesService } from '../../../api/generes/alumni/api/companies.service';
+import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { Company } from '../../../api/generes/alumni/model/company';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { ToastService } from '../../../commun/services/toast.service';
@@ -10,7 +11,8 @@ const orange: Company = { id: 'c1', name: 'Orange', sector: 'Télécoms', contac
 const page = (content: Company[]) => ({ content, totalElements: content.length, page: 0, size: 20 });
 
 describe('GestionEntreprises', () => {
-  let api: Record<'searchCompanies' | 'createCompany' | 'updateCompany', ReturnType<typeof vi.fn>>;
+  let api: Record<'searchCompanies' | 'createCompany' | 'updateCompany' | 'assignCompanyOwner', ReturnType<typeof vi.fn>>;
+  let utilisateurs: { listUsers: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<GestionEntreprises>;
   let el: HTMLElement;
   let toast: { succes: ReturnType<typeof vi.fn> };
@@ -34,9 +36,19 @@ describe('GestionEntreprises', () => {
       searchCompanies: vi.fn(() => of(page([orange]))),
       createCompany: vi.fn(() => of({ ...orange, id: 'c2', name: 'Sonatel' })),
       updateCompany: vi.fn(() => of({ ...orange, isPartner: true })),
+      assignCompanyOwner: vi.fn(() => of({ ...orange, ownerId: 'u4' })),
+    };
+    utilisateurs = {
+      listUsers: vi.fn(() => of({ content: [{ id: 'u4', firstName: 'Ibou', lastName: 'Ba', email: 'rh@orange.sn', role: 'ENTREPRISE' }] })),
     };
     toast = { succes: vi.fn() };
-    TestBed.configureTestingModule({ providers: [{ provide: CompaniesService, useValue: api }, { provide: ToastService, useValue: toast }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CompaniesService, useValue: api },
+        { provide: UsersService, useValue: utilisateurs },
+        { provide: ToastService, useValue: toast },
+      ],
+    });
     fixture = TestBed.createComponent(GestionEntreprises);
     fixture.detectChanges();
     el = fixture.nativeElement;
@@ -45,6 +57,58 @@ describe('GestionEntreprises', () => {
   it('charge la liste au démarrage', () => {
     expect(api.searchCompanies).toHaveBeenCalledWith(undefined, undefined, 0, 20);
     expect(el.querySelectorAll('tbody tr').length).toBe(1);
+  });
+
+  it('charge les comptes ENTREPRISE et affiche le gestionnaire de chaque fiche', () => {
+    expect(utilisateurs.listUsers).toHaveBeenCalledWith('ENTREPRISE', undefined, 0, 100);
+    expect(el.querySelector('td[data-label="Gestionnaire"]')!.textContent).toContain('Aucun compte entreprise');
+
+    api.searchCompanies.mockReturnValue(of(page([{ ...orange, ownerId: 'u4' }])));
+    el.querySelector('form')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(el.querySelector('td[data-label="Gestionnaire"]')!.textContent).toContain('Ibou Ba');
+  });
+
+  const ouvrirRattachement = () => {
+    const bouton = [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Rattacher')!;
+    bouton.click();
+    fixture.detectChanges();
+  };
+  const formulaireRattachement = () =>
+    [...el.querySelectorAll<HTMLFormElement>('form.formulaire')].find((f) => f.querySelector('select[name="compte"], app-champ[name="compte"]'))!;
+
+  it('rattache une fiche au compte ENTREPRISE choisi', async () => {
+    ouvrirRattachement();
+    const choix = formulaireRattachement().querySelector<HTMLSelectElement>('select')!;
+    choix.value = 'u4';
+    choix.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    formulaireRattachement().dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(api.assignCompanyOwner).toHaveBeenCalledWith('c1', { ownerId: 'u4' });
+    expect(toast.succes).toHaveBeenCalledWith('Orange est rattachée au compte choisi.');
+  });
+
+  it('demande de choisir un compte avant de rattacher', () => {
+    ouvrirRattachement();
+    formulaireRattachement().dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(api.assignCompanyOwner).not.toHaveBeenCalled();
+    expect(el.textContent).toContain('Choisissez le compte ENTREPRISE à rattacher.');
+  });
+
+  it('explique un refus 409 du rattachement', async () => {
+    api.assignCompanyOwner.mockReturnValue(throwError(() => new ErreurApi(409, 'ACCOUNT_NOT_LINKABLE', 'conflit')));
+    ouvrirRattachement();
+    const choix = formulaireRattachement().querySelector<HTMLSelectElement>('select')!;
+    choix.value = 'u4';
+    choix.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    formulaireRattachement().dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(el.textContent).toContain('déjà rattaché à une autre fiche');
   });
 
   it('recherche avec le texte et le filtre partenaire', () => {

@@ -104,7 +104,7 @@ export class Annuaire implements OnInit {
     switch (this.onglet()) {
       case 'alumni':
         return this.alumni
-          .searchAlumni(texte, f.entrepriseId || undefined, f.annee ?? undefined, page, this.taille)
+          .searchAlumni(texte, f.entrepriseId || undefined, f.annee ?? undefined, undefined, page, this.taille)
           .pipe(map((r) => ({ cartes: (r.content ?? []).map(carteAlumni), total: r.totalElements ?? 0 })));
       case 'entreprises':
         return this.entreprisesApi

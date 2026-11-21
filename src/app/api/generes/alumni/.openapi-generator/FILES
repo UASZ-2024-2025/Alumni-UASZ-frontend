@@ -6,6 +6,7 @@ api.module.ts
 api/alumni.service.ts
 api/api.ts
 api/companies.service.ts
+api/internal.service.ts
 api/promotions.service.ts
 api/students.service.ts
 configuration.ts
@@ -18,6 +19,7 @@ model/alumniProfileUpdateRequest.ts
 model/availabilityStatus.ts
 model/company.ts
 model/companyCreateRequest.ts
+model/companyOwnerRequest.ts
 model/companyPagedResponse.ts
 model/companyUpdateRequest.ts
 model/cvEducation.ts
@@ -27,8 +29,11 @@ model/cvRequest.ts
 model/cvResponse.ts
 model/errorResponse.ts
 model/models.ts
+model/profileProvisioningRequest.ts
+model/profileProvisioningResponse.ts
 model/promotion.ts
 model/promotionCreateRequest.ts
+model/provisionedProfileType.ts
 model/recommendationRequest.ts
 model/recommendationResponse.ts
 model/studentPagedResponse.ts

@@ -78,7 +78,7 @@ export class ChoixMembres {
       map((r) => (r.content ?? []).map((s) => this.membre(s.userId, s.firstName, s.lastName, `Étudiant${s.specialty ? ' · ' + s.specialty : ''}`))),
       catchError(() => of(null)),
     );
-    const alumni = this.alumniApi.searchAlumni(q, undefined, undefined, 0, TAILLE).pipe(
+    const alumni = this.alumniApi.searchAlumni(q, undefined, undefined, undefined, 0, TAILLE).pipe(
       map((r) => (r.content ?? []).map((a) => this.membre(a.userId, a.firstName, a.lastName, `Alumni${a.currentPosition ? ' · ' + a.currentPosition : ''}`))),
       catchError(() => of(null)),
     );

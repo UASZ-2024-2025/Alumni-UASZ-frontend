@@ -1,5 +1,44 @@
 # Journal des modifications des contrats OpenAPI
 
+## 1.8.0 (fiche entreprise du compte connecté, ALUM-224)
+
+Évolution compatible : aucune opération ni aucun champ retiré ; seule une opération est ajoutée.
+
+### alumni-student-company-service
+- **Ajout** de `GET /companies/me` (`getMyCompany`, rôle ENTREPRISE) : fiche dont le compte connecté est le
+  gestionnaire, 404 s'il n'en a pas encore. Relance le rattachement du compte dans user-service si le jeton n'a pas
+  encore de `companyId`.
+- `info.version` passe de 1.7.0 à **1.8.0**.
+
+SPI `alumni-student-company-service-spi` publié en **1.8.0** (pom parent `alumni-spis` 1.8.0).
+
+## 1.7.0 (recherche d'Alumni par spécialité, ALUM-105)
+
+Évolution compatible : aucune opération ni aucun champ retiré ; seuls un paramètre et une réponse sont ajoutés.
+
+### alumni-student-company-service
+- **Ajout** du paramètre de requête `specialty` (string, facultatif) sur `GET /alumni` (`searchAlumni`) :
+  filtre de recherche par spécialité, le « secteur » de l'écran (ALUM-105).
+- **Précision** : `PUT /alumni/{id}` (`updateAlumniProfile`) déclare la réponse 403 (modification par un
+  utilisateur qui n'est pas le propriétaire du profil) (ALUM-100).
+- `info.version` passe de 1.5.0 à **1.7.0**.
+
+SPI `alumni-student-company-service-spi` publié en **1.7.0** (pom parent `alumni-spis` 1.7.0).
+
+## 1.6.0 (publication et gestion des offres, ALUM-148)
+
+Évolution compatible : aucune opération ni aucun champ retiré ; seules des réponses et des descriptions sont ajoutées.
+
+### job-offer-service
+- **Ajout** des réponses `403` sur `updateOffer` et `updateOfferStatus` (auteur de l'offre ou ADMINISTRATEUR), `400` sur
+  `updateOfferStatus` (transition interdite), `503` sur `createOffer` (fiche entreprise indisponible).
+- **Précisions** : règles de publication (gestionnaire de la fiche, entreprise validée), visibilité des offres selon
+  leur statut (`searchOffers`, `getOfferById`), mise à jour partielle de `updateOffer`, archivage par `deleteOffer`,
+  transitions de statut, fermeture automatique à la date limite.
+- `info.version` passe de 1.0.0 à **1.6.0** pour s'aligner sur le SPI.
+
+SPI `job-offer-service-spi` publié en **1.6.0** (pom parent `alumni-spis` 1.6.0).
+
 ## 1.5.0 (rattachement d'un compte ENTREPRISE à sa fiche, ALUM-168)
 
 Évolution compatible : aucune opération ni aucun champ retiré ; seuls des champs, des opérations et des réponses sont ajoutés.

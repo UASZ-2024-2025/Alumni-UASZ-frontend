@@ -11,7 +11,7 @@ import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
 import { ToastService } from '../../../commun/services/toast.service';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
-import { NouvelleOffre, OffresEntrepriseService } from '../services/offres-entreprise.service';
+import { estCompteNonRattache, NouvelleOffre, OffresEntrepriseService } from '../services/offres-entreprise.service';
 
 /** Au-delà, on considère que le serveur ne répond pas (évite un bouton bloqué indéfiniment). */
 const DELAI_MS = 20_000;
@@ -44,7 +44,12 @@ const LIBELLES_CHAMPS: Record<string, string> = {
   template: `
     <app-carte titre="Publier une offre">
       <form [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
-        @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
+        @if (erreur()) {
+          <app-alerte>
+            {{ erreur() }}
+            @if (sansFiche()) { <a routerLink="/entreprise/ma-fiche">Ma fiche entreprise</a> }
+          </app-alerte>
+        }
 
         <app-champ libelle="Intitulé du poste" [requis]="true" formControlName="title"
           [erreur]="erreurDe(formulaire.controls.title, 'L\\'intitulé est obligatoire.')" />
@@ -119,6 +124,8 @@ export class PublierOffre {
     deadline: [''],
   });
   protected readonly erreur = signal<string | null>(null);
+  /** Compte ENTREPRISE sans fiche : on propose de la créer (ALUM-224). */
+  protected readonly sansFiche = signal(false);
   protected readonly chargement = signal(false);
 
   constructor() {
@@ -199,12 +206,14 @@ export class PublierOffre {
             this.toasts.succes('Votre offre a bien été publiée.');
             this.router.navigate(['/offres-emploi/mes-offres']);
           },
-          error: (e: unknown) =>
+          error: (e: unknown) => {
+            this.sansFiche.set(estCompteNonRattache(e));
             this.erreur.set(
               e instanceof TimeoutError
                 ? 'Le serveur met trop de temps à répondre. Réessayez dans un instant.'
                 : messageErreur(e, MESSAGES_PUBLICATION),
-            ),
+            );
+          },
         });
     } catch {
       this.chargement.set(false);

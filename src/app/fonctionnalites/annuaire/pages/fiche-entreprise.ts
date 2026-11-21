@@ -49,7 +49,7 @@ export class FicheEntreprise implements OnInit {
             tap((c) => {
               this.entreprise.set(c);
               this.chargement.set(false);
-              this.alumni.searchAlumni(undefined, id, undefined, 0, 12).subscribe({
+              this.alumni.searchAlumni(undefined, id, undefined, undefined, 0, 12).subscribe({
                 next: (r) => {
                   this.alumniDeLEntreprise.set(r.content ?? []);
                   this.totalAlumni.set(r.totalElements ?? 0);

@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CompaniesService } from '../../../api/generes/alumni/api/companies.service';
 import { Company } from '../../../api/generes/alumni/model/company';
+import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
+import { User } from '../../../api/generes/utilisateurs/model/user';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Avatar } from '../../../commun/components/avatar/avatar';
 import { Carte } from '../../../commun/components/carte/carte';
@@ -24,6 +26,7 @@ export class GestionEntreprises {
   private readonly api = inject(CompaniesService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly toast = inject(ToastService);
+  private readonly utilisateurs = inject(UsersService);
 
   protected readonly taille = 20;
   protected readonly entreprises = signal<Company[]>([]);
@@ -47,6 +50,23 @@ export class GestionEntreprises {
 
   protected readonly nbPages = computed(() => Math.max(1, Math.ceil(this.total() / this.taille)));
 
+  // --- Rattachement d'une fiche à un compte ENTREPRISE (ALUM-224, PUT /companies/{id}/owner) ---
+  protected readonly comptesEntreprise = signal<User[]>([]);
+  protected readonly aRattacher = signal<Company | null>(null);
+  protected readonly compteChoisi = signal('');
+  protected readonly rattachement = signal(false);
+  protected readonly erreurRattachement = signal<string | null>(null);
+  protected readonly optionsComptes = computed<OptionChamp[]>(() => [
+    { valeur: '', libelle: 'Choisir un compte' },
+    ...this.comptesEntreprise().map((u) => ({
+      valeur: u.id ?? '',
+      libelle: `${u.firstName ?? ''} ${u.lastName ?? ''} (${u.email ?? ''})${u.companyId ? ' : déjà rattaché' : ''}`.trim(),
+    })),
+  ]);
+  private readonly nomsComptes = computed(
+    () => new Map(this.comptesEntreprise().map((u) => [u.id, `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim()])),
+  );
+
   protected readonly formulaire = this.fb.group({
     name: ['', Validators.required],
     sector: ['', Validators.required],
@@ -59,6 +79,61 @@ export class GestionEntreprises {
 
   constructor() {
     this.charger();
+    this.chargerComptesEntreprise();
+  }
+
+  /** Nom du gestionnaire s'il s'agit d'un compte ENTREPRISE, sinon null (fiche gérée par l'administration ou un Alumni). */
+  protected gestionnaire(c: Company): string | null {
+    return (c.ownerId && this.nomsComptes().get(c.ownerId)) || null;
+  }
+
+  private chargerComptesEntreprise(): void {
+    this.utilisateurs.listUsers('ENTREPRISE', undefined, 0, 100).subscribe({
+      next: (r) => this.comptesEntreprise.set(r.content ?? []),
+      error: () => this.comptesEntreprise.set([]),
+    });
+  }
+
+  protected ouvrirRattachement(c: Company): void {
+    this.erreurRattachement.set(null);
+    this.compteChoisi.set(this.gestionnaire(c) ? (c.ownerId ?? '') : '');
+    this.aRattacher.set(c);
+  }
+
+  protected fermerRattachement(): void {
+    this.aRattacher.set(null);
+    this.compteChoisi.set('');
+  }
+
+  protected rattacher(): void {
+    const c = this.aRattacher();
+    const compte = this.compteChoisi();
+    if (!c?.id) return;
+    if (!compte) {
+      this.erreurRattachement.set('Choisissez le compte ENTREPRISE à rattacher.');
+      return;
+    }
+    this.rattachement.set(true);
+    this.erreurRattachement.set(null);
+    this.api.assignCompanyOwner(c.id, { ownerId: compte }).subscribe({
+      next: (maj) => {
+        this.rattachement.set(false);
+        this.entreprises.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
+        this.toast.succes(`${maj.name} est rattachée au compte choisi.`);
+        this.fermerRattachement();
+        this.chargerComptesEntreprise();
+      },
+      error: (e) => {
+        this.rattachement.set(false);
+        this.erreurRattachement.set(
+          messageErreur(e, {
+            404: 'Cette entreprise ou ce compte n’existe plus.',
+            409: 'Ce compte n’est pas un compte ENTREPRISE ou il est déjà rattaché à une autre fiche.',
+            503: 'Le service des comptes est momentanément indisponible. Réessayez dans un instant.',
+          }),
+        );
+      },
+    });
   }
 
   protected charger(): void {

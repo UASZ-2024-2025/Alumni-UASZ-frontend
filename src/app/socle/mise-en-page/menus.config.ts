@@ -38,6 +38,7 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     ...commun,
   ],
   ENTREPRISE: [
+    { libelle: 'Ma fiche entreprise', chemin: '/entreprise/ma-fiche' },
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Mes offres', chemin: '/offres-emploi/mes-offres' },
     { libelle: 'Publier une offre', chemin: '/offres-emploi/publier' },

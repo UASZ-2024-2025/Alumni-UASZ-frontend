@@ -33,6 +33,16 @@ export const routes: Routes = [
           ),
       },
 
+      {
+        path: 'entreprise',
+        canActivate: [roleGuard],
+        data: { roles: ['ENTREPRISE'] },
+        loadChildren: () =>
+          import('./fonctionnalites/fiche-entreprise/fiche-entreprise.routes').then(
+            (m) => m.FICHE_ENTREPRISE_ROUTES,
+          ),
+      },
+
       // --- Annuaire et profil Alumni ---
       {
         path: 'annuaire',
