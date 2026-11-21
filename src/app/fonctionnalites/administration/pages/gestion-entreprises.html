@@ -1,7 +1,12 @@
 <div class="entete-page">
   <div>
     <h1>Entreprises partenaires</h1>
-    <p class="total" aria-live="polite">{{ total() }} entreprise(s)</p>
+    <p class="total" aria-live="polite">
+      {{ total() }} entreprise(s)
+      @if (enAttente()) {
+        · <button type="button" class="lien-attente" (click)="voirEnAttente()">{{ enAttente() }} en attente de validation</button>
+      }
+    </p>
   </div>
   <app-bouton (clic)="ajouter()">Ajouter une entreprise</app-bouton>
 </div>
@@ -31,7 +36,7 @@
           <th scope="col">Secteur</th>
           <th scope="col">Contact</th>
           <th scope="col">Gestionnaire</th>
-          <th scope="col">Partenaire</th>
+          <th scope="col">Validation</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
@@ -53,12 +58,12 @@
               </span>
             </td>
             <td data-label="Gestionnaire">{{ gestionnaire(c) || 'Aucun compte entreprise' }}</td>
-            <td data-label="Partenaire">
+            <td data-label="Validation">
               <label class="interrupteur">
                 <input #partenaire type="checkbox" [checked]="c.isPartner" [disabled]="enCours() === c.id"
-                  [attr.aria-label]="'Partenaire : ' + c.name"
+                  [attr.aria-label]="'Valider ' + c.name + ' comme partenaire'"
                   (change)="basculerPartenaire(c, partenaire.checked)" />
-                <span>{{ c.isPartner ? 'Partenaire' : 'Non partenaire' }}</span>
+                <span>{{ c.isPartner ? 'Validée (partenaire)' : 'En attente de validation' }}</span>
               </label>
             </td>
             <td class="cellule-actions"><div class="actions">
