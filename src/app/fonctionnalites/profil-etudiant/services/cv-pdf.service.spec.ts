@@ -69,6 +69,37 @@ describe('CvPdfService', () => {
     const blob = await service.generer({ ...cvInitial(null, null), titre: 'CV' });
     expect(blob.size).toBeGreaterThan(500);
   });
+
+  describe('longueurs de CV (ALUM-228)', () => {
+    const pages = async (d: DonneesCv) => (await texte(await service.generer(d))).match(/\/Type\s*\/Page\b(?!s)/g)?.length ?? 0;
+    const experiences = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        companyName: `Entreprise ${i + 1}`,
+        position: `Poste ${i + 1}`,
+        startDate: '2024-01-01',
+        endDate: '2024-12-01',
+        description: 'Mission détaillée. '.repeat(14),
+      }));
+
+    it('un CV court tient sur 1 page', async () => {
+      expect(await pages({ ...donnees(), interets: ['Football', 'Lecture'] })).toBe(1);
+    });
+
+    it('un CV moyen tient sur 2 pages au plus', async () => {
+      expect(await pages({ ...donnees(), experiences: experiences(5) })).toBeLessThanOrEqual(2);
+    });
+
+    it('un CV long est réduit pour rester sur 2 pages et garde tout son contenu', async () => {
+      const d = { ...donnees(), experiences: experiences(9) };
+      expect(await pages(d)).toBeLessThanOrEqual(2);
+      const contenu = await texte(await service.generer(d));
+      expect(contenu).toContain('Entreprise 9');
+    });
+
+    it('affiche les centres d’intérêt', async () => {
+      expect(await texte(await service.generer({ ...donnees(), interets: ['Échecs'] }))).toContain('CENTRES D');
+    });
+  });
 });
 
 describe('modèles du CV', () => {
