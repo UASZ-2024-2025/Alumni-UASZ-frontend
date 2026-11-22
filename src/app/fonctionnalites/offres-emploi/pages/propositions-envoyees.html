@@ -1,6 +1,5 @@
 <app-entete-page titre="Propositions envoyées">
   <p class="total" aria-live="polite">{{ propositions().length }} proposition(s)</p>
-  <app-bouton actions variante="secondaire" [chargement]="chargement()" (clic)="charger()">Actualiser</app-bouton>
 </app-entete-page>
 
 <form class="filtres" (submit)="$event.preventDefault()">

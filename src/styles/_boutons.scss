@@ -17,5 +17,6 @@
   transition: 0.15s;
 
   &:hover:not(:disabled) { background: var(--g9); transform: translateY(-1px); }
-  &:disabled { opacity: 0.6; cursor: wait; box-shadow: none; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+  &[aria-busy="true"]:disabled { cursor: wait; }
 }

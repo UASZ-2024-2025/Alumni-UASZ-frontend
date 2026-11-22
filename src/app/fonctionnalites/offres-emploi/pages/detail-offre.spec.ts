@@ -129,7 +129,7 @@ describe('DetailOffre', () => {
 
   it('propose un retour vers la liste', () => {
     creer();
-    expect(el.querySelector('a.retour')!.getAttribute('href')).toBe('/offres-emploi');
+    expect(el.querySelector('a.lien-retour')!.getAttribute('href')).toBe('/offres-emploi');
   });
 
   it('affiche un message clair quand l’offre est introuvable (404)', () => {

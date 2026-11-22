@@ -10,7 +10,6 @@
   h2 { margin: 0; color: var(--tx); font: 700 1.25rem/1.2 var(--police-titre); }
   p { max-width: 24rem; margin: 0; }
 }
-.lien-retour { color: var(--g8); font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
 
 // --- En-tête ---
 .entete-fil { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--bd); background: var(--sf); }

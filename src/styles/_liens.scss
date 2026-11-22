@@ -7,3 +7,28 @@
   a { color: var(--g8); font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
 }
 .sous-titre { margin: -0.4rem 0 0.4rem; color: var(--mu); }
+
+// Liens modernes : soulignement fin qui se dessine au survol, retour visible au clavier.
+%lien-moderne {
+  color: var(--g8);
+  font-weight: 600;
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1.5px no-repeat;
+  transition: background-size 0.2s ease, color 0.15s;
+  border-radius: 2px;
+
+  &:hover { color: var(--g9); background-size: 100% 1.5px; }
+  &:focus-visible { outline: 2px solid var(--g8); outline-offset: 2px; }
+}
+.lien a, .aide a, dd a, p a:not(.btn), td a:not(.btn), .lien-retour { @extend %lien-moderne; }
+.lien-retour {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 4px 10px;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  background-image: none;
+  &:hover { background-color: var(--g0); border-color: var(--g1); background-size: 0; }
+}

@@ -1,5 +1,5 @@
 <div class="page page--etroite">
-  <a class="retour" routerLink="/annuaire" [queryParams]="{ onglet: 'entreprises' }">← Retour à l'annuaire</a>
+  <a class="lien-retour" routerLink="/annuaire" [queryParams]="{ onglet: 'entreprises' }">← Retour à l'annuaire</a>
 
   @if (chargement()) {
     <app-spinner libelle="Chargement de la fiche…" />
