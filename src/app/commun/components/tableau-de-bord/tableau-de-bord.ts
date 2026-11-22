@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, OnInit, signal, WritableSignal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { forkJoin, Observable } from 'rxjs';
 import { AnalyticsReportsService } from '../../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../../api/generes/analyses-correspondances/api/dashboard.service';
@@ -10,8 +11,11 @@ import { UsersService } from '../../../api/generes/utilisateurs/api/users.servic
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
 import { UserStatus } from '../../../api/generes/utilisateurs/model/userStatus';
 import { Alerte } from '../alerte/alerte';
+import { Bouton } from '../bouton/bouton';
+import { Champ, OptionChamp } from '../champ/champ';
 import { EtatVide } from '../etat-vide/etat-vide';
 import { Carte } from '../carte/carte';
+import { EntetePage } from '../entete-page/entete-page';
 import { CarteStat } from '../carte-stat/carte-stat';
 import { GraphiqueBarres, LigneGraphique } from '../graphique-barres/graphique-barres';
 import { ColonneGraphique, GraphiqueColonnes } from '../graphique-colonnes/graphique-colonnes';
@@ -30,7 +34,7 @@ const enChargement = <T>(): Etat<T> => ({ statut: 'chargement' });
 
 @Component({
   selector: 'app-tableau-de-bord',
-  imports: [DatePipe, Alerte, Carte, EtatVide, CarteStat, GraphiqueAnneau, GraphiqueBarres, GraphiqueColonnes],
+  imports: [DatePipe, FormsModule, Alerte, Bouton, Champ, Carte, EntetePage, EtatVide, CarteStat, GraphiqueAnneau, GraphiqueBarres, GraphiqueColonnes],
   templateUrl: './tableau-de-bord.html',
   styleUrl: './tableau-de-bord.scss',
 })
@@ -44,11 +48,19 @@ export class TableauDeBord implements OnInit {
    * tant que le back ne les ouvre pas à l'enseignant, sa vue n'appelle rien.
    */
   readonly admin = input(false);
+  /** Titre de la page ; par défaut selon le rôle. */
+  readonly titre = input<string>();
 
   protected readonly stats = signal<Etat<DashboardStats>>(enChargement());
   protected readonly insertion = signal<Etat<InsertionReportResponse>>(enChargement());
   protected readonly competences = signal<Etat<SkillsGapResponse>>(enChargement());
   protected readonly specialites = signal<string[]>([]);
+  protected readonly annee = signal('');
+  protected readonly specialite = signal('');
+  protected readonly optionsSpecialites = computed<OptionChamp[]>(() => [
+    { valeur: '', libelle: 'Toutes' },
+    ...this.specialites().map((s) => ({ valeur: s, libelle: s })),
+  ]);
   protected readonly parRole = signal<Etat<SegmentAnneau[]>>(enChargement());
   protected readonly parStatut = signal<Etat<SegmentAnneau[]>>(enChargement());
 
@@ -140,6 +152,10 @@ export class TableauDeBord implements OnInit {
       next: (donnees) => this.stats.set({ statut: 'ok', donnees }),
       error: (e) => this.stats.set({ statut: 'erreur', message: messageErreur(e) }),
     });
+  }
+
+  protected filtrer(): void {
+    this.chargerInsertion(this.annee(), this.specialite());
   }
 
   protected chargerInsertion(annee?: string, specialite?: string): void {

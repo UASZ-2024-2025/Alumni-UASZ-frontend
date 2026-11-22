@@ -8,7 +8,7 @@
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--bd);
-  border-radius: 16px;
+  border-radius: var(--rayon-l);
   background: var(--sf);
   box-shadow: var(--ombre-carte);
 }
@@ -18,58 +18,25 @@
 .entete-liste { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 10px; }
 h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
 
-.bouton-rond {
-  display: grid; place-items: center; flex: none; width: 38px; height: 38px;
-  border: 0; border-radius: 50%; background: var(--g8); color: #fff; cursor: pointer;
-  box-shadow: var(--ombre-bouton); transition: background .15s;
-  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-  &:hover { background: var(--g9); }
-}
+.recherche { margin: 0 12px 8px; }
 
-.recherche {
-  position: relative; margin: 0 12px 8px;
-  svg { position: absolute; top: 50%; left: 12px; width: 15px; height: 15px; transform: translateY(-50%); fill: none; stroke: var(--mu); stroke-width: 1.6; stroke-linecap: round; }
-  input {
-    box-sizing: border-box; width: 100%; padding: 8px 12px 8px 36px;
-    border: 1px solid transparent; border-radius: 999px; background: var(--g0); color: var(--tx); font: inherit; font-size: .875rem;
-    &:focus { border-color: var(--g7); outline: 2px solid var(--g1); background: var(--sf); }
-  }
-}
-
-.bouton-icone {
-  display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%;
-  background: none; color: var(--mu); cursor: pointer;
-  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  &:hover { background: var(--g0); color: var(--tx); }
-}
 .entete-liste:has(.titre-archives) { justify-content: flex-start; }
-.titre-archives { font-size: 1.25rem; }
-.note-archives { margin: 0 16px 10px; color: var(--mu); font-size: .8125rem; }
+.titre-archives { font-size: var(--t-l); }
+.note-archives { margin: 0 16px 10px; color: var(--mu); font-size: var(--t-s); }
 
-// Filtres en puces, comme les onglets « Tous / Non lus » de WhatsApp.
-.filtres { display: flex; gap: 6px; padding: 0 12px 8px; }
-.puce {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
-  border: 0; border-radius: 999px; background: var(--g0); color: var(--mu); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer;
-  &:hover { color: var(--tx); }
-  &.active { background: var(--g1); color: var(--g9); }
-}
-.compte { min-width: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--g7); color: #fff; font-size: .6875rem; line-height: 18px; text-align: center; }
 
-.entree-archives {
-  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 16px;
-  border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
-  &:hover { background: var(--g0); }
-  .libelle { flex: 1; font-weight: 600; }
-  .nombre { color: var(--g7); font-size: .8125rem; font-weight: 700; }
-}
+// Entrée « Archivées » : un app-bouton discret pleine largeur .
+.entree-archives { display: block; }
+.entree-archives .libelle { flex: 1; font-weight: 600; }
+.entree-archives .nombre { color: var(--g7); font-size: var(--t-s); font-weight: 700; }
+.icone { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icone-archives {
   display: grid; place-items: center; width: 2.9rem; height: 2.9rem; flex: none;
   svg { width: 20px; height: 20px; fill: none; stroke: var(--g7); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 }
 
 .defilement { flex: 1; min-height: 0; overflow-y: auto; }
-.message-liste { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; margin: 0; padding: 16px; color: var(--mu); font-size: .875rem; }
+.message-liste { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; margin: 0; padding: 16px; color: var(--mu); font-size: var(--t-m); }
 .message-liste.vide { align-items: center; text-align: center; strong { color: var(--tx); } }
 
 .conversations { margin: 0; padding: 0; list-style: none; }
@@ -85,13 +52,13 @@ h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
 .ligne { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .nom, .apercu { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nom { color: var(--tx); font-weight: 600; }
-.apercu { color: var(--mu); font-size: .875rem; }
-.date { flex: none; color: var(--mu); font-size: .75rem; }
+.apercu { color: var(--mu); font-size: var(--t-m); }
+.date { flex: none; color: var(--mu); font-size: var(--t-xs); }
 .date.non-lu { color: var(--g7); font-weight: 700; }
 .apercu.systeme { font-style: italic; }
 .indicateurs { display: flex; flex: none; align-items: center; gap: 4px; }
 .indicateur { width: 15px; height: 15px; fill: none; stroke: var(--mu); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.pastille { display: grid; place-items: center; flex: none; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: var(--g7); color: #fff; font-size: .6875rem; font-weight: 700; }
+.pastille { display: grid; place-items: center; flex: none; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: var(--rayon-pilule); background: var(--g7); color: var(--sf); font-size: var(--t-xs); font-weight: 700; }
 // Groupe en sourdine : la pastille passe au gris, comme sur WhatsApp.
 .pastille.sourdine { background: var(--mu); }
 
@@ -101,16 +68,16 @@ h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
 .accueil-fil {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
-  padding: 24px; border-bottom: 4px solid var(--g7); color: var(--mu); text-align: center;
+  padding: 24px; color: var(--mu); text-align: center;
   svg { width: 64px; height: 64px; margin-bottom: .5rem; fill: var(--g1); stroke: var(--g7); stroke-width: .6; stroke-linejoin: round; }
   h2 { margin: 0; color: var(--tx); font: 700 1.5rem/1.2 var(--police-titre); }
   p { max-width: 26rem; margin: 0; }
-  .discret { margin-top: 1rem; font-size: .8125rem; }
+  .discret { margin-top: 1rem; font-size: var(--t-s); }
 }
 
 // --- Fenêtre de création ---
 .formulaire { display: flex; flex-direction: column; gap: 1rem; }
-.aide { margin: 0; color: var(--mu); font-size: .8125rem; }
+.aide { margin: 0; color: var(--mu); font-size: var(--t-s); }
 .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 
 @media (max-width: 800px) {

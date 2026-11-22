@@ -1,10 +1,6 @@
-<div class="entete-page">
-  <div>
-    <h1>Propositions envoyées</h1>
-    <p class="total" aria-live="polite">{{ propositions().length }} proposition(s)</p>
-  </div>
-  <app-bouton variante="secondaire" [chargement]="chargement()" (clic)="charger()">Actualiser</app-bouton>
-</div>
+<app-entete-page titre="Propositions envoyées">
+  <p class="total" aria-live="polite">{{ propositions().length }} proposition(s)</p>
+</app-entete-page>
 
 <form class="filtres" (submit)="$event.preventDefault()">
   <app-champ libelle="Réponse" type="select" [options]="optionsStatut" name="statut"
@@ -22,27 +18,16 @@
     <app-etat-vide titre="Aucune proposition">Les offres que vous proposez à des étudiants apparaîtront ici.</app-etat-vide>
   } @else if (propositions().length > 0) {
     <app-carte>
-      <div class="tableau-conteneur"><table class="tableau tableau--cartes">
-        <caption class="cache">Propositions envoyées</caption>
-        <thead>
-          <tr>
-            <th scope="col">Étudiant</th>
-            <th scope="col">Offre</th>
-            <th scope="col">Envoyée le</th>
-            <th scope="col">Réponse</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of propositions(); track p.id) {
-            <tr>
-              <td><strong>{{ p.studentName || '—' }}</strong></td>
-              <td data-label="Offre">{{ p.offerTitle || '—' }}</td>
-              <td data-label="Envoyée le">{{ p.createdAt ? (p.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
-              <td data-label="Réponse"><app-badge [ton]="tonProposition(p.status)">{{ libelleProposition(p.status) }}</app-badge></td>
-            </tr>
+      <app-tableau [colonnes]="colonnes" [lignes]="propositions()" legende="Propositions envoyées">
+        <ng-template #cellule let-p let-cle="cle">
+          @switch (cle) {
+            @case ('etudiant') { <strong>{{ p.studentName || '—' }}</strong> }
+            @case ('offre') { {{ p.offerTitle || '—' }} }
+            @case ('date') { {{ p.createdAt ? (p.createdAt | date: 'dd/MM/yyyy') : '—' }} }
+            @default { <app-badge [ton]="tonProposition(p.status)">{{ libelleProposition(p.status) }}</app-badge> }
           }
-        </tbody>
-      </table></div>
+        </ng-template>
+      </app-tableau>
     </app-carte>
   }
 </div>

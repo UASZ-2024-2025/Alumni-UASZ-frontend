@@ -23,9 +23,10 @@ describe('ClocheNotifications', () => {
   let fixture: ComponentFixture<ClocheNotifications>;
   let el: HTMLElement;
 
-  const bouton = () => el.querySelector<HTMLButtonElement>('button.cloche')!;
+  const bouton = () => el.querySelector<HTMLButtonElement>('.cloche button')!;
   const panneau = () => el.querySelector('.panneau');
-  const elements = () => [...el.querySelectorAll<HTMLButtonElement>('.element')];
+  const elements = () => [...el.querySelectorAll<HTMLElement>('.element')];
+  const boutonsElements = () => [...el.querySelectorAll<HTMLButtonElement>('.element button')];
   const ouvrir = () => {
     bouton().click();
     fixture.detectChanges();
@@ -214,7 +215,7 @@ describe('ClocheNotifications', () => {
   describe('lien vers l’élément concerné', () => {
     it('marque la notification comme lue, ouvre l’écran concerné et ferme le panneau', () => {
       ouvrir();
-      elements()[0].click();
+      boutonsElements()[0].click();
       fixture.detectChanges();
 
       expect(api.markNotificationAsRead).toHaveBeenCalledWith('n1');
@@ -225,14 +226,14 @@ describe('ClocheNotifications', () => {
 
     it('ne rappelle pas le back pour une notification déjà lue, mais navigue quand même', () => {
       ouvrir();
-      elements()[2].click();
+      boutonsElements()[2].click();
       expect(api.markNotificationAsRead).not.toHaveBeenCalled();
       expect(router.navigateByUrl).toHaveBeenCalledWith('/messagerie');
     });
 
     it('ne navigue pas pour une notification sans destination (alerte système)', () => {
       ouvrir();
-      elements()[1].click();
+      boutonsElements()[1].click();
       expect(api.markNotificationAsRead).toHaveBeenCalledWith('n2');
       expect(router.navigateByUrl).not.toHaveBeenCalled();
     });

@@ -1,8 +1,5 @@
 <aside class="barre">
-  <div class="logo">
-    <img src="logo-uasz.png" width="44" height="44" alt="" />
-    <span>UASZ<small>Université Assane Seck de Ziguinchor</small></span>
-  </div>
+  <app-logo-uasz class="logo" variante="clair" source="logo-uasz.png" />
 
   <nav aria-label="Navigation principale">
     @for (e of elements(); track e.chemin) {
@@ -34,7 +31,7 @@
     }
     <button type="button" class="utilisateur" aria-haspopup="menu" [attr.aria-expanded]="menuOuvert()"
       (click)="menuOuvert.set(!menuOuvert())">
-      <span class="avatar">{{ initiale() }}</span>
+      <app-avatar [nom]="nom()" />
       <span class="identite"><b>{{ nom() }}</b><small>{{ role() }}</small></span>
       <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 10l4-4 4 4" />

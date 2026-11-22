@@ -26,8 +26,14 @@ describe('GestionUtilisateurs', () => {
     fixture.detectChanges();
     el = fixture.nativeElement;
   };
-  const bouton = (nom: string) =>
-    el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
+  const bouton = (nom: string) => {
+    const cible = nom.slice(nom.indexOf(' ') + 1);
+    if (!el.querySelector(`button[aria-label="${nom}"]`)) {
+      el.querySelector<HTMLButtonElement>(`button[aria-label="Actions pour ${cible}"]`)?.click();
+      fixture.detectChanges();
+    }
+    return el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
+  };
   const cliquer = (b: HTMLButtonElement) => { b.click(); fixture.detectChanges(); };
   const cliquerEtAttendre = async (b: HTMLButtonElement) => { b.click(); await fixture.whenStable(); fixture.detectChanges(); };
 
@@ -89,10 +95,10 @@ describe('GestionUtilisateurs', () => {
 
   it('filtre par statut avec les puces', () => {
     monter();
-    const puce = [...el.querySelectorAll<HTMLButtonElement>('.puce')].find((b) => b.textContent!.trim() === 'Suspendu')!;
+    const puce = [...el.querySelectorAll<HTMLButtonElement>('app-onglets [role="tab"]')].find((b) => b.textContent!.trim() === 'Suspendu')!;
     cliquer(puce);
     expect(api.listUsers).toHaveBeenLastCalledWith(undefined, 'SUSPENDU', 0, 20);
-    expect(puce.getAttribute('aria-pressed')).toBe('true');
+    expect(puce.getAttribute('aria-selected')).toBe('true');
   });
 
   it('pagine : Suivant charge la page 1 et se désactive sur la dernière page', () => {

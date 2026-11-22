@@ -10,7 +10,8 @@ import { Alerte } from '../../../../commun/components/alerte/alerte';
 import { Avatar } from '../../../../commun/components/avatar/avatar';
 import { Badge } from '../../../../commun/components/badge/badge';
 import { Bouton } from '../../../../commun/components/bouton/bouton';
-import { Champ } from '../../../../commun/components/champ/champ';
+import { CaseACocher } from '../../../../commun/components/case-a-cocher/case-a-cocher';
+import { Champ, OptionChamp } from '../../../../commun/components/champ/champ';
 import { ConfirmationService } from '../../../../commun/services/confirmation.service';
 import { ToastService } from '../../../../commun/services/toast.service';
 import { libelleRole } from '../../../../commun/utilitaires/libelles';
@@ -48,7 +49,7 @@ const rang = (m: GroupMember) => (m.groupRole === 'OWNER' ? 0 : m.groupRole === 
  */
 @Component({
   selector: 'app-infos-groupe',
-  imports: [FormsModule, Alerte, Avatar, Badge, Bouton, Champ, ChoixMembres],
+  imports: [FormsModule, Alerte, Avatar, Badge, Bouton, CaseACocher, Champ, ChoixMembres],
   templateUrl: './infos-groupe.html',
   styleUrl: './infos-groupe.scss',
 })
@@ -86,6 +87,14 @@ export class InfosGroupe {
     if (!p.muted) return 'NONE';
     return p.mutedUntil ? 'TEMPORAIRE' : 'ALWAYS';
   });
+
+  /** Liste « Couper les notifications » : la valeur vide représente l'échéance déjà posée (le contrat ne renvoie que la date). */
+  protected readonly optionsSourdine = computed<OptionChamp[]>(() => [
+    { valeur: 'NONE', libelle: 'Activées' },
+    ...(this.etatSourdine() === 'TEMPORAIRE' ? [{ valeur: '', libelle: "Coupées pour l'instant" }] : []),
+    ...DUREES_SOURDINE.map((d) => ({ valeur: d.valeur, libelle: `Couper · ${d.libelle}` })),
+  ]);
+  protected readonly valeurSourdine = computed(() => (this.etatSourdine() === 'TEMPORAIRE' ? '' : this.etatSourdine()));
 
   /** Propriétaire, puis administrateurs, puis « Vous », puis par nom. */
   protected readonly membres = computed(() =>
@@ -125,6 +134,7 @@ export class InfosGroupe {
 
   // --- Préférences personnelles ---
   protected sourdine(valeur: string): void {
+    if (!valeur) return;
     const mute = valeur as MuteDuration;
     this.executer('sourdine', this.api.updateGroupPreferences(this.groupe().id!, { mute }), (preferences) => {
       this.modifie.emit({ ...this.groupe(), preferences });

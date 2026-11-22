@@ -19,7 +19,7 @@
         <p class="description vide">Ajoutez une description pour présenter le groupe.</p>
       }
       @if (peutModifierInfos()) {
-        <button type="button" class="lien" (click)="modifier()">Modifier le nom ou la description</button>
+        <app-bouton variante="secondaire" [petit]="true" (clic)="modifier()">Modifier le nom ou la description</app-bouton>
       }
     }
   </section>
@@ -30,38 +30,27 @@
 
   <section class="carte-section" aria-labelledby="titre-preferences">
     <h4 id="titre-preferences">Pour moi</h4>
-    <label class="ligne-reglage">
+    <div class="ligne-reglage">
       <span class="texte">
         <strong>Notifications</strong>
         <small>{{ preferences().muted ? libelleSourdine(preferences().mutedUntil) : 'Activées' }}</small>
       </span>
-      <select class="selection" aria-label="Couper les notifications" [disabled]="enCours() === 'sourdine'"
-        (change)="sourdine($any($event.target).value)">
-        <option value="NONE" [selected]="etatSourdine() === 'NONE'">Activées</option>
-        @if (etatSourdine() === 'TEMPORAIRE') {
-          <!-- Le contrat ne renvoie que l'échéance : on l'affiche comme choix courant. -->
-          <option value="" disabled selected>Coupées pour l'instant</option>
-        }
-        @for (d of durees; track d.valeur) {
-          <option [value]="d.valeur" [selected]="etatSourdine() === d.valeur">Couper · {{ d.libelle }}</option>
-        }
-      </select>
-    </label>
-    <label class="ligne-reglage">
+      <app-champ class="selection" libelle="Couper les notifications" [libelleCache]="true" type="select" [options]="optionsSourdine()"
+        name="sourdine" [ngModel]="valeurSourdine()" [disabled]="enCours() === 'sourdine'" (ngModelChange)="sourdine($event)" />
+    </div>
+    <div class="ligne-reglage">
       <span class="texte">
-        <strong>Épingler en haut de la liste</strong>
+        <app-case-a-cocher libelle="Épingler en haut de la liste" name="epingle" [ngModel]="!!preferences().pinned"
+          [disabled]="enCours() === 'pinned'" (ngModelChange)="basculerPreference('pinned')" />
       </span>
-      <input type="checkbox" role="switch" class="interrupteur" [checked]="preferences().pinned"
-        [disabled]="enCours() === 'pinned'" (change)="basculerPreference('pinned')" />
-    </label>
-    <label class="ligne-reglage">
+    </div>
+    <div class="ligne-reglage">
       <span class="texte">
-        <strong>Archiver</strong>
+        <app-case-a-cocher libelle="Archiver" name="archive" [ngModel]="!!preferences().archived"
+          [disabled]="enCours() === 'archived'" (ngModelChange)="basculerPreference('archived')" />
         <small>Rangé dans « Archivées », à l'écart de la liste principale.</small>
       </span>
-      <input type="checkbox" role="switch" class="interrupteur" [checked]="preferences().archived"
-        [disabled]="enCours() === 'archived'" (change)="basculerPreference('archived')" />
-    </label>
+    </div>
   </section>
 
   @if (estAdmin()) {
@@ -69,15 +58,13 @@
       <h4 id="titre-reglages">Réglages du groupe</h4>
       <p class="aide">Activé : seuls les administrateurs peuvent le faire. Désactivé : tous les participants.</p>
       @for (r of reglages; track r.cle) {
-        <label class="ligne-reglage">
+        <div class="ligne-reglage">
           <span class="texte">
-            <strong>{{ r.titre }}</strong>
+            <app-case-a-cocher [libelle]="r.titre" [name]="r.cle" [ngModel]="adminsSeulement(r.cle)" [disabled]="enCours() === r.cle"
+              (ngModelChange)="basculerReglage(r.cle)" />
             <small>{{ adminsSeulement(r.cle) ? 'Administrateurs seulement' : 'Tous les participants' }}</small>
           </span>
-          <input type="checkbox" role="switch" class="interrupteur" [checked]="adminsSeulement(r.cle)"
-            [attr.aria-label]="r.titre + ' : administrateurs seulement'" [disabled]="enCours() === r.cle"
-            (change)="basculerReglage(r.cle)" />
-        </label>
+        </div>
       }
     </section>
   }
@@ -97,21 +84,20 @@
           </div>
         </div>
       } @else {
-        <button type="button" class="ligne-action" (click)="ouvrirAjout()">
+        <app-bouton class="ligne-action" variante="discret" [pleineLargeur]="true" (clic)="ouvrirAjout()">
           <span class="pastille-action">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M12.5 5v5M10 7.5h5" /></svg>
           </span>
           Ajouter des participants
-        </button>
+        </app-bouton>
       }
     }
 
     <ul class="membres">
       @for (m of membres(); track m.userId) {
         <li [class.ouvert]="membreOuvert() === m.userId">
-          <button type="button" class="membre" [class.gerable]="peutGererRole(m) || peutRetirer(m)"
-            [attr.aria-expanded]="peutGererRole(m) || peutRetirer(m) ? membreOuvert() === m.userId : null"
-            (click)="basculerMembre(m)">
+          <app-bouton class="membre" variante="discret" [pleineLargeur]="true"
+            [etendu]="peutGererRole(m) || peutRetirer(m) ? membreOuvert() === m.userId : null" (clic)="basculerMembre(m)">
             <app-avatar [nom]="m.userName ?? ''" />
             <span class="texte">
               <strong>{{ m.userId === moiId() ? 'Vous' : (m.userName || 'Participant') }}</strong>
@@ -122,7 +108,7 @@
             } @else if (m.groupRole === 'ADMIN') {
               <app-badge ton="ok">Admin du groupe</app-badge>
             }
-          </button>
+          </app-bouton>
           @if (membreOuvert() === m.userId) {
             <div class="actions-membre">
               @if (peutGererRole(m)) {
@@ -142,15 +128,15 @@
   </section>
 
   <section class="zone-danger">
-    <button type="button" class="ligne-action danger" [disabled]="enCours() === 'quitter'" (click)="quitter()">
+    <app-bouton class="ligne-action" variante="danger" [pleineLargeur]="true" [chargement]="enCours() === 'quitter'" (clic)="quitter()">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2H3v12h3M10 5l3 3-3 3M13 8H6" /></svg>
       Quitter le groupe
-    </button>
+    </app-bouton>
     @if (peutSupprimerGroupe()) {
-      <button type="button" class="ligne-action danger" [disabled]="enCours() === 'supprimer'" (click)="supprimer()">
+      <app-bouton class="ligne-action" variante="danger" [pleineLargeur]="true" [chargement]="enCours() === 'supprimer'" (clic)="supprimer()">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
         Supprimer le groupe
-      </button>
+      </app-bouton>
     }
   </section>
 </div>

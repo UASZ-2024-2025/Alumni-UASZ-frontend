@@ -2,34 +2,28 @@
   <aside class="colonne-liste" aria-label="Mes groupes">
     @if (vueArchives()) {
       <header class="entete-liste">
-        <button type="button" class="bouton-icone" aria-label="Retour aux groupes" (click)="vueArchives.set(false)">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
-        </button>
+        <app-bouton variante="discret" [petit]="true" libelleAria="Retour aux groupes" (clic)="vueArchives.set(false)">
+          <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+        </app-bouton>
         <h1 class="titre-archives">Archivées</h1>
       </header>
       <p class="note-archives">Les groupes archivés restent à part, même quand un nouveau message arrive.</p>
     } @else {
       <header class="entete-liste">
         <h1>Groupes</h1>
-        <button type="button" class="bouton-rond" aria-label="Nouveau groupe" title="Nouveau groupe" (click)="ouvrirCreation()">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
-        </button>
+        <app-bouton [petit]="true" libelleAria="Nouveau groupe" (clic)="ouvrirCreation()">
+          <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+        </app-bouton>
       </header>
     }
 
     <div class="recherche">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12A5 5 0 107 2a5 5 0 000 10zM11 11l3 3" /></svg>
-      <input type="search" placeholder="Rechercher un groupe" aria-label="Rechercher un groupe"
-        [value]="recherche()" (input)="recherche.set($any($event.target).value)" />
+      <app-champ libelle="Rechercher un groupe" type="search" [libelleCache]="true" placeholder="Rechercher un groupe"
+        name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
     </div>
 
     @if (!vueArchives()) {
-      <div class="filtres" role="group" aria-label="Filtrer les groupes">
-        <button type="button" class="puce" [class.active]="filtre() === 'tous'" [attr.aria-pressed]="filtre() === 'tous'"
-          (click)="filtre.set('tous')">Tous</button>
-        <button type="button" class="puce" [class.active]="filtre() === 'non-lus'" [attr.aria-pressed]="filtre() === 'non-lus'"
-          (click)="filtre.set('non-lus')">Non lus @if (nonLus()) {<span class="compte">{{ nonLus() }}</span>}</button>
-      </div>
+      <app-onglets [onglets]="onglets()" [actif]="filtre()" (actifChange)="choisirFiltre($event)" />
     }
 
     <div class="defilement" [attr.aria-busy]="store.chargement()">
@@ -48,13 +42,13 @@
         </div>
       } @else {
         @if (!vueArchives() && !recherche() && store.archives().length) {
-          <button type="button" class="entree-archives" (click)="vueArchives.set(true)">
+          <app-bouton class="entree-archives" variante="discret" [pleineLargeur]="true" (clic)="vueArchives.set(true)">
             <span class="icone-archives">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12v3H2zM3 6v7h10V6M6.5 9h3" /></svg>
             </span>
             <span class="libelle">Archivées</span>
             <span class="nombre">{{ store.archives().length }}</span>
-          </button>
+          </app-bouton>
         }
         @if (groupesAffiches().length === 0) {
           <p class="message-liste">

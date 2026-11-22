@@ -7,6 +7,8 @@ import { MESSAGE_POLITIQUE_MDP, validateurPolitiqueMotDePasse } from '../../../c
 import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { OngletsAuth } from '../../../commun/components/onglets-auth/onglets-auth';
+import { Champ } from '../../../commun/components/champ/champ';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 import { CompteService } from '../services/compte.service';
 
 const motsDePasseIdentiques: ValidatorFn = (g) =>
@@ -14,7 +16,7 @@ const motsDePasseIdentiques: ValidatorFn = (g) =>
 
 @Component({
   selector: 'app-inscription',
-  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth, Champ, Bouton],
   template: `
     <app-mise-en-page-auth>
       @if (emailInscrit(); as email) {
@@ -32,31 +34,19 @@ const motsDePasseIdentiques: ValidatorFn = (g) =>
           @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
 
           <div class="deux-colonnes">
-            <label>Nom <input formControlName="lastName" autocomplete="family-name" /></label>
-            <label>Prénom <input formControlName="firstName" autocomplete="given-name" /></label>
+            <app-champ libelle="Nom" formControlName="lastName" autocomplete="family-name" />
+            <app-champ libelle="Prénom" formControlName="firstName" autocomplete="given-name" />
           </div>
-          <label>Email <input type="email" formControlName="email" autocomplete="username" /></label>
-          @if (formulaire.controls.email.touched && formulaire.controls.email.invalid) {
-            <small class="invalide">Saisissez un email valide.</small>
-          }
-          <label>Vous êtes
-            <select formControlName="role">
-              @for (r of roles; track r.valeur) { <option [value]="r.valeur">{{ r.libelle }}</option> }
-            </select>
-          </label>
-          <label>Mot de passe
-            <input type="password" formControlName="password" autocomplete="new-password" /></label>
-          @if (formulaire.controls.password.touched && formulaire.controls.password.invalid) {
-            <small class="invalide">{{ politique }}</small>
-          }
-          <label>Confirmer le mot de passe
-            <input type="password" formControlName="confirmation" autocomplete="new-password" /></label>
-          @if (formulaire.controls.confirmation.touched && formulaire.hasError('different')) {
-            <small class="invalide">Les mots de passe ne correspondent pas.</small>
-          }
+          <app-champ libelle="Email" type="email" formControlName="email" autocomplete="username"
+            [erreur]="formulaire.controls.email.touched && formulaire.controls.email.invalid ? 'Saisissez un email valide.' : null" />
+          <app-champ libelle="Vous êtes" type="select" formControlName="role" [options]="roles" />
+          <app-champ libelle="Mot de passe" type="password" formControlName="password" autocomplete="new-password"
+            [erreur]="formulaire.controls.password.touched && formulaire.controls.password.invalid ? politique : null" />
+          <app-champ libelle="Confirmer le mot de passe" type="password" formControlName="confirmation" autocomplete="new-password"
+            [erreur]="formulaire.controls.confirmation.touched && formulaire.hasError('different') ? 'Les mots de passe ne correspondent pas.' : null" />
 
-          <button type="submit" [disabled]="chargement()">
-            {{ chargement() ? 'Création…' : "S'inscrire" }}</button>
+          <app-bouton type="submit" [pleineLargeur]="true" [chargement]="chargement()">
+            {{ chargement() ? 'Création…' : "S'inscrire" }}</app-bouton>
           <p class="lien">Déjà inscrit ? <a routerLink="/connexion">Se connecter</a></p>
         </form>
       }

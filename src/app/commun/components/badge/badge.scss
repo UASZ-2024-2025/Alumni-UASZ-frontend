@@ -1,10 +1,10 @@
 .badge {
   display: inline-block;
   padding: 3px 11px;
-  border-radius: 99px;
+  border-radius: var(--rayon-pilule);
   background: var(--g1);
   color: var(--g8);
-  font-size: 0.75rem;
+  font-size: var(--t-xs);
   font-weight: 600;
 }
 .badge--ok { background: var(--succes-fond); color: var(--ok); }

@@ -9,11 +9,11 @@
         }
       </li>
     } @empty {
-      <li class="vide">Aucune compétence</li>
+      <li class="vide">{{ texteVide() }}</li>
     }
   </ul>
   @if (!lectureSeule()) {
-    <input #champ [id]="id" type="text" placeholder="Ajouter une compétence, puis Entrée" [disabled]="desactive()"
-      (keydown.enter)="ajouter($event, champ)" (blur)="contact()" />
+    <input #champ [id]="id" type="text" [placeholder]="placeholder()" [disabled]="desactive()"
+      (keydown)="touche($event, champ)" (blur)="valider(champ); contact()" />
   }
 </div>

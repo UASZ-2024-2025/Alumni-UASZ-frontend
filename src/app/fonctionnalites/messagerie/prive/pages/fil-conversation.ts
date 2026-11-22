@@ -10,6 +10,7 @@ import { Avatar } from '../../../../commun/components/avatar/avatar';
 import { Bouton } from '../../../../commun/components/bouton/bouton';
 import { EtatVide } from '../../../../commun/components/etat-vide/etat-vide';
 import { Spinner } from '../../../../commun/components/spinner/spinner';
+import { ZoneSaisieMessage } from '../../../../commun/components/zone-saisie-message/zone-saisie-message';
 import { messageErreur } from '../../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
 import { ConversationsStore } from '../conversations.store';
@@ -33,7 +34,7 @@ const ERREURS_ENVOI: Record<number, string> = {
  */
 @Component({
   selector: 'app-fil-conversation',
-  imports: [Alerte, Avatar, Bouton, EtatVide, Spinner],
+  imports: [Alerte, Avatar, Bouton, EtatVide, Spinner, ZoneSaisieMessage],
   templateUrl: './fil-conversation.html',
   styleUrl: './fil-conversation.scss',
 })
@@ -61,7 +62,6 @@ export class FilConversation {
 
   protected readonly elements = computed(() => construireFil(this.messages(), this.moiId));
   protected readonly resteAnciens = computed(() => this.messages().length < this.total());
-  protected readonly peutEnvoyer = computed(() => this.brouillon().trim().length > 0 && !this.envoiEnCours());
 
   /** Nom et rôle affichés en en-tête : d'abord la liste des conversations, sinon les messages déjà chargés. */
   protected readonly interlocuteur = computed(() => {

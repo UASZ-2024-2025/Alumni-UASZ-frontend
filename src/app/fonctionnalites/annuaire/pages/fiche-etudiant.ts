@@ -1,5 +1,6 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
 import { StudentsService } from '../../../api/generes/alumni/api/students.service';
@@ -7,17 +8,22 @@ import { CvResponse } from '../../../api/generes/alumni/model/cvResponse';
 import { StudentProfile } from '../../../api/generes/alumni/model/studentProfile';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { Avatar } from '../../../commun/components/avatar/avatar';
+import { Badge } from '../../../commun/components/badge/badge';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { ApercuCv } from '../../profil-etudiant/composants/apercu-cv';
 import { cvInitial, depuisCvEnregistre, DonneesCv, formaterDate, LIBELLES_DISPONIBILITE } from '../../profil-etudiant/modeles/cv.modele';
 import { CvPdfService } from '../../profil-etudiant/services/cv-pdf.service';
 import { Recommander } from '../composants/recommander';
-import { initiales, nomComplet } from '../modeles/cartes';
+import { nomComplet } from '../modeles/cartes';
 
 @Component({
   selector: 'app-fiche-etudiant',
-  imports: [RouterLink, Alerte, ApercuCv, Recommander],
+  imports: [RouterLink, Alerte, ApercuCv, Recommander, Avatar, Badge, Bouton, PucesCompetences, Spinner, FormsModule],
   templateUrl: './fiche-etudiant.html',
   styleUrls: ['../../profil-etudiant/pages/profil-etudiant.scss', '../annuaire.scss'],
 })
@@ -28,7 +34,6 @@ export class FicheEtudiant implements OnInit {
   private readonly pdf = inject(CvPdfService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly initiales = initiales;
   protected readonly libelles = LIBELLES_DISPONIBILITE;
   protected readonly formaterDate = formaterDate;
 

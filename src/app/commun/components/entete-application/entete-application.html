@@ -6,6 +6,6 @@
   <div class="droite">
     <ng-content />
     <span class="role">{{ role() }}</span>
-    <span class="avatar" aria-hidden="true">{{ initiale() }}</span>
+    <app-avatar [nom]="nom()" />
   </div>
 </header>

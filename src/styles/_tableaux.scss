@@ -1,5 +1,5 @@
 // Tableau de la maquette : <div class="tableau-conteneur"><table class="tableau">…</table></div>
-.tableau-conteneur { overflow-x: auto; container-type: inline-size; }
+.tableau-conteneur { container-type: inline-size; } // jamais de défilement horizontal : le texte passe à la ligne, puis la ligne devient une carte
 .tableau {
   width: 100%;
   border-collapse: collapse;
@@ -14,16 +14,16 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-align: left;
-    white-space: nowrap;
+    white-space: nowrap; // un titre de colonne ne se coupe jamais lettre par lettre
   }
-  td { padding: 10px; border-bottom: 1px solid var(--bd); white-space: nowrap; }
+  td { padding: 10px; border-bottom: 1px solid var(--bd); overflow-wrap: anywhere; vertical-align: middle; }
   tbody tr:hover td { background: var(--g0); }
   .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 }
 
-// Variante « cartes » : sous 640 px de large, chaque ligne devient une carte empilée
+// Variante « cartes » : sous 760 px de large, chaque ligne devient une carte empilée
 // (le libellé de colonne vient de l'attribut data-label de la cellule).
-@container (max-width: 640px) {
+@container (max-width: 760px) {
   .tableau--cartes {
     thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     &, tbody, tr, td { display: block; }
@@ -37,4 +37,15 @@
     td.cellule-actions .actions { width: 100%; }
     td.cellule-actions .actions > * { flex: 1; }
   }
+}
+
+// Boutons rangés dans un <app-menu-actions> : lignes de menu sobres, alignées à gauche.
+.menu-actions__liste .btn {
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--tx);
+  &:hover:not(:disabled) { background: var(--g0); color: var(--g8); transform: none; }
+  &.btn--danger { color: var(--dg); &:hover:not(:disabled) { background: var(--erreur-fond); color: var(--dg); filter: none; } }
 }

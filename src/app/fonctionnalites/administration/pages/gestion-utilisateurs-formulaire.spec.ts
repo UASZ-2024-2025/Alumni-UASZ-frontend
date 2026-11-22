@@ -20,7 +20,7 @@ describe('GestionUtilisateurs : création et modification', () => {
   let el: HTMLElement;
 
   const champ = (libelle: string) =>
-    Array.from(el.querySelectorAll('app-champ'))
+    Array.from(el.querySelectorAll('app-modale app-champ'))
       .find((c) => c.querySelector('label')?.textContent?.includes(libelle))!
       .querySelector('input,select') as HTMLInputElement;
   const saisir = (libelle: string, valeur: string) => {
@@ -28,7 +28,14 @@ describe('GestionUtilisateurs : création et modification', () => {
     c.value = valeur;
     c.dispatchEvent(new Event(c.tagName === 'SELECT' ? 'change' : 'input'));
   };
-  const bouton = (nom: string) => el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
+  const bouton = (nom: string) => {
+    const cible = nom.slice(nom.indexOf(' ') + 1);
+    if (!el.querySelector(`button[aria-label="${nom}"]`)) {
+      el.querySelector<HTMLButtonElement>(`button[aria-label="Actions pour ${cible}"]`)?.click();
+      fixture.detectChanges();
+    }
+    return el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
+  };
   const soumettre = () => {
     el.querySelector('app-modale form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();

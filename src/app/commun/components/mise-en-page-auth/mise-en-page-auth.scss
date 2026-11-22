@@ -74,7 +74,7 @@
     margin: 16px 0 0;
     max-width: 400px;
     opacity: 0.88;
-    font-size: 1rem;
+    font-size: var(--t-base);
     line-height: 1.6;
     animation: apparition 0.8s 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
@@ -89,10 +89,10 @@
   span {
     padding: 7px 14px;
     border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 99px;
+    border-radius: var(--rayon-pilule);
     background: rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(6px);
-    font-size: 12px;
+    font-size: var(--t-xs);
     transition: transform 0.2s, background-color 0.2s;
     animation: apparition 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 
@@ -161,6 +161,9 @@
   height: 120px;
   border-radius: 50%;
   overflow: hidden;
+  object-fit: contain;
+  padding: 6px;
+  box-sizing: border-box;
   flex-shrink: 0;
   background: white;
   border: 3px solid white;

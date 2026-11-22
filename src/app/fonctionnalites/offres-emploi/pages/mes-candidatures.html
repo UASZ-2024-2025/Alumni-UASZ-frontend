@@ -1,6 +1,4 @@
-<div class="entete-page">
-  <h1>Mes candidatures</h1>
-</div>
+<app-entete-page titre="Mes candidatures" />
 
 <app-onglets [onglets]="onglets()" [(actif)]="onglet" />
 
@@ -22,25 +20,15 @@
     } @else if (candidatures.elements().length > 0) {
       <p class="total" aria-live="polite">{{ candidatures.total() }} candidature(s)</p>
       <app-carte>
-        <div class="tableau-conteneur"><table class="tableau tableau--cartes">
-          <caption class="cache">Mes candidatures</caption>
-          <thead>
-            <tr>
-              <th scope="col">Offre</th>
-              <th scope="col">Envoyée le</th>
-              <th scope="col">Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of candidatures.elements(); track c.id) {
-              <tr>
-                <td><strong>{{ c.offerTitle || '—' }}</strong></td>
-                <td data-label="Envoyée le">{{ c.createdAt ? (c.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
-                <td data-label="Statut"><app-badge [ton]="tonCandidature(c.status)">{{ libelleCandidature(c.status) }}</app-badge></td>
-              </tr>
+        <app-tableau [colonnes]="colonnes" [lignes]="candidatures.elements()" legende="Mes candidatures">
+          <ng-template #cellule let-c let-cle="cle">
+            @switch (cle) {
+              @case ('offre') { <strong>{{ c.offerTitle || '—' }}</strong> }
+              @case ('date') { {{ c.createdAt ? (c.createdAt | date: 'dd/MM/yyyy') : '—' }} }
+              @default { <app-badge [ton]="tonCandidature(c.status)">{{ libelleCandidature(c.status) }}</app-badge> }
             }
-          </tbody>
-        </table></div>
+          </ng-template>
+        </app-tableau>
       </app-carte>
       <app-pagination [page]="candidatures.page()" [nbPages]="candidatures.nbPages()" (changement)="candidatures.aller($event)" />
     }

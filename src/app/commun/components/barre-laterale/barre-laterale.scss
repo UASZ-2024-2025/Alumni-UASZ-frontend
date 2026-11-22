@@ -10,9 +10,7 @@
   background: linear-gradient(180deg, var(--g8), var(--g9));
   color: #fff;
 }
-.logo { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font: 700 1rem/1.1 var(--police-titre); }
-.logo img { flex: none; border-radius: 50%; background: #fff; }
-.logo small { display: block; margin-top: 2px; font: 400 10px var(--police); opacity: 0.8; }
+app-logo-uasz { margin-bottom: 18px; }
 
 nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.28) transparent; }
 nav a {
@@ -20,9 +18,9 @@ nav a {
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: var(--rayon);
   color: #d5eadd;
-  font-size: 0.875rem;
+  font-size: var(--t-m);
   font-weight: 500;
   text-decoration: none;
 
@@ -38,17 +36,17 @@ nav a {
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--rayon-m);
   background: none;
   color: inherit;
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: var(--t-s);
   text-align: left;
   cursor: pointer;
 
   &:hover, &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.1); }
 }
-.avatar { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--g8); font-weight: 700; }
+app-avatar { width: 34px; background: #fff; }
 .identite { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 .identite b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .identite small { opacity: 0.8; }
@@ -61,7 +59,7 @@ nav a {
   bottom: calc(100% - 2px);
   left: 0;
   padding: 6px;
-  border-radius: 12px;
+  border-radius: var(--rayon-m);
   background: var(--g9);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
@@ -72,7 +70,7 @@ nav a {
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--rayon-s);
   background: none;
   color: #ffd9d4;
   font: 500 0.875rem var(--police);

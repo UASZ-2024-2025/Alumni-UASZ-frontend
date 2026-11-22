@@ -23,7 +23,6 @@ import { MODES, STATUTS, TYPES } from '../offres-libelles';
   imports: [DatePipe, RouterLink, Alerte, Badge, Bouton, Carte, FormulaireCandidature, Modale, Spinner],
   templateUrl: './detail-offre.html',
   styles: `
-    .retour { display: inline-block; margin-bottom: 12px; }
     .entreprise { color: var(--mu); margin: 0 0 16px; }
     dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
     dt { color: var(--mu); }

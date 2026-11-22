@@ -20,7 +20,7 @@
   @case ('erreur') {
     <div class="etat">
       <app-alerte>{{ erreur() }}</app-alerte>
-      <button type="button" class="lien-retour" (click)="recharger()">Réessayer</button>
+      <app-bouton variante="secondaire" [petit]="true" (clic)="recharger()">Réessayer</app-bouton>
     </div>
   }
   @case ('pret') {
@@ -29,7 +29,7 @@
         <a class="retour" routerLink="/groupes" aria-label="Retour à mes groupes">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
         </a>
-        <button type="button" class="identite" (click)="infosOuvertes.set(true)" [attr.aria-label]="'Infos du groupe ' + g.name">
+        <app-bouton class="identite" variante="discret" [pleineLargeur]="true" [libelleAria]="'Infos du groupe ' + g.name" (clic)="infosOuvertes.set(true)">
           <app-avatar [nom]="g.name ?? ''" />
           <span class="texte">
             <strong>
@@ -42,34 +42,34 @@
             </strong>
             <small>{{ participants() }}</small>
           </span>
-        </button>
+        </app-bouton>
 
         <div class="menu">
-          <button type="button" class="bouton-icone" title="Plus d'options" aria-label="Plus d'options" aria-haspopup="menu"
-            [attr.aria-expanded]="menuOuvert()" (click)="basculerMenu($event)">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v.01M8 8v.01M8 12.5v.01" /></svg>
-          </button>
+          <app-bouton variante="discret" [petit]="true" libelleAria="Plus d'options" [etendu]="menuOuvert()" controle="options-groupe"
+            (clic)="basculerMenu($event)">
+            <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v.01M8 8v.01M8 12.5v.01" /></svg>
+          </app-bouton>
           @if (menuOuvert()) {
-            <ul class="options" role="menu" (click)="$event.stopPropagation()">
-              <li role="none"><button type="button" role="menuitem" (click)="menuOuvert.set(false); infosOuvertes.set(true)">Infos du groupe</button></li>
-              <li role="none">
+            <ul id="options-groupe" class="options" (click)="$event.stopPropagation()">
+              <li><app-bouton variante="discret" [pleineLargeur]="true" (clic)="menuOuvert.set(false); infosOuvertes.set(true)">Infos du groupe</app-bouton></li>
+              <li>
                 @if (preferences()?.muted) {
-                  <button type="button" role="menuitem" (click)="preference({ mute: 'NONE' }, 'Notifications réactivées.')">Réactiver les notifications</button>
+                  <app-bouton variante="discret" [pleineLargeur]="true" (clic)="preference({ mute: 'NONE' }, 'Notifications réactivées.')">Réactiver les notifications</app-bouton>
                 } @else {
-                  <button type="button" role="menuitem" (click)="preference({ mute: 'ALWAYS' }, 'Notifications coupées.')">Couper les notifications</button>
+                  <app-bouton variante="discret" [pleineLargeur]="true" (clic)="preference({ mute: 'ALWAYS' }, 'Notifications coupées.')">Couper les notifications</app-bouton>
                 }
               </li>
-              <li role="none">
-                <button type="button" role="menuitem"
-                  (click)="preference({ pinned: !preferences()?.pinned }, preferences()?.pinned ? 'Groupe désépinglé.' : 'Groupe épinglé en haut de la liste.')">
+              <li>
+                <app-bouton variante="discret" [pleineLargeur]="true"
+                  (clic)="preference({ pinned: !preferences()?.pinned }, preferences()?.pinned ? 'Groupe désépinglé.' : 'Groupe épinglé en haut de la liste.')">
                   {{ preferences()?.pinned ? 'Désépingler' : 'Épingler' }}
-                </button>
+                </app-bouton>
               </li>
-              <li role="none">
-                <button type="button" role="menuitem"
-                  (click)="preference({ archived: !preferences()?.archived }, preferences()?.archived ? 'Groupe désarchivé.' : 'Groupe archivé.')">
+              <li>
+                <app-bouton variante="discret" [pleineLargeur]="true"
+                  (clic)="preference({ archived: !preferences()?.archived }, preferences()?.archived ? 'Groupe désarchivé.' : 'Groupe archivé.')">
                   {{ preferences()?.archived ? 'Désarchiver' : 'Archiver' }}
-                </button>
+                </app-bouton>
               </li>
             </ul>
           }
@@ -80,9 +80,9 @@
         <ol class="fil" aria-label="Messages du groupe" aria-live="polite">
           @if (plusAnciens()) {
             <li class="plus-anciens">
-              <button type="button" [disabled]="chargementAnciens()" (click)="chargerAnciens()">
+              <app-bouton variante="secondaire" [petit]="true" [chargement]="chargementAnciens()" (clic)="chargerAnciens()">
                 {{ chargementAnciens() ? 'Chargement…' : 'Afficher les messages précédents' }}
-              </button>
+              </app-bouton>
             </li>
           }
           @for (el of fil(); track el.cle) {
@@ -104,10 +104,10 @@
                   <p>{{ el.message.content }}<time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time></p>
                 }
                 @if (peutSupprimer(el.message)) {
-                  <button type="button" class="supprimer" title="Supprimer pour tous" aria-label="Supprimer ce message pour tous"
-                    (click)="supprimerMessage(el.message)">
-                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
-                  </button>
+                  <app-bouton class="supprimer" variante="discret" [petit]="true" libelleAria="Supprimer ce message pour tous"
+                    (clic)="supprimerMessage(el.message)">
+                    <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
+                  </app-bouton>
                 }
               </li>
             }
@@ -127,14 +127,8 @@
           @if (erreurEnvoi(); as message) {
             <p class="erreur-envoi" role="alert">{{ message }}</p>
           }
-          <form class="barre" (submit)="$event.preventDefault(); envoyer()">
-            <label class="cache" for="message-groupe">Votre message</label>
-            <textarea id="message-groupe" #saisie rows="1" placeholder="Écrire un message" [attr.maxlength]="messageMax"
-              [value]="brouillon()" (input)="brouillon.set($any($event.target).value)" (keydown)="touche($event)"></textarea>
-            <button type="submit" class="envoyer" aria-label="Envoyer" title="Envoyer" [disabled]="!brouillon().trim() || envoi()">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2l12 6-12 6 2-6zM4 8h10" /></svg>
-            </button>
-          </form>
+          <app-zone-saisie-message #saisie [(texte)]="brouillon" [lignes]="1" [longueurMax]="messageMax" [envoiEnCours]="envoi()"
+            (envoyer)="envoyer()" />
           @if (brouillon().length > messageMax - 200) {
             <p class="compteur">{{ brouillon().length }} / {{ messageMax }}</p>
           }

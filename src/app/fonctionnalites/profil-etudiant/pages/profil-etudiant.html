@@ -1,78 +1,53 @@
 <div class="page page--etroite">
-  <div class="entete">
-    <div>
-      <h1>Mon profil</h1>
-      <p>{{ nom() || 'Étudiant' }}@if (profil()?.email) { · {{ profil()?.email }} }</p>
-    </div>
-    <a class="btn-sec" routerLink="/mon-espace/cv">Éditer mon CV</a>
-  </div>
+  <app-entete-page titre="Mon profil">
+    <p>{{ nom() || 'Étudiant' }}@if (profil()?.email) { · {{ profil()?.email }} }</p>
+    <app-bouton actions variante="secondaire" [lien]="['/mon-espace/cv']">Éditer mon CV</app-bouton>
+  </app-entete-page>
 
   @if (chargement()) {
-    <p class="chargement">Chargement de votre profil…</p>
+    <app-spinner libelle="Chargement de votre profil…" />
   } @else {
     @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
     @if (succes()) { <app-alerte type="succes">Profil enregistré.</app-alerte> }
 
     <form [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
-      <section class="fiche">
+      <app-carte class="fiche">
+<div class="corps">
         <h2>Parcours</h2>
         <div class="grille">
-          <label>
-            Spécialité
-            <input type="text" formControlName="specialty" list="specialites" placeholder="Ex. Génie Logiciel" />
-            <datalist id="specialites">
-              @for (s of specialites; track s) { <option [value]="s"></option> }
-            </datalist>
-          </label>
-          <label>
-            Année de promotion
-            <input type="number" formControlName="academicYear" placeholder="Ex. 2026" />
-            @if (formulaire.controls.academicYear.touched && formulaire.controls.academicYear.invalid) {
-              <span class="invalide">Saisissez une année entre 2000 et 2100.</span>
-            }
-          </label>
+          <app-champ libelle="Spécialité" formControlName="specialty" [suggestions]="specialites" placeholder="Ex. Génie Logiciel" />
+          <app-champ libelle="Année de promotion" type="number" formControlName="academicYear" placeholder="Ex. 2026"
+            [erreur]="formulaire.controls.academicYear.touched && formulaire.controls.academicYear.invalid ? 'Saisissez une année entre 2000 et 2100.' : null" />
         </div>
-        <label>
-          Présentation
-          <textarea formControlName="bio" rows="4" maxlength="2000" placeholder="Quelques lignes sur vous, vos projets, vos objectifs…"></textarea>
-        </label>
-      </section>
+        <app-champ libelle="Présentation" type="textarea" formControlName="bio" [lignes]="4" placeholder="Quelques lignes sur vous, vos projets, vos objectifs…" />
+      </div>
+</app-carte>
 
-      <section class="fiche">
+      <app-carte class="fiche">
+<div class="corps">
         <h2>Compétences et centres d'intérêt</h2>
-        <div>
-          <span class="libelle">Compétences</span>
-          <app-champ-etiquettes [(valeur)]="competences" libelle="Ajouter une compétence" placeholder="Java, Spring Boot, Docker…" />
-        </div>
-        <div>
-          <span class="libelle">Centres d'intérêt</span>
-          <app-champ-etiquettes [(valeur)]="interets" libelle="Ajouter un centre d'intérêt" placeholder="DevOps, Cloud, IA…" />
-        </div>
-      </section>
+        <app-puces-competences libelle="Compétences" formControlName="competences" placeholder="Java, Spring Boot, Docker…" />
+        <app-puces-competences libelle="Centres d'intérêt" formControlName="interets" placeholder="DevOps, Cloud, IA… puis Entrée" texteVide="Aucun centre d'intérêt" />
+      </div>
+</app-carte>
 
-      <section class="fiche">
+      <app-carte class="fiche">
+<div class="corps">
         <h2>Disponibilité</h2>
         <div class="grille">
-          <label>
-            Je suis
-            <select formControlName="availabilityStatus">
-              @for (d of disponibilites; track d[0]) { <option [value]="d[0]">{{ d[1] }}</option> }
-            </select>
-          </label>
+          <app-champ libelle="Je suis" type="select" formControlName="availabilityStatus" [options]="disponibilites" />
           @if (datePertinente()) {
-            <label>
-              À partir du
-              <input type="date" formControlName="availabilityDate" />
-            </label>
+            <app-champ libelle="À partir du" type="date" formControlName="availabilityDate" />
           }
         </div>
         <span class="aide">Ces informations sont visibles par les autres membres de la plateforme.</span>
-      </section>
+      </div>
+</app-carte>
 
       <div class="actions">
-        <button type="submit" class="btn-prim" [disabled]="enregistrement()">
+        <app-bouton type="submit" [chargement]="enregistrement()">
           {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer mon profil' }}
-        </button>
+        </app-bouton>
       </div>
     </form>
   }

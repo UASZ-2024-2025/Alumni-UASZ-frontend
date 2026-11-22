@@ -3,7 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, forkJoin, map, Observable, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { AlumniService } from '../../../../api/generes/alumni/api/alumni.service';
 import { StudentsService } from '../../../../api/generes/alumni/api/students.service';
+import { FormsModule } from '@angular/forms';
 import { Avatar } from '../../../../commun/components/avatar/avatar';
+import { Bouton } from '../../../../commun/components/bouton/bouton';
+import { Champ } from '../../../../commun/components/champ/champ';
 
 /** Personne invitable dans un groupe. `userId` est l'id du COMPTE (celui attendu par `memberIds`), pas celui du profil. */
 export interface Membre { userId: string; nom: string; detail: string; }
@@ -18,7 +21,7 @@ const TAILLE = 6;
  */
 @Component({
   selector: 'app-choix-membres',
-  imports: [Avatar],
+  imports: [FormsModule, Avatar, Bouton, Champ],
   templateUrl: './choix-membres.html',
   styleUrl: './choix-membres.scss',
 })

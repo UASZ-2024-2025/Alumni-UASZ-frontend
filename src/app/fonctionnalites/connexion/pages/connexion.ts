@@ -6,11 +6,13 @@ import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { OngletsAuth } from '../../../commun/components/onglets-auth/onglets-auth';
+import { Champ } from '../../../commun/components/champ/champ';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 
 @Component({
   selector: 'app-connexion',
-  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, OngletsAuth, Champ, Bouton],
   templateUrl: './connexion.html',
 })
 export class Connexion {

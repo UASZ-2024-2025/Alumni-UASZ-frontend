@@ -1,22 +1,22 @@
 <div class="page page--etroite">
-  <a class="retour" routerLink="/annuaire" [queryParams]="{ onglet: 'alumni' }">← Retour à l'annuaire</a>
+  <a class="lien-retour" routerLink="/annuaire" [queryParams]="{ onglet: 'alumni' }">← Retour à l'annuaire</a>
 
   @if (chargement()) {
-    <p class="chargement">Chargement de la fiche…</p>
+    <app-spinner libelle="Chargement de la fiche…" />
   } @else if (erreur()) {
     <app-alerte>{{ erreur() }}</app-alerte>
   } @else if (profil(); as p) {
     <div class="fiche-tete">
-      <span class="avatar avatar--grand" aria-hidden="true">{{ initiales(nom()) }}</span>
+      <app-avatar class="avatar-grand" [nom]="nom()" />
       <div>
         <h1>{{ nom() }}</h1>
         <p>{{ p.currentPosition || 'Poste non renseigné' }}@if (p.currentCompany) { chez {{ p.currentCompany }} }</p>
       </div>
       @if (estProprietaire()) {
-        <div class="actions"><a class="btn-sec" routerLink="/espace-alumni/profil">Modifier mon profil</a></div>
+        <div class="actions"><app-bouton variante="secondaire" [lien]="'/espace-alumni/profil'">Modifier mon profil</app-bouton></div>
       }
       @if (p.userId && !estProprietaire()) {
-        <div class="actions"><a class="btn-sec" [routerLink]="['/messagerie', p.userId]">Contacter</a></div>
+        <div class="actions"><app-bouton variante="secondaire" [lien]="['/messagerie', p.userId]">Contacter</app-bouton></div>
       }
     </div>
 

@@ -15,6 +15,7 @@ import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Onglet, Onglets } from '../../../commun/components/onglets/onglets';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { Spinner } from '../../../commun/components/spinner/spinner';
+import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { ConfirmationService } from '../../../commun/services/confirmation.service';
 import { ToastService } from '../../../commun/services/toast.service';
 import { creerListePaginee } from '../../../commun/utilitaires/liste-paginee';
@@ -27,6 +28,7 @@ import {
   tonCandidature,
   tonProposition,
 } from '../libelles';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 const ERREURS_REPONSE: Record<number, string> = {
   403: "Cette proposition ne vous est pas adressée.",
@@ -36,7 +38,7 @@ const ERREURS_REPONSE: Record<number, string> = {
 /** ALUM-175 : l'étudiant suit ses candidatures et répond aux propositions reçues. */
 @Component({
   selector: 'app-mes-candidatures',
-  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, EtatVide, Onglets, Pagination, Spinner],
+  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, EtatVide, Onglets, Pagination, Spinner, Tableau, EntetePage],
   templateUrl: './mes-candidatures.html',
   styleUrl: '../offres-emploi.scss',
 })
@@ -52,6 +54,11 @@ export class MesCandidatures {
   protected readonly libelleProposition = libelleProposition;
   protected readonly tonProposition = tonProposition;
   protected readonly optionsStatut = OPTIONS_STATUT_CANDIDATURE;
+  protected readonly colonnes: ColonneTableau[] = [
+    { cle: 'offre', libelle: 'Offre' },
+    { cle: 'date', libelle: 'Envoyée le' },
+    { cle: 'statut', libelle: 'Statut' },
+  ];
 
   protected readonly onglet = signal('candidatures');
 

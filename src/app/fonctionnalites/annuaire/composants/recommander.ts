@@ -1,44 +1,34 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AlumniService } from '../../../api/generes/alumni/api/alumni.service';
 import { CompaniesService } from '../../../api/generes/alumni/api/companies.service';
 import { Company } from '../../../api/generes/alumni/model/company';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 
 /** Bouton « Recommander » (Alumni) : recommande un étudiant auprès d'une entreprise. */
 @Component({
   selector: 'app-recommander',
-  imports: [ReactiveFormsModule, Alerte],
+  imports: [ReactiveFormsModule, Alerte, Bouton, Champ],
   template: `
     @if (succes()) { <app-alerte type="succes">Recommandation envoyée. Merci pour votre soutien !</app-alerte> }
 
     @if (!ouvert()) {
-      <button type="button" class="btn-prim" (click)="ouvrir()">★ Recommander {{ nomEtudiant() }}</button>
+      <app-bouton (clic)="ouvrir()">★ Recommander {{ nomEtudiant() }}</app-bouton>
     } @else {
       <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="envoyer()" novalidate>
         <h3>Recommander {{ nomEtudiant() }}</h3>
         @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
-        <label>
-          Entreprise ou opportunité visée
-          <select formControlName="companyId">
-            <option value="">Choisir une entreprise…</option>
-            @for (c of entreprises(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
-          </select>
-          @if (formulaire.controls.companyId.touched && formulaire.controls.companyId.invalid) {
-            <span class="invalide">Choisissez une entreprise.</span>
-          }
-        </label>
-        <label>
-          Votre recommandation
-          <textarea formControlName="comments" rows="4" maxlength="1000" placeholder="Pourquoi recommandez-vous cet étudiant ?"></textarea>
-          @if (formulaire.controls.comments.touched && formulaire.controls.comments.invalid) {
-            <span class="invalide">Rédigez quelques lignes (obligatoire).</span>
-          }
-        </label>
+        <app-champ libelle="Entreprise ou opportunité visée" type="select" [options]="optionsEntreprises()" formControlName="companyId"
+          [erreur]="formulaire.controls.companyId.touched && formulaire.controls.companyId.invalid ? 'Choisissez une entreprise.' : null" />
+        <app-champ libelle="Votre recommandation" type="textarea" [lignes]="4" placeholder="Pourquoi recommandez-vous cet étudiant ?"
+          formControlName="comments"
+          [erreur]="formulaire.controls.comments.touched && formulaire.controls.comments.invalid ? 'Rédigez quelques lignes (obligatoire).' : null" />
         <div class="actions">
-          <button type="submit" class="btn-prim" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Envoyer la recommandation' }}</button>
-          <button type="button" class="btn-sec" (click)="ouvert.set(false)">Annuler</button>
+          <app-bouton type="submit" [chargement]="envoi()">{{ envoi() ? 'Envoi…' : 'Envoyer la recommandation' }}</app-bouton>
+          <app-bouton variante="secondaire" (clic)="ouvert.set(false)">Annuler</app-bouton>
         </div>
       </form>
     }
@@ -47,14 +37,7 @@ import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
     :host { display: block; }
     .formulaire { display: flex; flex-direction: column; gap: 0.9rem; padding: 1rem; background: var(--g0); border: 1px solid var(--bd); border-radius: 14px; }
     h3 { margin: 0; font: 700 1.0625rem var(--police-titre); color: var(--g8); }
-    label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8125rem; font-weight: 600; }
-    select, textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--bord-champ); border-radius: var(--rayon); background: var(--sf); font: 400 0.9375rem var(--police); }
-    .invalide { color: var(--dg); font-weight: 400; }
     .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-    .btn-prim, .btn-sec { padding: 10px 18px; border-radius: var(--rayon); font: 600 0.875rem var(--police); cursor: pointer; }
-    .btn-prim { border: 1px solid var(--g8); background: var(--g8); color: #fff; }
-    .btn-prim:disabled { opacity: 0.6; cursor: wait; }
-    .btn-sec { border: 1px solid var(--g8); background: #fff; color: var(--g8); }
   `,
 })
 export class Recommander {
@@ -70,6 +53,10 @@ export class Recommander {
   protected readonly succes = signal(false);
   protected readonly erreur = signal<string | null>(null);
   protected readonly entreprises = signal<Company[]>([]);
+  protected readonly optionsEntreprises = computed<OptionChamp[]>(() => [
+    { valeur: '', libelle: 'Choisir une entreprise…' },
+    ...this.entreprises().map((c) => ({ valeur: c.id ?? '', libelle: c.name ?? '' })),
+  ]);
 
   protected readonly formulaire = this.fb.nonNullable.group({
     companyId: ['', Validators.required],

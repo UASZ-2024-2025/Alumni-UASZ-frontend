@@ -1,3 +1,4 @@
+import { TonBadge } from '../../../commun/components/badge/badge';
 import { AlumniProfile } from '../../../api/generes/alumni/model/alumniProfile';
 import { Company } from '../../../api/generes/alumni/model/company';
 import { StudentProfile } from '../../../api/generes/alumni/model/studentProfile';
@@ -14,7 +15,7 @@ export function ongletValide(valeur: string | null): Onglet {
   return ONGLETS.some((o) => o.code === valeur) ? (valeur as Onglet) : 'etudiants';
 }
 
-export type TonBadge = 'ok' | 'info' | 'neutre';
+export type { TonBadge };
 
 /** Une ligne de résultat de l'annuaire, quel que soit le type (étudiant, Alumni, entreprise). */
 export interface CarteAnnuaire {
@@ -71,7 +72,7 @@ export function carteEntreprise(c: Company): CarteAnnuaire {
     titre: c.name ?? 'Entreprise',
     sousTitre: c.sector ?? '',
     details: rempli(c.website, c.contactEmail),
-    badge: c.isPartner ? { texte: 'Partenaire', ton: 'info' } : undefined,
+    badge: c.isPartner ? { texte: 'Partenaire', ton: 'ok' } : undefined,
     etiquettes: [],
   };
 }

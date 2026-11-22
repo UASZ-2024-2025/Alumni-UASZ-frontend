@@ -47,19 +47,6 @@
   &:hover:not(:disabled)::after { transform: translateX(120%); }
   &:hover:not(:disabled) { box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--g8) 60%, transparent); }
   &:active:not(:disabled) { transform: translateY(0) scale(0.98); }
-
-  // Le bouton est désactivé pendant la requête (chargement()) : on affiche un spinner.
-  &:disabled::before {
-    content: '';
-    flex: none;
-    width: 14px;
-    height: 14px;
-    margin-right: 8px;
-    border: 2px solid currentColor;
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: rotation 0.7s linear infinite;
-  }
 }
 
 // ---- Liens : soulignement qui se dessine ----

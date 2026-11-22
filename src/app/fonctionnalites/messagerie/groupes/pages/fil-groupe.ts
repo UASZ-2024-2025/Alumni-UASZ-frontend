@@ -8,8 +8,10 @@ import { GroupMessage } from '../../../../api/generes/notifications-messagerie/m
 import { GroupPreferencesUpdateRequest } from '../../../../api/generes/notifications-messagerie/model/groupPreferencesUpdateRequest';
 import { Alerte } from '../../../../commun/components/alerte/alerte';
 import { Avatar } from '../../../../commun/components/avatar/avatar';
+import { Bouton } from '../../../../commun/components/bouton/bouton';
 import { Modale } from '../../../../commun/components/modale/modale';
 import { Spinner } from '../../../../commun/components/spinner/spinner';
+import { ZoneSaisieMessage } from '../../../../commun/components/zone-saisie-message/zone-saisie-message';
 import { ErreurApi } from '../../../../commun/modeles/erreur-api.model';
 import { ConfirmationService } from '../../../../commun/services/confirmation.service';
 import { ToastService } from '../../../../commun/services/toast.service';
@@ -35,7 +37,7 @@ const ERREURS_ENVOI: Record<number, string> = {
 /** Fil d'un groupe (route `/groupes/:id`) : seuls les membres y ont accès, le back renvoie 403 aux autres. */
 @Component({
   selector: 'app-fil-groupe',
-  imports: [RouterLink, Alerte, Avatar, InfosGroupe, Modale, Spinner],
+  imports: [RouterLink, Alerte, Avatar, Bouton, InfosGroupe, Modale, Spinner, ZoneSaisieMessage],
   templateUrl: './fil-groupe.html',
   styleUrl: './fil-groupe.scss',
   host: { '(document:click)': 'menuOuvert.set(false)', '(document:keydown.escape)': 'menuOuvert.set(false)' },
@@ -50,7 +52,7 @@ export class FilGroupe {
   protected readonly moiId = inject(AuthentificationService).utilisateur()?.id;
 
   private readonly defilement = viewChild<ElementRef<HTMLElement>>('defilement');
-  private readonly saisie = viewChild<ElementRef<HTMLTextAreaElement>>('saisie');
+  private readonly saisie = viewChild(ZoneSaisieMessage);
 
   protected readonly heure = heure;
   protected readonly couleurAuteur = couleurAuteur;
@@ -209,14 +211,6 @@ export class FilGroupe {
     });
   }
 
-  protected touche(e: KeyboardEvent): void {
-    // Entrée envoie, Maj+Entrée passe à la ligne (comme WhatsApp Web).
-    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-      e.preventDefault();
-      this.envoyer();
-    }
-  }
-
   protected envoyer(): void {
     const content = this.brouillon().trim();
     if (!content || this.envoi() || content.length > MESSAGE_MAX) return;
@@ -235,7 +229,7 @@ export class FilGroupe {
         this.messages.update((l) => fusionnerMessages(l, [message]));
         this.total.update((t) => t + 1);
         this.allerEnBas();
-        this.saisie()?.nativeElement.focus();
+        this.saisie()?.focus();
       },
       error: (e) => {
         this.envoi.set(false);

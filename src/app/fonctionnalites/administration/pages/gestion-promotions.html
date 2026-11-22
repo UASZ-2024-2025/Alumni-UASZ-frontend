@@ -1,10 +1,7 @@
-<div class="entete-page">
-  <div>
-    <h1>Promotions</h1>
-    <p class="total" aria-live="polite">{{ promotions().length }} promotion(s)</p>
-  </div>
-  <app-bouton (clic)="ajouter()">Ajouter une promotion</app-bouton>
-</div>
+<app-entete-page titre="Promotions">
+  <p class="total" aria-live="polite">{{ promotions().length }} promotion(s)</p>
+  <app-bouton actions (clic)="ajouter()">Ajouter une promotion</app-bouton>
+</app-entete-page>
 
 @if (!formulaireOuvert() && erreur(); as message) {
   <app-alerte>{{ message }}</app-alerte>
@@ -17,31 +14,22 @@
     <app-etat-vide titre="Aucune promotion">Créez la première promotion.</app-etat-vide>
   } @else if (promotions().length > 0) {
     <app-carte>
-    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
-      <caption class="cache">Liste des promotions</caption>
-      <thead>
-        <tr>
-          <th scope="col">Année</th>
-          <th scope="col">Spécialité</th>
-          <th scope="col">Diplômés</th>
-          <th scope="col">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (p of promotions(); track p.id) {
-          <tr>
-            <td data-label="Année"><strong>{{ p.academicYear }}</strong></td>
-            <td data-label="Spécialité">{{ p.specialty || '—' }}</td>
-            <td data-label="Diplômés">{{ p.graduateCount ?? 0 }}</td>
-            <td class="cellule-actions"><div class="actions">
-              <app-bouton variante="secondaire" [petit]="true"
-                [libelleAria]="'Voir les diplômés ' + p.academicYear + ' ' + p.specialty"
-                (clic)="voirDiplomes(p)">Diplômés</app-bouton>
-            </div></td>
-          </tr>
-        }
-      </tbody>
-    </table></div>
+      <app-tableau [colonnes]="colonnes" [lignes]="promotions()" legende="Liste des promotions">
+        <ng-template #cellule let-p let-cle="cle">
+          @switch (cle) {
+            @case ('annee') { <strong>{{ p.academicYear }}</strong> }
+            @case ('specialite') { {{ p.specialty || '—' }} }
+            @case ('diplomes') { {{ p.graduateCount ?? 0 }} }
+            @default {
+              <div class="actions">
+                <app-bouton variante="secondaire" [petit]="true"
+                  [libelleAria]="'Voir les diplômés ' + p.academicYear + ' ' + p.specialty"
+                  (clic)="voirDiplomes(p)">Diplômés</app-bouton>
+              </div>
+            }
+          }
+        </ng-template>
+      </app-tableau>
     </app-carte>
   }
 </div>

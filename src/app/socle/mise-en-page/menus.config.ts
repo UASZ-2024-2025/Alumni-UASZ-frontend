@@ -33,7 +33,6 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
   ],
   ENSEIGNANT: [
     { libelle: 'Annuaire', chemin: '/annuaire' },
-    { libelle: 'Statistiques', chemin: '/statistiques' },
     groupes,
     ...commun,
   ],
@@ -42,7 +41,6 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Mes offres', chemin: '/offres-emploi/mes-offres' },
     { libelle: 'Publier une offre', chemin: '/offres-emploi/publier' },
-    { libelle: 'Candidatures reçues', chemin: '/candidatures' },
     { libelle: 'Propositions envoyées', chemin: '/propositions' },
     ...commun,
   ],
@@ -51,7 +49,6 @@ export const MENUS: Record<RoleApplicatif, ElementMenu[]> = {
     { libelle: 'Annuaire', chemin: '/annuaire' },
     { libelle: 'Entreprises', chemin: '/administration/entreprises' },
     { libelle: 'Offres', chemin: '/offres-emploi' },
-    { libelle: 'Statistiques', chemin: '/statistiques' },
     groupes,
     ...commun,
   ],

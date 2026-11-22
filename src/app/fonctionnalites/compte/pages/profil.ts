@@ -6,6 +6,7 @@ import { Gender } from '../../../api/generes/utilisateurs/model/gender';
 import { UserUpdateRequest } from '../../../api/generes/utilisateurs/model/userUpdateRequest';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { Spinner } from '../../../commun/components/spinner/spinner';
@@ -20,10 +21,10 @@ const dansLePasse: ValidatorFn = (c) => (!c.value || c.value < aujourdhui() ? nu
 
 @Component({
   selector: 'app-profil',
-  imports: [ReactiveFormsModule, RouterLink, Alerte, Bouton, Carte, Champ, Spinner],
+  imports: [ReactiveFormsModule, RouterLink, Alerte, Bouton, Carte, Champ, EntetePage, Spinner],
   styleUrl: '../compte.scss',
   template: `
-    <h1>Mon profil</h1>
+    <app-entete-page titre="Mon profil" />
     <app-carte>
       @if (chargement()) {
         <app-spinner libelle="Chargement du profil…" />

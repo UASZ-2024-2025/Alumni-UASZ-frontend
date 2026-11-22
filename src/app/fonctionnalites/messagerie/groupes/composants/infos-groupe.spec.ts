@@ -44,9 +44,9 @@ describe('InfosGroupe', () => {
   const bouton = (libelle: string) =>
     [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === libelle);
   const ligne = (titre: string) =>
-    [...el.querySelectorAll<HTMLLabelElement>('.ligne-reglage')].find((l) => l.querySelector('strong')?.textContent?.trim() === titre)!;
+    [...el.querySelectorAll<HTMLElement>('.ligne-reglage')].find((l) => l.textContent?.includes(titre))!;
   const membre = (nom: string) =>
-    [...el.querySelectorAll<HTMLButtonElement>('.membre')].find((b) => b.querySelector('strong')?.textContent === nom)!;
+    [...el.querySelectorAll<HTMLButtonElement>('.membre button')].find((b) => b.querySelector('strong')?.textContent === nom)!;
   const attendre = async () => {
     await fixture.whenStable();
     fixture.detectChanges();
@@ -99,7 +99,7 @@ describe('InfosGroupe', () => {
 
   it('coupe les notifications pour la durée choisie', () => {
     creer('moi');
-    const choix = el.querySelector<HTMLSelectElement>('.selection')!;
+    const choix = el.querySelector<HTMLSelectElement>('.selection select')!;
     choix.value = 'ONE_WEEK';
     choix.dispatchEvent(new Event('change'));
     expect(api.updateGroupPreferences).toHaveBeenCalledWith('g1', { mute: 'ONE_WEEK' });

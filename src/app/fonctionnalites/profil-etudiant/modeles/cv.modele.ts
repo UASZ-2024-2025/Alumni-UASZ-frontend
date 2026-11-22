@@ -56,6 +56,8 @@ export interface DonneesCv {
   experiences: ExperienceCv[];
   formations: FormationCv[];
   langues: LangueCv[];
+  /** Centres d'intérêt : repris du profil, non enregistrés avec le CV. */
+  interets: string[];
 }
 
 export interface TitresSections {
@@ -64,6 +66,8 @@ export interface TitresSections {
   formations: string;
   competences: string;
   langues: string;
+  interets: string;
+  contact: string;
   present: string;
 }
 
@@ -74,6 +78,8 @@ const TITRES_SECTIONS: Record<string, TitresSections> = {
     formations: 'Formation',
     competences: 'Compétences',
     langues: 'Langues',
+    interets: 'Centres d’intérêt',
+    contact: 'Contact',
     present: 'Aujourd’hui',
   },
   Anglais: {
@@ -82,9 +88,19 @@ const TITRES_SECTIONS: Record<string, TitresSections> = {
     formations: 'Education',
     competences: 'Skills',
     langues: 'Languages',
+    interets: 'Interests',
+    contact: 'Contact',
     present: 'Present',
   },
 };
+
+/** Mise en page unique du CV (PDF et aperçu) : feuille A4 en mm, colonne gauche (contact, compétences, langues) et colonne principale. */
+export const MISE_EN_PAGE_CV = { largeur: 210, hauteur: 297, colonneGauche: 64, marge: 8 } as const;
+
+/** Initiales affichées en tête de la colonne gauche. */
+export function initialesCv(d: Pick<DonneesCv, 'prenom' | 'nom'>): string {
+  return [d.prenom, d.nom].map((v) => v.trim().charAt(0).toUpperCase()).join('') || 'CV';
+}
 
 export function titresSections(langue: string): TitresSections {
   return TITRES_SECTIONS[langue] ?? TITRES_SECTIONS['Français'];
@@ -106,6 +122,7 @@ export function cvInitial(utilisateur: User | null, profil: StudentProfile | nul
     experiences: [],
     formations: [],
     langues: [{ language: 'Français', proficiency: 'Langue maternelle' }],
+    interets: [...(profil?.interests ?? [])],
   };
 }
 

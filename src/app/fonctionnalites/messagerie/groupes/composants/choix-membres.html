@@ -1,16 +1,13 @@
 <div class="choix">
-  <label class="champ">
-    Ajouter des participants
-    <input type="search" placeholder="Rechercher par nom, prénom ou compétence" autocomplete="off"
-      [value]="requete()" (input)="saisir($any($event.target).value)" />
-  </label>
+  <app-champ libelle="Ajouter des participants" type="search" placeholder="Rechercher par nom, prénom ou compétence"
+    [ngModel]="requete()" [ngModelOptions]="{ standalone: true }" (ngModelChange)="saisir($event)" />
 
   @if (selection().length) {
     <ul class="puces" aria-label="Participants choisis">
       @for (m of selection(); track m.userId) {
         <li>
           {{ m.nom }}
-          <button type="button" [attr.aria-label]="'Retirer ' + m.nom" (click)="retirer(m)">×</button>
+          <app-bouton variante="discret" [petit]="true" [libelleAria]="'Retirer ' + m.nom" (clic)="retirer(m)">×</app-bouton>
         </li>
       }
     </ul>
@@ -30,11 +27,11 @@
       <ul class="liste">
         @for (m of resultats(); track m.userId) {
           <li>
-            <button type="button" class="personne" (click)="choisir(m)" [attr.aria-label]="'Ajouter ' + m.nom">
+            <app-bouton class="personne" variante="discret" [pleineLargeur]="true" [libelleAria]="'Ajouter ' + m.nom" (clic)="choisir(m)">
               <app-avatar [nom]="m.nom" />
               <span class="texte"><strong>{{ m.nom }}</strong><small>{{ m.detail }}</small></span>
               <span class="plus" aria-hidden="true">+</span>
-            </button>
+            </app-bouton>
           </li>
         }
       </ul>

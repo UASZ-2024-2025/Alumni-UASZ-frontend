@@ -6,10 +6,13 @@ import { AlumniService } from '../../../api/generes/alumni/api/alumni.service';
 import { AlumniProfile } from '../../../api/generes/alumni/model/alumniProfile';
 import { WorkExperience } from '../../../api/generes/alumni/model/workExperience';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Avatar } from '../../../commun/components/avatar/avatar';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { periode } from '../../profil-etudiant/modeles/cv.modele';
-import { initiales, nomComplet } from '../modeles/cartes';
+import { nomComplet } from '../modeles/cartes';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 
 /** Les expériences en cours d'abord, puis de la plus récente à la plus ancienne. */
 export function trierExperiences(liste: WorkExperience[]): WorkExperience[] {
@@ -21,7 +24,7 @@ export function trierExperiences(liste: WorkExperience[]): WorkExperience[] {
 
 @Component({
   selector: 'app-fiche-alumni',
-  imports: [RouterLink, Alerte],
+  imports: [RouterLink, Alerte, Avatar, Bouton, Spinner],
   templateUrl: './fiche-alumni.html',
   styleUrls: ['../../profil-etudiant/pages/profil-etudiant.scss', '../annuaire.scss'],
 })
@@ -31,7 +34,6 @@ export class FicheAlumni implements OnInit {
   private readonly auth = inject(AuthentificationService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly initiales = initiales;
   protected readonly profil = signal<AlumniProfile | null>(null);
   protected readonly experiences = signal<WorkExperience[]>([]);
   protected readonly chargement = signal(true);

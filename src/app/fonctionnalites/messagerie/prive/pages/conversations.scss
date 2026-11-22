@@ -1,6 +1,5 @@
 :host { display: block; }
 
-.entete-page { margin-bottom: 1rem; }
 h1 { margin: 0; font-family: var(--police-titre); color: var(--g9); }
 
 .messagerie {
@@ -39,8 +38,8 @@ h1 { margin: 0; font-family: var(--police-titre); color: var(--g9); }
 .texte { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .ligne { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.heure { flex: none; font-size: 0.75rem; color: var(--mu); }
-.apercu { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; color: var(--mu); }
+.heure { flex: none; font-size: var(--t-xs); color: var(--mu); }
+.apercu { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-m); color: var(--mu); }
 .non-lue .apercu { color: var(--tx); font-weight: 600; }
 
 .retour {

@@ -47,7 +47,7 @@ describe('fil de groupe', () => {
 
   it('donne toujours la même couleur à un même auteur', () => {
     expect(couleurAuteur('u1')).toBe(couleurAuteur('u1'));
-    expect(couleurAuteur('u1')).toMatch(/^#[0-9a-f]{6}$/);
+    expect(couleurAuteur('u1')).toMatch(/^var\(--[a-z0-9]+\)$/);
   });
 
   it('affiche les événements du groupe à part, et ils coupent la série', () => {

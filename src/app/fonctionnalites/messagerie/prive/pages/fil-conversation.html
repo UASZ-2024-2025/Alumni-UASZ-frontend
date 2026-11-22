@@ -41,14 +41,9 @@
   }
 </div>
 
-<form class="saisie" (submit)="envoyer(); $event.preventDefault()">
+<div class="saisie">
   @if (erreurEnvoi(); as message) {
     <app-alerte>{{ message }}</app-alerte>
   }
-  <div class="saisie-ligne">
-    <textarea #zoneTexte rows="2" placeholder="Écrivez votre message…" aria-label="Votre message"
-      [value]="brouillon()" (input)="brouillon.set(zoneTexte.value)"
-      (keydown.enter)="envoyer(); $event.preventDefault()"></textarea>
-    <app-bouton type="submit" [desactive]="!peutEnvoyer()" [chargement]="envoiEnCours()">Envoyer</app-bouton>
-  </div>
-</form>
+  <app-zone-saisie-message [(texte)]="brouillon" placeholder="Écrivez votre message…" [envoiEnCours]="envoiEnCours()" (envoyer)="envoyer()" />
+</div>

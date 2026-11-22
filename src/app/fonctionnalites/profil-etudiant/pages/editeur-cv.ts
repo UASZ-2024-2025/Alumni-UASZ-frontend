@@ -1,15 +1,19 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { catchError, map, of, startWith, switchMap, throwError } from 'rxjs';
 import { StudentsService } from '../../../api/generes/alumni/api/students.service';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
+import { Carte } from '../../../commun/components/carte/carte';
+import { Champ } from '../../../commun/components/champ/champ';
+import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { ApercuCv } from '../composants/apercu-cv';
-import { ChampEtiquettes } from '../composants/champ-etiquettes';
 import {
   cvInitial,
   depuisCvEnregistre,
@@ -24,7 +28,7 @@ import { CvPdfService } from '../services/cv-pdf.service';
 
 @Component({
   selector: 'app-editeur-cv',
-  imports: [ReactiveFormsModule, RouterLink, Alerte, ChampEtiquettes, ApercuCv],
+  imports: [ReactiveFormsModule, Alerte, ApercuCv, Bouton, EntetePage, Carte, Champ, PucesCompetences, Spinner],
   templateUrl: './editeur-cv.html',
   styleUrls: ['./profil-etudiant.scss', './editeur-cv.scss'],
 })
@@ -34,20 +38,20 @@ export class EditeurCv implements OnInit {
   private readonly auth = inject(AuthentificationService);
   private readonly pdf = inject(CvPdfService);
 
-  protected readonly modeles = MODELES_CV;
-  protected readonly languesCv = LANGUES_CV;
-  protected readonly niveaux = NIVEAUX_LANGUE;
+  protected readonly modeles = MODELES_CV.map((m) => ({ valeur: m.code, libelle: m.libelle }));
+  protected readonly languesCv = LANGUES_CV.map((l) => ({ valeur: l, libelle: l }));
+  protected readonly niveaux = NIVEAUX_LANGUE.map((n) => ({ valeur: n, libelle: n }));
 
   protected readonly formulaire = this.fb.group({
     titre: ['', [Validators.required, Validators.maxLength(150)]],
     modele: ['MODERN_BLUE', Validators.required],
     langue: ['Français', Validators.required],
     resume: ['', Validators.maxLength(2000)],
+    competences: [[] as string[]],
     experiences: this.fb.array<FormGroup>([]),
     formations: this.fb.array<FormGroup>([]),
     langues: this.fb.array<FormGroup>([]),
   });
-  protected readonly competences = signal<string[]>([]);
   private readonly identite = signal<DonneesCv>(cvInitial(null, null));
 
   private readonly valeurs = toSignal(
@@ -67,7 +71,7 @@ export class EditeurCv implements OnInit {
       modele: v.modele,
       langue: v.langue,
       resume: v.resume,
-      competences: this.competences(),
+      competences: v.competences,
       experiences: v.experiences as DonneesCv['experiences'],
       formations: v.formations as DonneesCv['formations'],
       langues: v.langues as DonneesCv['langues'],
@@ -121,8 +125,7 @@ export class EditeurCv implements OnInit {
   }
 
   private appliquer(d: DonneesCv): void {
-    this.formulaire.patchValue({ titre: d.titre, modele: d.modele, langue: d.langue, resume: d.resume });
-    this.competences.set(d.competences);
+    this.formulaire.patchValue({ titre: d.titre, modele: d.modele, langue: d.langue, resume: d.resume, competences: d.competences });
     this.experiences.clear();
     d.experiences.forEach((e) => this.experiences.push(this.groupeExperience(e)));
     this.formations.clear();

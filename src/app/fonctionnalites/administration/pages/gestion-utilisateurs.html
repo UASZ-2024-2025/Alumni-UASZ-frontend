@@ -1,27 +1,11 @@
-<div class="entete-page">
-  <div>
-    <h1>Gestion des utilisateurs</h1>
-    <p class="total" aria-live="polite">{{ total() }} utilisateur(s)</p>
-  </div>
-  <app-bouton (clic)="ouvrirCreation()">Créer un utilisateur</app-bouton>
-</div>
+<app-entete-page titre="Gestion des utilisateurs">
+  <p class="total" aria-live="polite">{{ total() }} utilisateur(s)</p>
+  <app-bouton actions (clic)="ouvrirCreation()">Créer un utilisateur</app-bouton>
+</app-entete-page>
 
 <div class="filtres filtres--barre">
-  <label class="champ">
-    Rôle
-    <select #filtreRole (change)="filtrerRole(filtreRole.value)">
-      <option value="">Tous</option>
-      @for (r of roles; track r) {
-        <option [value]="r">{{ libelleRole(r) }}</option>
-      }
-    </select>
-  </label>
-  <fieldset class="puces" aria-label="Filtrer par statut">
-    <button type="button" class="puce" [attr.aria-pressed]="!statut()" (click)="filtrerStatut('')">Tous</button>
-    @for (s of statuts; track s) {
-      <button type="button" class="puce" [attr.aria-pressed]="statut() === s" (click)="filtrerStatut(s)">{{ libelleStatut(s) }}</button>
-    }
-  </fieldset>
+  <app-champ libelle="Rôle" type="select" [options]="optionsFiltreRole" name="role" [ngModel]="role() ?? ''" (ngModelChange)="filtrerRole($event)" />
+  <app-onglets [onglets]="ongletsStatut" [actif]="statut() ?? ''" (actifChange)="filtrerStatut($event)" />
 </div>
 
 @if (erreur(); as message) {
@@ -37,55 +21,47 @@
     <app-etat-vide titre="Aucun utilisateur">Aucun résultat pour ces filtres.</app-etat-vide>
   } @else if (utilisateurs().length > 0) {
     <app-carte>
-    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
-      <caption class="cache">Liste des utilisateurs</caption>
-      <thead>
-        <tr>
-          <th scope="col">Utilisateur</th>
-          <th scope="col">Rôle</th>
-          <th scope="col">Statut</th>
-          <th scope="col">Inscrit le</th>
-          <th scope="col">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (u of utilisateurs(); track u.id) {
-          <tr>
-            <td class="identite">
-              <app-avatar [nom]="nomComplet(u)" />
-              <span class="identite-texte">
-                <strong>{{ nomComplet(u) }}</strong>
-                <small>{{ u.email }}</small>
+      <app-tableau [colonnes]="colonnes" [lignes]="utilisateurs()" legende="Liste des utilisateurs">
+        <ng-template #cellule let-u let-cle="cle">
+          @switch (cle) {
+            @case ('utilisateur') {
+              <span class="identite">
+                <app-avatar [nom]="nomComplet(u)" />
+                <span class="identite-texte">
+                  <strong>{{ nomComplet(u) }}</strong>
+                  <small>{{ u.email }}</small>
+                </span>
               </span>
-            </td>
-            <td data-label="Rôle">{{ libelleRole(u.role) }}</td>
-            <td data-label="Statut"><app-badge [ton]="tonStatut(u.status)">{{ libelleStatut(u.status) }}</app-badge></td>
-            <td data-label="Inscrit le">{{ u.createdAt ? (u.createdAt | date: 'dd/MM/yyyy') : '—' }}</td>
-            <td class="cellule-actions"><div class="actions">
-              @if (u.status !== 'ACTIF') {
-                <app-bouton [petit]="true" [desactive]="enCours() === u.id" [libelleAria]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)" (clic)="activer(u)">
-                  {{ u.status === 'SUSPENDU' ? 'Réactiver' : 'Activer' }}
+            }
+            @case ('role') { {{ libelleRole(u.role) }} }
+            @case ('statut') { <app-badge [ton]="tonStatut(u.status)">{{ libelleStatut(u.status) }}</app-badge> }
+            @case ('creation') { {{ u.createdAt ? (u.createdAt | date: 'dd/MM/yyyy') : '—' }} }
+            @default {
+              <app-menu-actions [libelle]="'Actions pour ' + nomComplet(u)">
+                @if (u.status !== 'ACTIF') {
+                  <app-bouton [desactive]="enCours() === u.id" [libelleAria]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)" (clic)="activer(u)">
+                    {{ u.status === 'SUSPENDU' ? 'Réactiver' : 'Activer' }}
+                  </app-bouton>
+                }
+                @if (u.status === 'ACTIF') {
+                  <app-bouton variante="secondaire" [desactive]="enCours() === u.id || estMoi(u)"
+                    [libelleAria]="'Suspendre ' + nomComplet(u)" (clic)="suspendre(u)">
+                    Suspendre
+                  </app-bouton>
+                }
+                <app-bouton variante="secondaire" [desactive]="enCours() === u.id"
+                  [libelleAria]="'Modifier ' + nomComplet(u)" (clic)="ouvrirEdition(u)">
+                  Modifier
                 </app-bouton>
-              }
-              @if (u.status === 'ACTIF') {
-                <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
-                  [libelleAria]="'Suspendre ' + nomComplet(u)" (clic)="suspendre(u)">
-                  Suspendre
+                <app-bouton variante="danger" [desactive]="enCours() === u.id || estMoi(u)"
+                  [libelleAria]="'Supprimer ' + nomComplet(u)" (clic)="supprimer(u)">
+                  Supprimer
                 </app-bouton>
-              }
-              <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id"
-                [libelleAria]="'Modifier ' + nomComplet(u)" (clic)="ouvrirEdition(u)">
-                Modifier
-              </app-bouton>
-              <app-bouton variante="danger" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
-                [libelleAria]="'Supprimer ' + nomComplet(u)" (clic)="supprimer(u)">
-                Supprimer
-              </app-bouton>
-            </div></td>
-          </tr>
-        }
-      </tbody>
-    </table></div>
+              </app-menu-actions>
+            }
+          }
+        </ng-template>
+      </app-tableau>
     </app-carte>
 
     <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="aller($event)" />

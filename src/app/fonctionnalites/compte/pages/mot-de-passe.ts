@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Champ } from '../../../commun/components/champ/champ';
 import {
@@ -20,10 +21,10 @@ const differentDeLActuel: ValidatorFn = (g) => {
 
 @Component({
   selector: 'app-mot-de-passe',
-  imports: [ReactiveFormsModule, Alerte, Bouton, Carte, Champ],
+  imports: [ReactiveFormsModule, Alerte, Bouton, Carte, Champ, EntetePage],
   styleUrl: '../compte.scss',
   template: `
-    <h1>Changer mon mot de passe</h1>
+    <app-entete-page titre="Changer mon mot de passe" />
     <app-carte>
       <p class="aide">Toutes vos sessions seront fermées : vous devrez vous reconnecter.</p>
       <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>

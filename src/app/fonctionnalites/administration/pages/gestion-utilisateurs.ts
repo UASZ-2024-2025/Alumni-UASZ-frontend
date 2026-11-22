@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
 import { RoleName } from '../../../api/generes/utilisateurs/model/roleName';
 import { User } from '../../../api/generes/utilisateurs/model/user';
@@ -12,8 +12,11 @@ import { Badge } from '../../../commun/components/badge/badge';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
+import { MenuActions } from '../../../commun/components/menu-actions/menu-actions';
 import { Modale } from '../../../commun/components/modale/modale';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { Onglet, Onglets } from '../../../commun/components/onglets/onglets';
+import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ConfirmationService } from '../../../commun/services/confirmation.service';
@@ -21,11 +24,12 @@ import { ToastService } from '../../../commun/services/toast.service';
 import { Avatar } from '../../../commun/components/avatar/avatar';
 import { messageErreur } from '../erreurs';
 import { libelleRole, libelleStatut, tonStatut } from '../../../commun/utilitaires/libelles';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 @Component({
   selector: 'app-gestion-utilisateurs',
   templateUrl: './gestion-utilisateurs.html',
-  imports: [DatePipe, ReactiveFormsModule, Alerte, Avatar, Badge, Bouton, Carte, Champ, EtatVide, Modale, Pagination, Spinner],
+  imports: [DatePipe, FormsModule, ReactiveFormsModule, Alerte, Avatar, Badge, Bouton, Carte, Champ, EtatVide, Modale, Onglets, Pagination, Spinner, Tableau, EntetePage, MenuActions],
   styleUrl: '../administration.scss',
 })
 export class GestionUtilisateurs {
@@ -60,6 +64,16 @@ export class GestionUtilisateurs {
     phone: [''],
     role: [RoleName.Etudiant as RoleName],
   });
+
+  protected readonly optionsFiltreRole: OptionChamp[] = [{ valeur: '', libelle: 'Tous' }, ...this.optionsRole];
+  protected readonly ongletsStatut: Onglet[] = [{ cle: '', libelle: 'Tous' }, ...this.statuts.map((s) => ({ cle: s as string, libelle: libelleStatut(s) }))];
+  protected readonly colonnes: ColonneTableau[] = [
+    { cle: 'utilisateur', libelle: 'Utilisateur' },
+    { cle: 'role', libelle: 'Rôle' },
+    { cle: 'statut', libelle: 'Statut' },
+    { cle: 'creation', libelle: 'Inscrit le' },
+    { cle: 'actions', libelle: 'Actions' },
+  ];
 
   protected readonly tonStatut = tonStatut;
   protected readonly libelleRole = libelleRole;
