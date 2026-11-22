@@ -18,7 +18,7 @@ describe('GestionEntreprises', () => {
   let toast: { succes: ReturnType<typeof vi.fn> };
 
   const ouvrirAjout = () => {
-    el.querySelector<HTMLButtonElement>('.entete-page app-bouton button')!.click();
+    el.querySelector<HTMLButtonElement>('.entete-page .actions app-bouton button')!.click();
     fixture.detectChanges();
   };
   const saisir = (nom: string, valeur: string) => {
@@ -62,9 +62,9 @@ describe('GestionEntreprises', () => {
     el = fixture.nativeElement;
 
     expect(api.searchCompanies).toHaveBeenCalledWith(undefined, false, 0, 1);
-    const lien = el.querySelector<HTMLButtonElement>('.lien-attente')!;
+    const lien = el.querySelector<HTMLElement>('.lien-attente')!;
     expect(lien.textContent).toContain('3 en attente de validation');
-    lien.click();
+    lien.querySelector('button')!.click();
     expect(api.searchCompanies).toHaveBeenLastCalledWith(undefined, false, 0, 20);
   });
 

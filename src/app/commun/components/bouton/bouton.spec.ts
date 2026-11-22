@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Bouton } from './bouton';
 
 describe('Bouton', () => {
@@ -25,5 +26,16 @@ describe('Bouton', () => {
     expect(b.disabled).toBe(true);
     expect(b.getAttribute('aria-busy')).toBe('true');
     expect(b.querySelector('.roue')).toBeTruthy();
+  });
+
+  it('devient un vrai lien routé quand `lien` est renseigné', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const f = TestBed.createComponent(Bouton);
+    f.componentRef.setInput('lien', '/annuaire');
+    f.detectChanges();
+    const a = f.nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(a.getAttribute('href')).toBe('/annuaire');
+    expect(a.className).toContain('btn--principal');
+    expect(f.nativeElement.querySelector('button')).toBeNull();
   });
 });

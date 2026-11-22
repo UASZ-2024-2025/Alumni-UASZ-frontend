@@ -2,22 +2,22 @@
   <a class="retour" routerLink="/annuaire" [queryParams]="{ onglet: 'etudiants' }">← Retour à l'annuaire</a>
 
   @if (chargement()) {
-    <p class="chargement">Chargement de la fiche…</p>
+    <app-spinner libelle="Chargement de la fiche…" />
   } @else if (erreur()) {
     <app-alerte>{{ erreur() }}</app-alerte>
   } @else if (profil(); as p) {
     <div class="fiche-tete">
-      <span class="avatar avatar--grand" aria-hidden="true">{{ initiales(nom()) }}</span>
+      <app-avatar class="avatar-grand" [nom]="nom()" />
       <div>
         <h1>{{ nom() }}</h1>
         <p>{{ p.specialty || 'Parcours non renseigné' }}@if (p.academicYear) { · Promotion {{ p.academicYear }} }</p>
-        @if (dispo(); as d) { <span class="badge badge--ok">{{ d }}@if (p.availabilityDate) { · dès le {{ formaterDate(p.availabilityDate) }} }</span> }
+        @if (dispo(); as d) { <app-badge ton="ok">{{ d }}@if (p.availabilityDate) { · dès le {{ formaterDate(p.availabilityDate) }} }</app-badge> }
       </div>
       @if (estProprietaire()) {
-        <div class="actions"><a class="btn-sec" routerLink="/mon-espace/profil">Modifier mon profil</a></div>
+        <div class="actions"><app-bouton variante="secondaire" [lien]="'/mon-espace/profil'">Modifier mon profil</app-bouton></div>
       }
       @if (p.userId && !estProprietaire()) {
-        <div class="actions"><a class="btn-sec" [routerLink]="['/messagerie', p.userId]">Contacter</a></div>
+        <div class="actions"><app-bouton variante="secondaire" [lien]="['/messagerie', p.userId]">Contacter</app-bouton></div>
       }
     </div>
 
@@ -37,18 +37,10 @@
 
     <section class="fiche">
       <h2>Compétences et centres d'intérêt</h2>
-      <div>
-        <span class="libelle">Compétences</span>
-        @if (p.skills?.length) {
-          <ul class="puces">@for (s of p.skills; track s) { <li>{{ s }}</li> }</ul>
-        } @else { <p class="aide">Aucune compétence renseignée.</p> }
-      </div>
-      <div>
-        <span class="libelle">Centres d'intérêt</span>
-        @if (p.interests?.length) {
-          <ul class="puces">@for (i of p.interests; track i) { <li>{{ i }}</li> }</ul>
-        } @else { <p class="aide">Aucun centre d'intérêt renseigné.</p> }
-      </div>
+      <app-puces-competences libelle="Compétences" [lectureSeule]="true" [ngModel]="p.skills ?? []" name="competences"
+        texteVide="Aucune compétence renseignée." />
+      <app-puces-competences libelle="Centres d'intérêt" [lectureSeule]="true" [ngModel]="p.interests ?? []" name="interets"
+        texteVide="Aucun centre d'intérêt renseigné." />
     </section>
 
     @if (peutVoirCv()) {
@@ -58,9 +50,9 @@
         @if (donneesCv(); as d) {
           <app-apercu-cv [donnees]="d" />
           <div class="actions">
-            <button type="button" class="btn-prim" (click)="telechargerCv()" [disabled]="telechargement()">
+            <app-bouton [chargement]="telechargement()" (clic)="telechargerCv()">
               {{ telechargement() ? 'Génération…' : 'Télécharger le CV en PDF' }}
-            </button>
+            </app-bouton>
           </div>
         } @else if (!erreurCv()) {
           <p class="aide">Cet étudiant n'a pas encore publié de CV.</p>

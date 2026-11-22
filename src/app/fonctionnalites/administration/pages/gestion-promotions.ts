@@ -9,13 +9,15 @@ import { Carte } from '../../../commun/components/carte/carte';
 import { Champ } from '../../../commun/components/champ/champ';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Modale } from '../../../commun/components/modale/modale';
+import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ToastService } from '../../../commun/services/toast.service';
 import { messageErreur } from '../erreurs';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 @Component({
   selector: 'app-gestion-promotions',
-  imports: [ReactiveFormsModule, Alerte, Bouton, Carte, Champ, EtatVide, Modale, Spinner],
+  imports: [ReactiveFormsModule, Alerte, Bouton, Carte, Champ, EtatVide, Modale, Spinner, Tableau, EntetePage],
   templateUrl: './gestion-promotions.html',
   styleUrl: '../administration.scss',
 })
@@ -24,6 +26,12 @@ export class GestionPromotions {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly toast = inject(ToastService);
 
+  protected readonly colonnes: ColonneTableau[] = [
+    { cle: 'annee', libelle: 'Année' },
+    { cle: 'specialite', libelle: 'Spécialité' },
+    { cle: 'diplomes', libelle: 'Diplômés' },
+    { cle: 'actions', libelle: 'Actions' },
+  ];
   protected readonly promotions = signal<Promotion[]>([]);
   protected readonly chargement = signal(true);
   protected readonly erreur = signal<string | null>(null);

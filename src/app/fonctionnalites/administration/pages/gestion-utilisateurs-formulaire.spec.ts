@@ -20,7 +20,7 @@ describe('GestionUtilisateurs : création et modification', () => {
   let el: HTMLElement;
 
   const champ = (libelle: string) =>
-    Array.from(el.querySelectorAll('app-champ'))
+    Array.from(el.querySelectorAll('app-modale app-champ'))
       .find((c) => c.querySelector('label')?.textContent?.includes(libelle))!
       .querySelector('input,select') as HTMLInputElement;
   const saisir = (libelle: string, valeur: string) => {

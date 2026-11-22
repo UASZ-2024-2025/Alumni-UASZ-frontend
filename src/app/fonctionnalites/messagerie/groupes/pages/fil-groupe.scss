@@ -2,8 +2,6 @@
 // fond vert très clair, bulles blanches pour les autres, vert pâle pour soi, séparateurs de jour en pastille.
 :host { display: flex; flex: 1; flex-direction: column; min-height: 0; }
 
-.cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-
 // --- États (chargement, accès refusé, introuvable, erreur) ---
 .etat {
   display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: .5rem;
@@ -12,41 +10,32 @@
   h2 { margin: 0; color: var(--tx); font: 700 1.25rem/1.2 var(--police-titre); }
   p { max-width: 24rem; margin: 0; }
 }
-.lien-retour { padding: 0; border: 0; background: none; color: var(--g8); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; &:hover { text-decoration: underline; } }
+.lien-retour { color: var(--g8); font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
 
 // --- En-tête ---
 .entete-fil { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--bd); background: var(--sf); }
 .retour { display: none; }
-.retour, .bouton-icone {
-  place-items: center; flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%;
-  background: none; color: var(--mu); cursor: pointer;
+.retour {
+  place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; color: var(--mu);
   svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   &:hover { background: var(--g0); color: var(--tx); }
 }
-.bouton-icone { display: grid; }
-.identite {
-  display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px;
-  border: 0; border-radius: var(--rayon); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
-  &:hover { background: var(--g0); }
-}
+.icone { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.identite { flex: 1; min-width: 0; }
 .identite .texte { display: flex; flex-direction: column; min-width: 0; }
 .identite strong, .identite small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.identite small { color: var(--mu); font-size: .8125rem; }
+.identite small { color: var(--mu); font-size: var(--t-s); }
 .identite .sourdine { width: 14px; height: 14px; margin-left: 4px; vertical-align: -2px; fill: none; stroke: var(--mu); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 
 // --- Menu ⋮ ---
 .menu { position: relative; }
-.bouton-icone svg path[d^='M8 3.5'] { stroke-width: 2.6; }
+.menu .icone path { stroke-width: 2.6; }
 .options {
   position: absolute; z-index: 10; top: calc(100% + 4px); right: 0; min-width: 230px; margin: 0; padding: 6px 0;
-  border: 1px solid var(--bd); border-radius: 12px; background: var(--sf); list-style: none;
-  box-shadow: 0 8px 24px rgba(7, 61, 39, .16);
+  border: 1px solid var(--bd); border-radius: var(--rayon-m); background: var(--sf); list-style: none;
+  box-shadow: var(--ombre-flottante);
   animation: apparition .12s ease-out;
-  button {
-    display: block; width: 100%; padding: 9px 18px; border: 0; background: none; color: var(--tx);
-    font: inherit; font-size: .9rem; text-align: left; cursor: pointer;
-    &:hover, &:focus-visible { background: var(--g0); outline: none; }
-  }
+  li app-bouton { display: block; }
 }
 @keyframes apparition { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 
@@ -59,15 +48,14 @@
 .fil { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
 
 .jour { align-self: center; margin: 10px 0 6px; }
-.jour span { display: inline-block; padding: 4px 12px; border-radius: 8px; background: var(--sf); color: var(--mu); font-size: .75rem; font-weight: 600; box-shadow: 0 1px 1px rgba(7, 61, 39, .08); }
+.jour span { display: inline-block; padding: 4px 12px; border-radius: var(--rayon-s); background: var(--sf); color: var(--mu); font-size: var(--t-xs); font-weight: 600; box-shadow: var(--ombre-legere); }
 .plus-anciens { align-self: center; margin-bottom: 6px; }
-.plus-anciens button { padding: 5px 14px; border: 1px solid var(--bd); border-radius: 999px; background: var(--sf); color: var(--g8); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer; &:disabled { cursor: wait; opacity: .7; } }
 
 .bulle {
   --fond-bulle: var(--sf);
   position: relative; align-self: flex-start; max-width: min(75%, 34rem);
-  padding: 6px 9px 7px; border-radius: 10px; background: var(--fond-bulle); color: var(--tx);
-  box-shadow: 0 1px 1px rgba(7, 61, 39, .1);
+  padding: 6px 9px 7px; border-radius: var(--rayon); background: var(--fond-bulle); color: var(--tx);
+  box-shadow: var(--ombre-legere);
   &.debut { margin-top: 6px; border-top-left-radius: 0; }
   // Petite pointe en haut de la première bulle d'une série.
   &.debut::before { content: ''; position: absolute; top: 0; left: -7px; border-top: 0 solid transparent; border-right: 8px solid var(--fond-bulle); border-bottom: 9px solid transparent; }
@@ -76,23 +64,20 @@
   &.moi.debut { border-top-left-radius: 10px; border-top-right-radius: 0; }
   &.moi.debut::before { right: -7px; left: auto; border-right: 0; border-left: 8px solid var(--fond-bulle); }
 }
-.auteur { display: block; margin-bottom: 1px; font-size: .8125rem; font-weight: 700; }
+.auteur { display: block; margin-bottom: 1px; font-size: var(--t-s); font-weight: 700; }
 .bulle p { margin: 0; font-size: .9375rem; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
 // L'heure flotte en bas à droite de la bulle, sans ligne à elle seule quand il y a la place.
-.bulle time { float: right; margin: 6px 0 -4px 10px; color: var(--mu); font-size: .6875rem; line-height: 1; }
+.bulle time { float: right; margin: 6px 0 -4px 10px; color: var(--mu); font-size: var(--t-xs); line-height: 1; }
 
 // Message supprimé : texte gris en italique précédé d'un symbole « interdit », comme WhatsApp.
 .bulle.supprime p { color: var(--mu); font-style: italic; }
 .bulle.supprime p svg { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 
 // Corbeille qui apparaît au survol (ou au focus clavier) de la bulle.
+// Le bouton garde le focus clavier visible même quand il est transparent.
 .supprimer {
-  position: absolute; top: 50%; right: calc(100% + 4px); display: grid; place-items: center; width: 28px; height: 28px;
-  border: 0; border-radius: 50%; background: var(--sf); color: var(--mu); cursor: pointer; opacity: 0;
-  box-shadow: 0 1px 2px rgba(7, 61, 39, .15); transform: translateY(-50%); transition: opacity .12s;
-  svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-  &:hover { color: var(--dg); }
-  &:focus-visible { opacity: 1; }
+  position: absolute; top: 50%; right: calc(100% + 4px); opacity: 0; transform: translateY(-50%); transition: opacity .12s;
+  &:focus-within { opacity: 1; }
 }
 .bulle:not(.moi) .supprimer { right: auto; left: calc(100% + 4px); }
 .bulle:hover .supprimer { opacity: 1; }
@@ -101,33 +86,19 @@
 // Événement du groupe (création, ajout, départ, réglage) : pastille centrée, sans auteur.
 .evenement { align-self: center; max-width: 85%; margin: 8px 0; text-align: center; }
 .evenement span {
-  display: inline-block; padding: 5px 12px; border-radius: 8px;
-  background: color-mix(in srgb, var(--g1) 70%, var(--sf)); color: var(--g9); font-size: .78rem; line-height: 1.35;
-  box-shadow: 0 1px 1px rgba(7, 61, 39, .08);
+  display: inline-block; padding: 5px 12px; border-radius: var(--rayon-s);
+  background: color-mix(in srgb, var(--g1) 70%, var(--sf)); color: var(--g9); font-size: var(--t-s); line-height: 1.35;
+  box-shadow: var(--ombre-legere);
 }
 
 // --- Saisie ---
 .saisie { padding: 8px 12px 10px; border-top: 1px solid var(--bd); background: var(--sf); }
-.erreur-envoi { margin: 0 0 6px; color: var(--dg); font-size: .8125rem; }
-.compteur { margin: 4px 54px 0 0; color: var(--mu); font-size: .75rem; text-align: right; }
+.erreur-envoi { margin: 0 0 6px; color: var(--dg); font-size: var(--t-s); }
+.compteur { margin: 4px 0 0; color: var(--mu); font-size: var(--t-xs); text-align: right; }
 .lecture-seule {
   display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 10px;
-  color: var(--mu); font-size: .875rem; text-align: center;
+  color: var(--mu); font-size: var(--t-m); text-align: center;
   svg { flex: none; width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
-}
-.barre { display: flex; align-items: flex-end; gap: 8px; }
-textarea {
-  flex: 1; box-sizing: border-box; min-height: 42px; max-height: 9rem; padding: 10px 16px;
-  border: 1px solid var(--bord-champ); border-radius: 22px; background: var(--g0); color: var(--tx);
-  font: 400 .9375rem/1.4 var(--police); resize: none; field-sizing: content;
-  &:focus { border-color: var(--g7); outline: 2px solid var(--g1); background: var(--sf); }
-}
-.envoyer {
-  display: grid; place-items: center; flex: none; width: 42px; height: 42px; border: 0; border-radius: 50%;
-  background: var(--g8); color: #fff; cursor: pointer; box-shadow: var(--ombre-bouton); transition: background .15s, opacity .15s;
-  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
-  &:hover:not(:disabled) { background: var(--g9); }
-  &:disabled { opacity: .45; cursor: default; box-shadow: none; }
 }
 
 @media (max-width: 800px) {

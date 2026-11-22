@@ -1,51 +1,22 @@
 // Styles communs aux écrans de l'annuaire, des fiches, du profil Alumni et des promotions.
-.onglets { display: flex; gap: 0.25rem; margin-bottom: 1rem; border-bottom: 1px solid var(--bd); overflow-x: auto; }
-.onglet {
-  padding: 0.7rem 1.1rem; border: 0; border-bottom: 3px solid transparent; background: transparent;
-  color: var(--mu); font: 600 0.9375rem var(--police); cursor: pointer; white-space: nowrap;
-  &[aria-selected='true'] { color: var(--g8); border-bottom-color: var(--g8); }
-  &:hover { color: var(--g9); }
-}
-
 .filtres {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; align-items: end;
-  padding: 1rem; margin-bottom: 1rem; background: var(--sf); border: 1px solid var(--bd); border-radius: 14px;
-  label { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; font-size: 0.8125rem; font-weight: 600; }
-  input, select {
-    width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--bord-champ); border-radius: var(--rayon);
-    background: var(--sf); color: var(--tx); font: 400 0.9375rem var(--police);
-    &:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
-  }
+  padding: 1rem; margin-bottom: 1rem; background: var(--sf); border: 1px solid var(--bd); border-radius: var(--rayon-l);
 }
-.total { margin: 0 0 0.75rem; color: var(--mu); font-size: 0.875rem; }
+.total { margin: 0 0 0.75rem; color: var(--mu); font-size: var(--t-m); }
 
 .grille-cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; }
 .carte-profil {
   display: flex; flex-direction: column; gap: 0.55rem; padding: 1rem; color: inherit; text-decoration: none;
-  background: var(--sf); border: 1px solid var(--bd); border-radius: 14px; transition: 0.15s;
+  background: var(--sf); border: 1px solid var(--bd); border-radius: var(--rayon-l); transition: 0.15s;
   &:hover { border-color: var(--g7); box-shadow: 0 8px 20px -12px rgba(7, 61, 39, 0.4); }
   .entete-carte { display: flex; align-items: center; gap: 0.75rem; }
   strong { display: block; color: var(--g9); font: 700 1rem var(--police-titre); }
-  .sous-titre { margin: 0; color: var(--mu); font-size: 0.8125rem; }
-  .detail { margin: 0; color: var(--mu); font-size: 0.78rem; overflow-wrap: anywhere; }
+  .sous-titre { margin: 0; color: var(--mu); font-size: var(--t-s); }
+  .detail { margin: 0; color: var(--mu); font-size: var(--t-s); overflow-wrap: anywhere; }
 }
 
-.avatar {
-  display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 42px; height: 42px; border-radius: 50%; background: var(--g1); color: var(--g9); font: 700 0.9375rem var(--police);
-  &--grand { width: 72px; height: 72px; font-size: 1.5rem; }
-}
-
-.badge {
-  display: inline-block; align-self: flex-start; padding: 2px 10px; border-radius: 999px; font: 700 0.72rem var(--police);
-  &--ok { background: #dff3e7; color: #0b5d3b; }
-  &--info { background: #e0ebfa; color: #1d4f91; }
-  &--neutre { background: var(--g1); color: var(--g9); }
-}
-.puces { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
-.puces li { padding: 2px 10px; border-radius: 999px; background: var(--g1); color: var(--g9); font-size: 0.78rem; font-weight: 600; }
-
-.vide { padding: 2.5rem 1rem; text-align: center; color: var(--mu); background: var(--sf); border: 1px dashed var(--bord-champ); border-radius: 14px; }
+app-avatar.avatar-grand { width: 4.5rem; font-size: var(--t-xl); }
 
 // Fiches
 .fiche-tete { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
@@ -65,7 +36,7 @@
     &::before { content: ''; position: absolute; left: -1.5rem; top: 0.35rem; width: 10px; height: 10px; border-radius: 50%; background: var(--g7); }
   }
   strong { display: block; color: var(--g9); }
-  .periode { margin: 0; color: var(--mu); font-size: 0.8125rem; font-style: italic; }
+  .periode { margin: 0; color: var(--mu); font-size: var(--t-s); font-style: italic; }
   p { margin: 0.2rem 0 0; }
 }
 
@@ -75,7 +46,7 @@
   small { color: var(--mu); }
 }
 .tableau { width: 100%; border-collapse: collapse; font-size: 0.9375rem;
-  th { text-align: left; padding: 0.6rem 0.75rem; color: var(--mu); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--bd); }
+  th { text-align: left; padding: 0.6rem 0.75rem; color: var(--mu); font-size: var(--t-s); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--bd); }
   td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--bd); }
   .num { text-align: right; }
 }

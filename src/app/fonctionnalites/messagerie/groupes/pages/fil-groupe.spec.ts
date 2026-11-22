@@ -42,7 +42,7 @@ describe('FilGroupe', () => {
     fixture.detectChanges();
   };
   const entree = (shiftKey = false) => {
-    const e = new KeyboardEvent('keydown', { key: 'Enter', shiftKey, cancelable: true });
+    const e = new KeyboardEvent('keydown', { key: 'Enter', shiftKey, cancelable: true, bubbles: true });
     zone().dispatchEvent(e);
     fixture.detectChanges();
     return e;
@@ -102,7 +102,7 @@ describe('FilGroupe', () => {
     expect(el.textContent).toContain('Groupe introuvable');
   });
 
-  it('envoie avec Entrée, passe à la ligne avec Maj+Entrée', () => {
+  it('envoie avec Entrée, passe à la ligne avec Maj+Entrée', async () => {
     creer();
     saisir('  Bonjour  ');
     expect(entree(true).defaultPrevented).toBe(false);
@@ -110,6 +110,9 @@ describe('FilGroupe', () => {
 
     expect(entree().defaultPrevented).toBe(true);
     expect(api.sendGroupMessage).toHaveBeenCalledWith('g1', { content: 'Bonjour' });
+    fixture.detectChanges();
+    await fixture.whenStable(); // ngModel réécrit la valeur au tour suivant
+    fixture.detectChanges();
     expect(zone().value).toBe('');
     expect(el.querySelectorAll('.bulle.moi').length).toBe(2);
     expect(store.maj).toHaveBeenCalledWith('g1', {
@@ -158,7 +161,7 @@ describe('FilGroupe', () => {
 
   it('supprime son message pour tous après confirmation', async () => {
     creer();
-    el.querySelector<HTMLButtonElement>('.bulle.moi .supprimer')!.click();
+    el.querySelector<HTMLButtonElement>('.bulle.moi .supprimer button')!.click();
     await fixture.whenStable();
     fixture.detectChanges();
     expect(api.deleteGroupMessage).toHaveBeenCalledWith('g1', 'm2');
@@ -180,9 +183,9 @@ describe('FilGroupe', () => {
 
   it('épingle le groupe depuis le menu ⋮', () => {
     creer();
-    el.querySelector<HTMLButtonElement>('.menu .bouton-icone')!.click();
+    el.querySelector<HTMLButtonElement>('.menu app-bouton button')!.click();
     fixture.detectChanges();
-    [...el.querySelectorAll<HTMLButtonElement>('.options button')].find((b) => b.textContent?.trim() === 'Épingler')!.click();
+    [...el.querySelectorAll<HTMLButtonElement>('.options app-bouton button')].find((b) => b.textContent?.trim() === 'Épingler')!.click();
     fixture.detectChanges();
     expect(api.updateGroupPreferences).toHaveBeenCalledWith('g1', { pinned: true });
     expect(store.maj).toHaveBeenCalledWith('g1', { preferences: { pinned: true, archived: false, muted: false } });

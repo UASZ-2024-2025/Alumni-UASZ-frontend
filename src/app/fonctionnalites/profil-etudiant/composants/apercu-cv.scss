@@ -1,15 +1,21 @@
 :host { display: block; }
 
-// Feuille A4 en proportion (210 x 297), qui rétrécit avec son conteneur.
+// Feuille A4 en proportion (210 x 297) : colonne gauche 64/210, comme le PDF (MISE_EN_PAGE_CV).
 .feuille {
-  --accent: #1d4f91;
+  --bleu-cv: rgb(29, 79, 145); // seule couleur du CV absente de la charte
+  --papier: var(--sf);
+  --encre: var(--tx);
+  --accent: var(--bleu-cv);
+  --fond-colonne: var(--accent);
+  --texte-colonne: var(--papier);
   --police-cv: Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 30.5% 1fr;
   aspect-ratio: 210 / 297;
-  min-height: 0;
   width: 100%;
   overflow: auto;
-  background: #fff;
-  color: #1e1e1e;
+  background: var(--papier);
+  color: var(--encre);
   border: 1px solid var(--bd);
   border-radius: 6px;
   box-shadow: 0 8px 24px -12px rgba(7, 61, 39, 0.35);
@@ -17,30 +23,47 @@
   container-type: inline-size;
 }
 
-.feuille[data-modele='UASZ_VERT'] { --accent: #0b5d3b; }
-.feuille[data-modele='CLASSIC'] { --accent: #1e1e1e; --police-cv: 'Times New Roman', Times, serif; }
+.feuille[data-modele='UASZ_VERT'] { --accent: var(--g8); }
+.feuille[data-modele='CLASSIC'] {
+  --accent: var(--encre);
+  --fond-colonne: var(--g0);
+  --texte-colonne: var(--encre);
+  --police-cv: 'Times New Roman', Times, serif;
+}
+
+aside {
+  padding: 1.1rem 0.9rem;
+  background: var(--fond-colonne);
+  color: var(--texte-colonne);
+  font-size: 0.9em;
+
+  .initiales {
+    display: grid;
+    place-items: center;
+    width: 4.2rem;
+    height: 4.2rem;
+    margin: 0 auto 0.8rem;
+    border-radius: 50%;
+    background: var(--texte-colonne);
+    color: var(--fond-colonne);
+    font: 700 1.4em var(--police-cv);
+  }
+  h3 { color: inherit; border-bottom-color: currentColor; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  li::before { content: '•  '; }
+  .texte { margin-bottom: 0.3rem; }
+  .periode { margin-bottom: 0.3rem; }
+}
+
+.principal { padding: 1.1rem 1.1rem 1rem 1rem; }
 
 header {
-  padding: 1.1rem 1.25rem 0.9rem;
-  background: var(--accent);
-  color: #fff;
-
-  h2 { margin: 0; font: 700 1.5em/1.2 var(--police-cv); }
-  .titre { margin: 0.2rem 0 0; font-size: 1.05em; }
-  .contact { margin: 0.35rem 0 0; font-size: 0.85em; opacity: 0.95; }
+  h2 { margin: 0; color: var(--accent); font: 700 1.9em/1.15 var(--police-cv); }
+  .titre { margin: 0.25rem 0 0; opacity: 0.8; font-size: 1.05em; font-style: italic; }
 }
-
-.feuille[data-modele='CLASSIC'] header {
-  background: transparent;
-  color: #1e1e1e;
-  border-bottom: 2px solid #1e1e1e;
-  .titre { font-style: italic; }
-}
-
-section { padding: 0 1.25rem; }
 
 h3 {
-  margin: 1rem 0 0.4rem;
+  margin: 1rem 0 0.45rem;
   padding-bottom: 0.2rem;
   border-bottom: 1px solid var(--accent);
   color: var(--accent);
@@ -49,8 +72,9 @@ h3 {
   text-transform: uppercase;
 }
 
-.bloc { margin-bottom: 0.6rem; }
+.bloc { margin-bottom: 0.7rem; break-inside: avoid; }
 .intitule { margin: 0; font-weight: 700; }
-.periode { margin: 0; font-style: italic; font-size: 0.9em; }
+.periode { margin: 0; font-style: italic; font-size: 0.9em; color: var(--accent); }
+aside .periode { color: inherit; }
 .texte { margin: 0; white-space: pre-line; }
 p { overflow-wrap: anywhere; }

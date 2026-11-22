@@ -4,22 +4,22 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Champ } from '../../../commun/components/champ/champ';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 import { CompteService } from '../services/compte.service';
 
 @Component({
   selector: 'app-renvoi-confirmation',
-  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, Champ, Bouton],
   template: `
     <app-mise-en-page-auth>
       <form class="carte" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
         <h1>Renvoyer l'email de confirmation</h1>
         @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
         @if (succes()) { <app-alerte type="succes">{{ succes() }}</app-alerte> }
-        <label>Email <input type="email" formControlName="email" autocomplete="username" /></label>
-        @if (formulaire.controls.email.touched && formulaire.controls.email.invalid) {
-          <small class="invalide">Saisissez un email valide.</small>
-        }
-        <button type="submit" [disabled]="chargement()">Renvoyer</button>
+        <app-champ libelle="Email" type="email" formControlName="email" autocomplete="username"
+          [erreur]="formulaire.controls.email.touched && formulaire.controls.email.invalid ? 'Saisissez un email valide.' : null" />
+        <app-bouton type="submit" [pleineLargeur]="true" [chargement]="chargement()">Renvoyer</app-bouton>
         <p class="lien"><a routerLink="/connexion">Retour à la connexion</a></p>
       </form>
     </app-mise-en-page-auth>

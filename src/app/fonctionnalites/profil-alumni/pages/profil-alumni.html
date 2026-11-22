@@ -1,61 +1,42 @@
 <div class="page page--etroite">
-  <div class="entete">
-    <div>
-      <h1>Mon profil Alumni</h1>
-      <p>Mettez à jour votre situation et votre parcours professionnel.</p>
-    </div>
-    <a class="btn-sec" [routerLink]="['/annuaire', 'alumni', id()]">Voir ma fiche publique</a>
-  </div>
+  <app-entete-page titre="Mon profil Alumni">
+    <p>Mettez à jour votre situation et votre parcours professionnel.</p>
+    <app-bouton actions variante="secondaire" [lien]="['/annuaire', 'alumni', id()]">Voir ma fiche publique</app-bouton>
+  </app-entete-page>
 
   @if (chargement()) {
-    <p class="chargement">Chargement de votre profil…</p>
+    <app-spinner libelle="Chargement de votre profil…" />
   } @else {
     @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
     @if (succes()) { <app-alerte type="succes">Profil enregistré.</app-alerte> }
 
     <form [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
-      <section class="fiche">
+      <app-carte class="fiche">
+<div class="corps">
         <h2>Situation actuelle</h2>
         <div class="grille">
-          <label>
-            Année de diplôme
-            <input type="number" formControlName="graduationYear" placeholder="Ex. 2023" />
-            @if (formulaire.controls.graduationYear.touched && formulaire.controls.graduationYear.invalid) {
-              <span class="invalide">Saisissez une année entre 2000 et 2100.</span>
-            }
-          </label>
-          <label>
-            Spécialité
-            <input type="text" formControlName="specialty" placeholder="Ex. Génie Logiciel" />
-          </label>
-          <label>
-            Entreprise actuelle
-            <input type="text" formControlName="currentCompany" placeholder="Ex. Orange Sonatel" />
-          </label>
-          <label>
-            Poste actuel
-            <input type="text" formControlName="currentPosition" placeholder="Ex. Ingénieur DevOps" />
-          </label>
+          <app-champ libelle="Année de diplôme" formControlName="graduationYear" type="number" placeholder="Ex. 2023"
+            [erreur]="formulaire.controls.graduationYear.touched && formulaire.controls.graduationYear.invalid ? 'Saisissez une année entre 2000 et 2100.' : null" />
+          <app-champ libelle="Spécialité" formControlName="specialty" placeholder="Ex. Génie Logiciel" />
+          <app-champ libelle="Entreprise actuelle" formControlName="currentCompany" placeholder="Ex. Orange Sonatel" />
+          <app-champ libelle="Poste actuel" formControlName="currentPosition" placeholder="Ex. Ingénieur DevOps" />
         </div>
-        <label>
-          Profil LinkedIn
-          <input type="url" formControlName="linkedinUrl" placeholder="https://www.linkedin.com/in/votre-profil" />
-          @if (formulaire.controls.linkedinUrl.touched && formulaire.controls.linkedinUrl.invalid) {
-            <span class="invalide">Saisissez une adresse commençant par http:// ou https://.</span>
-          }
-        </label>
+        <app-champ libelle="Profil LinkedIn" formControlName="linkedinUrl" placeholder="https://www.linkedin.com/in/votre-profil"
+            [erreur]="formulaire.controls.linkedinUrl.touched && formulaire.controls.linkedinUrl.invalid ? 'Saisissez une adresse commençant par http:// ou https://.' : null" />
         <div class="actions">
-          <button type="submit" class="btn-prim" [disabled]="enregistrement()">
+          <app-bouton type="submit" [chargement]="enregistrement()">
             {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer mon profil' }}
-          </button>
+          </app-bouton>
         </div>
-      </section>
+      </div>
+</app-carte>
     </form>
 
-    <section class="fiche">
+    <app-carte class="fiche">
+<div class="corps">
       <h2>Parcours professionnel</h2>
       @if (experiences().length === 0) {
-        <p class="aide">Aucune expérience renseignée pour le moment.</p>
+        <app-etat-vide titre="Aucune expérience renseignée pour le moment." />
       } @else {
         <ol class="chronologie">
           @for (e of experiences(); track e.id ?? $index) {
@@ -67,47 +48,32 @@
           }
         </ol>
       }
-    </section>
+    </div>
+</app-carte>
 
     <form [formGroup]="experience" (ngSubmit)="ajouterExperience()" novalidate>
-      <section class="fiche">
+      <app-carte class="fiche">
+<div class="corps">
         <h2>Ajouter une expérience</h2>
         @if (erreurExperience()) { <app-alerte>{{ erreurExperience() }}</app-alerte> }
         @if (succesExperience()) { <app-alerte type="succes">Expérience ajoutée.</app-alerte> }
         <div class="grille">
-          <label>
-            Poste
-            <input type="text" formControlName="position" placeholder="Ingénieur logiciel" />
-            @if (experience.controls.position.touched && experience.controls.position.invalid) { <span class="invalide">Le poste est obligatoire.</span> }
-          </label>
-          <label>
-            Entreprise
-            <input type="text" formControlName="companyName" placeholder="Orange Sonatel" />
-            @if (experience.controls.companyName.touched && experience.controls.companyName.invalid) { <span class="invalide">L'entreprise est obligatoire.</span> }
-          </label>
-          <label>
-            Début
-            <input type="date" formControlName="startDate" />
-            @if (experience.controls.startDate.touched && experience.controls.startDate.invalid) { <span class="invalide">La date de début est obligatoire.</span> }
-          </label>
-          <label>
-            Fin
-            <input type="date" formControlName="endDate" />
-          </label>
+          <app-champ libelle="Poste" formControlName="position" placeholder="Ingénieur logiciel"
+            [erreur]="experience.controls.position.touched && experience.controls.position.invalid ? 'Le poste est obligatoire.' : null" />
+          <app-champ libelle="Entreprise" formControlName="companyName" placeholder="Orange Sonatel"
+            [erreur]="experience.controls.companyName.touched && experience.controls.companyName.invalid ? 'L\'entreprise est obligatoire.' : null" />
+          <app-champ libelle="Début" formControlName="startDate" type="date"
+            [erreur]="experience.controls.startDate.touched && experience.controls.startDate.invalid ? 'La date de début est obligatoire.' : null" />
+          <app-champ libelle="Fin" formControlName="endDate" type="date" />
         </div>
-        <label class="case">
-          <input type="checkbox" formControlName="isCurrent" />
-          C'est mon poste actuel
-        </label>
+        <app-case-a-cocher libelle="C'est mon poste actuel" formControlName="isCurrent" />
         @if (experience.errors?.['datesIncoherentes']) { <span class="invalide">La date de fin précède la date de début.</span> }
-        <label>
-          Description
-          <textarea formControlName="description" rows="3" maxlength="2000" placeholder="Vos missions et réalisations"></textarea>
-        </label>
+        <app-champ libelle="Description" type="textarea" formControlName="description" placeholder="Vos missions et réalisations" />
         <div class="actions">
-          <button type="submit" class="btn-prim" [disabled]="ajout()">{{ ajout() ? 'Ajout…' : "Ajouter l'expérience" }}</button>
+          <app-bouton type="submit" [chargement]="ajout()">{{ ajout() ? 'Ajout…' : "Ajouter l'expérience" }}</app-bouton>
         </div>
-      </section>
+      </div>
+</app-carte>
     </form>
   }
 </div>

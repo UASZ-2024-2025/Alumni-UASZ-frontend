@@ -3,5 +3,5 @@
 li { flex: 1 1 0; min-width: 2.75rem; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .piste { margin: 0; flex: 1; width: 100%; max-width: 3rem; display: flex; align-items: flex-end; overflow: hidden; border-radius: 8px 8px 0 0; background: var(--g0); }
 .barre { width: 100%; min-height: 2px; background: var(--g7); border-radius: 8px 8px 0 0; }
-.valeur { font-size: 0.75rem; font-weight: 600; color: var(--g8); }
-.libelle { font-size: 0.75rem; color: var(--mu); text-align: center; overflow-wrap: anywhere; }
+.valeur { font-size: var(--t-xs); font-weight: 600; color: var(--g8); }
+.libelle { font-size: var(--t-xs); color: var(--mu); text-align: center; overflow-wrap: anywhere; }

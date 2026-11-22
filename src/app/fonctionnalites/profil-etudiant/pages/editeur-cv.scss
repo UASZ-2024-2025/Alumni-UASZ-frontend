@@ -22,4 +22,4 @@
 }
 
 .titre-ligne { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.lecture-seule { margin: 0; color: var(--mu); font-size: 0.8125rem; }
+.lecture-seule { margin: 0; color: var(--mu); font-size: var(--t-s); }

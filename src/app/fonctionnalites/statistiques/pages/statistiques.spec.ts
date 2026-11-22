@@ -23,7 +23,7 @@ describe('Statistiques', () => {
   };
 
   it("affiche le tableau de bord complet à l'administrateur", () => {
-    expect(monter(true).querySelector('h1')!.textContent).toBe('Tableau de bord administrateur');
+    expect(monter(true).querySelector('h1')!.textContent).toBe('Statistiques');
   });
 
   it("affiche le message d'attente à l'enseignant", () => {

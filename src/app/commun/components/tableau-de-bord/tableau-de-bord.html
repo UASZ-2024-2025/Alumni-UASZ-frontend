@@ -1,4 +1,4 @@
-<h1>{{ admin() ? 'Tableau de bord administrateur' : 'Statistiques' }}</h1>
+<app-entete-page [titre]="titre() ?? (admin() ? 'Tableau de bord administrateur' : 'Statistiques')" />
 
 @if (!admin()) {
   <app-etat-vide titre="Statistiques bientôt disponibles">
@@ -11,7 +11,7 @@
   @if (stats().statut === 'erreur') {
     <app-alerte>
       {{ stats().message }}
-      <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerStats()">Réessayer</button>
+      <app-bouton variante="secondaire" [petit]="true" (clic)="chargerStats()">Réessayer</app-bouton>
     </app-alerte>
   } @else {
     <ul class="kpis" [attr.aria-busy]="stats().statut === 'chargement'">
@@ -34,7 +34,7 @@
       @case ('erreur') {
         <app-alerte>
           {{ parRole().message }}
-          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerRepartitions()">Réessayer</button>
+          <app-bouton variante="secondaire" [petit]="true" (clic)="chargerRepartitions()">Réessayer</app-bouton>
         </app-alerte>
       }
       @default { <app-graphique-anneau [segments]="parRole().donnees ?? []" /> }
@@ -47,7 +47,7 @@
       @case ('erreur') {
         <app-alerte>
           {{ parStatut().message }}
-          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerRepartitions()">Réessayer</button>
+          <app-bouton variante="secondaire" [petit]="true" (clic)="chargerRepartitions()">Réessayer</app-bouton>
         </app-alerte>
       }
       @default { <app-graphique-anneau [segments]="parStatut().donnees ?? []" /> }
@@ -67,21 +67,10 @@
 
 <div class="deux-cartes">
   <app-carte titre="Rapport d'insertion">
-    <form class="filtres" (submit)="$event.preventDefault(); chargerInsertion(annee.value, specialite.value)">
-      <label class="champ">
-        Promotion (année)
-        <input #annee type="number" min="2000" max="2100" />
-      </label>
-      <label class="champ">
-        Spécialité
-        <select #specialite>
-          <option value="">Toutes</option>
-          @for (s of specialites(); track s) {
-            <option [value]="s">{{ s }}</option>
-          }
-        </select>
-      </label>
-      <button type="submit" class="btn btn--auto">Filtrer</button>
+    <form class="filtres" (submit)="$event.preventDefault(); filtrer()">
+      <app-champ libelle="Promotion (année)" type="number" name="annee" [ngModel]="annee()" (ngModelChange)="annee.set($event)" />
+      <app-champ libelle="Spécialité" type="select" name="specialite" [options]="optionsSpecialites()" [ngModel]="specialite()" (ngModelChange)="specialite.set($event)" />
+      <app-bouton type="submit">Filtrer</app-bouton>
     </form>
 
     @switch (insertion().statut) {
@@ -89,7 +78,7 @@
       @case ('erreur') {
         <app-alerte>
           {{ insertion().message }}
-          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerInsertion(annee.value, specialite.value)">Réessayer</button>
+          <app-bouton variante="secondaire" [petit]="true" (clic)="filtrer()">Réessayer</app-bouton>
         </app-alerte>
       }
       @default {
@@ -114,7 +103,7 @@
       @case ('erreur') {
         <app-alerte>
           {{ competences().message }}
-          <button type="button" class="btn btn--auto btn--secondaire btn--petit" (click)="chargerCompetences()">Réessayer</button>
+          <app-bouton variante="secondaire" [petit]="true" (clic)="chargerCompetences()">Réessayer</app-bouton>
         </app-alerte>
       }
       @default {

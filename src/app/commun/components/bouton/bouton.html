@@ -1,4 +1,9 @@
-<button [attr.type]="type()" [class]="classes()" [disabled]="desactive() || chargement()" [attr.aria-busy]="chargement()" [attr.aria-label]="libelleAria()" (click)="clic.emit($event)">
+<ng-template #contenu><ng-content /></ng-template>
+@if (lien(); as cible) {
+  <a [routerLink]="cible" [class]="classes()" [attr.aria-label]="libelleAria()"><ng-container [ngTemplateOutlet]="contenu" /></a>
+} @else {
+<button [attr.type]="type()" [class]="classes()" [disabled]="desactive() || chargement()" [attr.aria-busy]="chargement()" [attr.aria-label]="libelleAria()" [attr.aria-expanded]="etendu()" [attr.aria-controls]="controle()" (click)="clic.emit($event)">
   @if (chargement()) { <span class="roue" aria-hidden="true"></span> }
-  <ng-content />
+  <ng-container [ngTemplateOutlet]="contenu" />
 </button>
+}

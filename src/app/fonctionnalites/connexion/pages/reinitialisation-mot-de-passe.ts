@@ -5,6 +5,8 @@ import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { MESSAGE_POLITIQUE_MDP, validateurPolitiqueMotDePasse } from '../../../commun/utilitaires/mot-de-passe';
 import { MiseEnPageAuth } from '../../../commun/components/mise-en-page-auth/mise-en-page-auth';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Champ } from '../../../commun/components/champ/champ';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 import { CompteService } from '../services/compte.service';
 
 const identiques: ValidatorFn = (g) =>
@@ -12,7 +14,7 @@ const identiques: ValidatorFn = (g) =>
 
 @Component({
   selector: 'app-reinitialisation-mot-de-passe',
-  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte],
+  imports: [ReactiveFormsModule, RouterLink, MiseEnPageAuth, Alerte, Champ, Bouton],
   template: `
     <app-mise-en-page-auth>
       @if (reussi()) {
@@ -28,17 +30,11 @@ const identiques: ValidatorFn = (g) =>
           @if (lienInvalide()) {
             <p class="lien"><a routerLink="/mot-de-passe-oublie">Demander un nouveau lien</a></p>
           }
-          <label>Nouveau mot de passe
-            <input type="password" formControlName="newPassword" autocomplete="new-password" /></label>
-          @if (formulaire.controls.newPassword.touched && formulaire.controls.newPassword.invalid) {
-            <small class="invalide">{{ politique }}</small>
-          }
-          <label>Confirmer
-            <input type="password" formControlName="confirmation" autocomplete="new-password" /></label>
-          @if (formulaire.controls.confirmation.touched && formulaire.hasError('different')) {
-            <small class="invalide">Les mots de passe ne correspondent pas.</small>
-          }
-          <button type="submit" [disabled]="chargement()">Réinitialiser</button>
+          <app-champ libelle="Nouveau mot de passe" type="password" formControlName="newPassword" autocomplete="new-password"
+            [erreur]="formulaire.controls.newPassword.touched && formulaire.controls.newPassword.invalid ? politique : null" />
+          <app-champ libelle="Confirmer" type="password" formControlName="confirmation" autocomplete="new-password"
+            [erreur]="formulaire.controls.confirmation.touched && formulaire.hasError('different') ? 'Les mots de passe ne correspondent pas.' : null" />
+          <app-bouton type="submit" [pleineLargeur]="true" [chargement]="chargement()">Réinitialiser</app-bouton>
         </form>
       }
     </app-mise-en-page-auth>

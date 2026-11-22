@@ -59,4 +59,39 @@ describe('Champ de type date', () => {
     f.detectChanges();
     expect((f.nativeElement as HTMLElement).querySelector('input')!.type).toBe('date');
   });
+
+  it('propose des suggestions via une datalist', () => {
+    @Component({ imports: [Champ, ReactiveFormsModule], template: '<app-champ libelle="Spé" [suggestions]="[\'Droit\', \'Gestion\']" [formControl]="c" />' })
+    class Hote2 { c = new FormControl(''); }
+    const f = TestBed.createComponent(Hote2);
+    f.detectChanges();
+    const el: HTMLElement = f.nativeElement;
+    const liste = el.querySelector('input')!.getAttribute('list')!;
+    expect(el.querySelector('#' + liste)!.querySelectorAll('option').length).toBe(2);
+  });
+});
+
+describe('Champ autocomplete et type url', () => {
+  const monter = (type: string, autocomplete?: string) => {
+    const f = TestBed.createComponent(Champ);
+    f.componentRef.setInput('libelle', 'X');
+    f.componentRef.setInput('type', type);
+    if (autocomplete) f.componentRef.setInput('autocomplete', autocomplete);
+    f.detectChanges();
+    return f.nativeElement as HTMLElement;
+  };
+
+  it("n'ajoute pas d'attribut autocomplete par défaut", () => {
+    expect(monter('text').querySelector('input')!.hasAttribute('autocomplete')).toBe(false);
+  });
+
+  it('applique autocomplete sur input, textarea et select', () => {
+    expect(monter('password', 'new-password').querySelector('input')!.getAttribute('autocomplete')).toBe('new-password');
+    expect(monter('textarea', 'off').querySelector('textarea')!.getAttribute('autocomplete')).toBe('off');
+    expect(monter('select', 'sex').querySelector('select')!.getAttribute('autocomplete')).toBe('sex');
+  });
+
+  it('affiche un champ natif de type url', () => {
+    expect(monter('url').querySelector('input')!.type).toBe('url');
+  });
 });

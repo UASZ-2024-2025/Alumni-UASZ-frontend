@@ -16,11 +16,11 @@ describe('EnteteApplication', () => {
     fixture.detectChanges();
   });
 
-  it('montre la recherche, le rôle et l’initiale en majuscule', () => {
+  it('montre la recherche, le rôle et les initiales en majuscule', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('input[type="search"]')).toBeTruthy();
     expect(el.querySelector('.role')?.textContent).toContain('ADMINISTRATEUR');
-    expect(el.querySelector('.avatar')?.textContent).toBe('A');
+    expect(el.querySelector('app-avatar')?.textContent?.trim()).toBe('AU');
   });
 
   it('affiche le contenu projeté (la cloche) à droite, avant le rôle', () => {

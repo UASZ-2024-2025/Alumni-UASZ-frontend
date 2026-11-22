@@ -6,7 +6,7 @@ import { AuthentificationService } from '../../../socle/authentification/service
 @Component({
   selector: 'app-statistiques',
   imports: [TableauDeBord],
-  template: '<app-tableau-de-bord [admin]="estAdmin()" />',
+  template: '<app-tableau-de-bord titre="Statistiques" [admin]="estAdmin()" />',
 })
 export class Statistiques {
   protected readonly estAdmin = inject(AuthentificationService).estAdministrateur;

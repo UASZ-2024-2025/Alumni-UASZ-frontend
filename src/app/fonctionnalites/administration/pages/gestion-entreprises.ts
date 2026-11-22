@@ -8,21 +8,32 @@ import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Avatar } from '../../../commun/components/avatar/avatar';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
+import { CaseACocher } from '../../../commun/components/case-a-cocher/case-a-cocher';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Modale } from '../../../commun/components/modale/modale';
 import { Pagination } from '../../../commun/components/pagination/pagination';
+import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ToastService } from '../../../commun/services/toast.service';
 import { messageErreur } from '../erreurs';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 @Component({
   selector: 'app-gestion-entreprises',
-  imports: [FormsModule, ReactiveFormsModule, Alerte, Avatar, Bouton, Carte, Champ, EtatVide, Modale, Pagination, Spinner],
+  imports: [FormsModule, ReactiveFormsModule, Alerte, Avatar, Bouton, Carte, CaseACocher, Champ, EtatVide, Modale, Pagination, Spinner, Tableau, EntetePage],
   templateUrl: './gestion-entreprises.html',
   styleUrl: '../administration.scss',
 })
 export class GestionEntreprises {
+  protected readonly colonnes: ColonneTableau[] = [
+    { cle: 'entreprise', libelle: 'Entreprise' },
+    { cle: 'secteur', libelle: 'Secteur' },
+    { cle: 'contact', libelle: 'Contact' },
+    { cle: 'gestionnaire', libelle: 'Gestionnaire' },
+    { cle: 'validation', libelle: 'Validation' },
+    { cle: 'actions', libelle: 'Actions' },
+  ];
   private readonly api = inject(CompaniesService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly toast = inject(ToastService);

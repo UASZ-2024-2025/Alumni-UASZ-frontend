@@ -7,12 +7,15 @@ import { CompaniesService } from '../../../api/generes/alumni/api/companies.serv
 import { AlumniProfile } from '../../../api/generes/alumni/model/alumniProfile';
 import { Company } from '../../../api/generes/alumni/model/company';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Avatar } from '../../../commun/components/avatar/avatar';
+import { Badge } from '../../../commun/components/badge/badge';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
-import { initiales, nomComplet } from '../modeles/cartes';
+import { nomComplet } from '../modeles/cartes';
 
 @Component({
   selector: 'app-fiche-entreprise',
-  imports: [RouterLink, Alerte],
+  imports: [RouterLink, Alerte, Avatar, Badge, Spinner],
   templateUrl: './fiche-entreprise.html',
   styleUrls: ['../../profil-etudiant/pages/profil-etudiant.scss', '../annuaire.scss'],
 })
@@ -22,7 +25,6 @@ export class FicheEntreprise implements OnInit {
   private readonly alumni = inject(AlumniService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly initiales = initiales;
   protected readonly nomComplet = nomComplet;
   protected readonly entreprise = signal<Company | null>(null);
   protected readonly alumniDeLEntreprise = signal<AlumniProfile[]>([]);

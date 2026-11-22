@@ -1,12 +1,18 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AlumniService } from '../../../api/generes/alumni/api/alumni.service';
 import { AlumniProfile } from '../../../api/generes/alumni/model/alumniProfile';
 import { WorkExperience } from '../../../api/generes/alumni/model/workExperience';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
+import { Carte } from '../../../commun/components/carte/carte';
+import { CaseACocher } from '../../../commun/components/case-a-cocher/case-a-cocher';
+import { Champ } from '../../../commun/components/champ/champ';
+import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { trierExperiences } from '../../annuaire/pages/fiche-alumni';
@@ -22,7 +28,7 @@ export function datesCoherentes(g: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-profil-alumni',
-  imports: [ReactiveFormsModule, RouterLink, Alerte],
+  imports: [ReactiveFormsModule, Alerte, Bouton, EntetePage, Carte, CaseACocher, Champ, EtatVide, Spinner],
   templateUrl: './profil-alumni.html',
   styleUrls: ['../../profil-etudiant/pages/profil-etudiant.scss', '../../annuaire/annuaire.scss'],
 })
@@ -44,7 +50,7 @@ export class ProfilAlumni implements OnInit {
   protected readonly periode = periode;
 
   protected readonly formulaire = this.fb.group({
-    graduationYear: [null as number | null, [Validators.min(2000), Validators.max(2100)]],
+    graduationYear: ['', [Validators.min(2000), Validators.max(2100)]],
     specialty: ['', Validators.maxLength(150)],
     currentCompany: ['', Validators.maxLength(150)],
     currentPosition: ['', Validators.maxLength(150)],
@@ -79,7 +85,7 @@ export class ProfilAlumni implements OnInit {
       next: ({ profil, experiences }) => {
         this.profil.set(profil);
         this.formulaire.patchValue({
-          graduationYear: profil.graduationYear ?? null,
+          graduationYear: profil.graduationYear == null ? '' : String(profil.graduationYear),
           specialty: profil.specialty ?? '',
           currentCompany: profil.currentCompany ?? '',
           currentPosition: profil.currentPosition ?? '',
@@ -106,7 +112,7 @@ export class ProfilAlumni implements OnInit {
     this.enregistrement.set(true);
     this.api
       .updateAlumniProfile(this.id(), {
-        graduationYear: v.graduationYear ?? undefined,
+        graduationYear: v.graduationYear ? Number(v.graduationYear) : undefined,
         specialty: v.specialty.trim() || undefined,
         currentCompany: v.currentCompany.trim() || undefined,
         currentPosition: v.currentPosition.trim() || undefined,

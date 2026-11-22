@@ -11,14 +11,16 @@ import { Carte } from '../../../commun/components/carte/carte';
 import { Champ } from '../../../commun/components/champ/champ';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Spinner } from '../../../commun/components/spinner/spinner';
+import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { libelleProposition, OPTIONS_STATUT_PROPOSITION, tonProposition } from '../libelles';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 /** ALUM-175 : le recruteur (Alumni ou Entreprise) suit les propositions envoyées et la réponse des étudiants. */
 @Component({
   selector: 'app-propositions-envoyees',
-  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, EtatVide, Spinner],
+  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, EtatVide, Spinner, Tableau, EntetePage],
   templateUrl: './propositions-envoyees.html',
   styleUrl: '../offres-emploi.scss',
 })
@@ -29,6 +31,12 @@ export class PropositionsEnvoyees {
   protected readonly libelleProposition = libelleProposition;
   protected readonly tonProposition = tonProposition;
   protected readonly optionsStatut = OPTIONS_STATUT_PROPOSITION;
+  protected readonly colonnes: ColonneTableau[] = [
+    { cle: 'etudiant', libelle: 'Étudiant' },
+    { cle: 'offre', libelle: 'Offre' },
+    { cle: 'date', libelle: 'Envoyée le' },
+    { cle: 'statut', libelle: 'Réponse' },
+  ];
 
   protected choixStatut = '';
   private readonly statut = signal<ProposalStatus | undefined>(undefined);

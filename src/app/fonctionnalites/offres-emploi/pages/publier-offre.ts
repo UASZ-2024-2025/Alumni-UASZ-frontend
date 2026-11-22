@@ -1,12 +1,13 @@
 import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { finalize, timeout, TimeoutError } from 'rxjs';
 import { OfferType, RemoteType } from '../../../api/generes/offres-emploi';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Carte } from '../../../commun/components/carte/carte';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
 import { ToastService } from '../../../commun/services/toast.service';
@@ -40,9 +41,10 @@ const LIBELLES_CHAMPS: Record<string, string> = {
 
 @Component({
   selector: 'app-publier-offre',
-  imports: [ReactiveFormsModule, RouterLink, Alerte, Bouton, Carte, Champ, PucesCompetences],
+  imports: [ReactiveFormsModule, Alerte, Bouton, Carte, Champ, EntetePage, PucesCompetences],
   template: `
-    <app-carte titre="Publier une offre">
+    <app-entete-page titre="Publier une offre" />
+    <app-carte>
       <form [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
         @if (erreur()) {
           <app-alerte>
@@ -83,7 +85,7 @@ const LIBELLES_CHAMPS: Record<string, string> = {
 
         <div class="actions">
           <app-bouton type="submit" [chargement]="chargement()">Publier l'offre</app-bouton>
-          <a class="btn btn--secondaire btn--auto" routerLink="/offres-emploi/mes-offres">Annuler</a>
+          <app-bouton variante="secondaire" [lien]="'/offres-emploi/mes-offres'">Annuler</app-bouton>
         </div>
       </form>
     </app-carte>
@@ -91,7 +93,7 @@ const LIBELLES_CHAMPS: Record<string, string> = {
   styles: `
     form { display: grid; gap: 1rem; }
     .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-    .aide { color: var(--g8, #555); }
+    .aide { color: var(--g8); }
   `,
 })
 export class PublierOffre {

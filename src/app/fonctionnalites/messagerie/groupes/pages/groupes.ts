@@ -8,6 +8,7 @@ import { Avatar } from '../../../../commun/components/avatar/avatar';
 import { Bouton } from '../../../../commun/components/bouton/bouton';
 import { Champ } from '../../../../commun/components/champ/champ';
 import { Modale } from '../../../../commun/components/modale/modale';
+import { Onglet, Onglets } from '../../../../commun/components/onglets/onglets';
 import { Spinner } from '../../../../commun/components/spinner/spinner';
 import { ToastService } from '../../../../commun/services/toast.service';
 import { messageErreur } from '../../../../commun/utilitaires/messages-erreur';
@@ -21,7 +22,7 @@ type Filtre = 'tous' | 'non-lus';
 /** ALUM-185 : groupes de discussion, présentés comme une messagerie (liste à gauche, fil à droite). */
 @Component({
   selector: 'app-groupes',
-  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet, Alerte, Avatar, Bouton, Champ, ChoixMembres, Modale, Spinner],
+  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet, Alerte, Avatar, Bouton, Champ, ChoixMembres, Modale, Onglets, Spinner],
   providers: [GroupesStore],
   templateUrl: './groupes.html',
   styleUrl: './groupes.scss',
@@ -45,6 +46,14 @@ export class Groupes {
   /** Vue « Archivées » (comme WhatsApp : une entrée en haut de la liste qui ouvre les conversations archivées). */
   protected readonly vueArchives = signal(false);
   protected readonly nonLus = computed(() => this.store.actifs().filter((g) => g.unreadCount).length);
+  protected readonly onglets = computed<Onglet[]>(() => [
+    { cle: 'tous', libelle: 'Tous' },
+    { cle: 'non-lus', libelle: this.nonLus() ? `Non lus (${this.nonLus()})` : 'Non lus' },
+  ]);
+
+  protected choisirFiltre(cle: string): void {
+    this.filtre.set(cle as Filtre);
+  }
 
   protected readonly groupesAffiches = computed(() => {
     const q = this.recherche().trim().toLowerCase();

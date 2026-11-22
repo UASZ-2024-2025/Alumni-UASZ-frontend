@@ -1,15 +1,12 @@
-<div class="entete-page">
-  <div>
-    <h1>Entreprises partenaires</h1>
-    <p class="total" aria-live="polite">
-      {{ total() }} entreprise(s)
-      @if (enAttente()) {
-        · <button type="button" class="lien-attente" (click)="voirEnAttente()">{{ enAttente() }} en attente de validation</button>
-      }
-    </p>
-  </div>
-  <app-bouton (clic)="ajouter()">Ajouter une entreprise</app-bouton>
-</div>
+<app-entete-page titre="Entreprises partenaires">
+  <p class="total" aria-live="polite">
+    {{ total() }} entreprise(s)
+    @if (enAttente()) {
+      · <app-bouton class="lien-attente" variante="secondaire" [petit]="true" (clic)="voirEnAttente()">{{ enAttente() }} en attente de validation</app-bouton>
+    }
+  </p>
+  <app-bouton actions (clic)="ajouter()">Ajouter une entreprise</app-bouton>
+</app-entete-page>
 
 <form class="filtres filtres--barre" (submit)="$event.preventDefault(); rechercher(texteRecherche, choixPartenaire)">
   <app-champ libelle="Recherche" type="search" placeholder="Nom de l'entreprise" name="recherche" [(ngModel)]="texteRecherche" />
@@ -28,54 +25,41 @@
     <app-etat-vide titre="Aucune entreprise">Aucun résultat pour ces critères.</app-etat-vide>
   } @else if (entreprises().length > 0) {
     <app-carte>
-    <div class="tableau-conteneur"><table class="tableau tableau--cartes">
-      <caption class="cache">Liste des entreprises</caption>
-      <thead>
-        <tr>
-          <th scope="col">Entreprise</th>
-          <th scope="col">Secteur</th>
-          <th scope="col">Contact</th>
-          <th scope="col">Gestionnaire</th>
-          <th scope="col">Validation</th>
-          <th scope="col">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (c of entreprises(); track c.id) {
-          <tr>
-            <td class="identite">
-              <app-avatar [nom]="c.name ?? ''" />
-              <span class="identite-texte">
-                <strong>{{ c.name }}</strong>
-                @if (c.website) { <small>{{ c.website }}</small> }
+      <app-tableau [colonnes]="colonnes" [lignes]="entreprises()" legende="Liste des entreprises">
+        <ng-template #cellule let-c let-cle="cle">
+          @switch (cle) {
+            @case ('entreprise') {
+              <span class="identite">
+                <app-avatar [nom]="c.name ?? ''" />
+                <span class="identite-texte">
+                  <strong>{{ c.name }}</strong>
+                  @if (c.website) { <small>{{ c.website }}</small> }
+                </span>
               </span>
-            </td>
-            <td data-label="Secteur">{{ c.sector || '—' }}</td>
-            <td data-label="Contact">
+            }
+            @case ('secteur') { {{ c.sector || '—' }} }
+            @case ('contact') {
               <span class="identite-texte">
                 <span>{{ c.contactEmail || '—' }}</span>
                 @if (c.contactPhone) { <small>{{ c.contactPhone }}</small> }
               </span>
-            </td>
-            <td data-label="Gestionnaire">{{ gestionnaire(c) || 'Aucun compte entreprise' }}</td>
-            <td data-label="Validation">
-              <label class="interrupteur">
-                <input #partenaire type="checkbox" [checked]="c.isPartner" [disabled]="enCours() === c.id"
-                  [attr.aria-label]="'Valider ' + c.name + ' comme partenaire'"
-                  (change)="basculerPartenaire(c, partenaire.checked)" />
-                <span>{{ c.isPartner ? 'Validée (partenaire)' : 'En attente de validation' }}</span>
-              </label>
-            </td>
-            <td class="cellule-actions"><div class="actions">
-              <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Modifier ' + c.name"
-                (clic)="modifier(c)">Modifier</app-bouton>
-              <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Rattacher ' + c.name + ' à un compte'"
-                (clic)="ouvrirRattachement(c)">Rattacher</app-bouton>
-            </div></td>
-          </tr>
-        }
-      </tbody>
-    </table></div>
+            }
+            @case ('gestionnaire') { {{ gestionnaire(c) || 'Aucun compte entreprise' }} }
+            @case ('validation') {
+              <app-case-a-cocher [libelle]="c.isPartner ? 'Validée (partenaire)' : 'En attente de validation'"
+                [ngModel]="!!c.isPartner" [disabled]="enCours() === c.id" (ngModelChange)="basculerPartenaire(c, $event)" />
+            }
+            @default {
+              <div class="actions">
+                <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Modifier ' + c.name"
+                  (clic)="modifier(c)">Modifier</app-bouton>
+                <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Rattacher ' + c.name + ' à un compte'"
+                  (clic)="ouvrirRattachement(c)">Rattacher</app-bouton>
+              </div>
+            }
+          }
+        </ng-template>
+      </app-tableau>
     </app-carte>
 
     <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="aller($event)" />

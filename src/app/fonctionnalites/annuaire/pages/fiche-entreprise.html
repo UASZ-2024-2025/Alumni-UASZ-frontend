@@ -2,16 +2,16 @@
   <a class="retour" routerLink="/annuaire" [queryParams]="{ onglet: 'entreprises' }">← Retour à l'annuaire</a>
 
   @if (chargement()) {
-    <p class="chargement">Chargement de la fiche…</p>
+    <app-spinner libelle="Chargement de la fiche…" />
   } @else if (erreur()) {
     <app-alerte>{{ erreur() }}</app-alerte>
   } @else if (entreprise(); as c) {
     <div class="fiche-tete">
-      <span class="avatar avatar--grand" aria-hidden="true">{{ initiales(c.name ?? '') }}</span>
+      <app-avatar class="avatar-grand" [nom]="c.name ?? ''" />
       <div>
         <h1>{{ c.name }}</h1>
         <p>{{ c.sector }}</p>
-        @if (c.isPartner) { <span class="badge badge--info">Partenaire officielle</span> }
+        @if (c.isPartner) { <app-badge ton="ok">Partenaire officielle</app-badge> }
       </div>
     </div>
 
@@ -43,7 +43,7 @@
         <ul class="liste-lignes">
           @for (a of alumniDeLEntreprise(); track a.id) {
             <li>
-              <span class="avatar" aria-hidden="true">{{ initiales(nomComplet(a)) }}</span>
+              <app-avatar [nom]="nomComplet(a)" />
               <span>
                 <a [routerLink]="['/annuaire', 'alumni', a.id]">{{ nomComplet(a) }}</a><br />
                 <small>{{ a.currentPosition || 'Poste non renseigné' }}</small>

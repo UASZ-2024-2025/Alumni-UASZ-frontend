@@ -1,2 +1,5 @@
 body { margin: 0; color: var(--tx); font: 15px/1.5 var(--police); }
 :focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+
+/* Texte réservé aux lecteurs d'écran (légendes, titres de section). */
+.cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

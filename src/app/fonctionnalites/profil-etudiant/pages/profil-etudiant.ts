@@ -1,20 +1,24 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { StudentsService } from '../../../api/generes/alumni/api/students.service';
 import { AvailabilityStatus } from '../../../api/generes/alumni/model/availabilityStatus';
 import { StudentProfile } from '../../../api/generes/alumni/model/studentProfile';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
+import { Carte } from '../../../commun/components/carte/carte';
+import { Champ } from '../../../commun/components/champ/champ';
+import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
-import { ChampEtiquettes } from '../composants/champ-etiquettes';
 import { LIBELLES_DISPONIBILITE } from '../modeles/cv.modele';
 
 const SPECIALITES = ['Génie Logiciel', 'Réseaux et Télécommunications', 'Informatique de Gestion', 'Intelligence Artificielle', 'Cybersécurité'];
 
 @Component({
   selector: 'app-profil-etudiant',
-  imports: [ReactiveFormsModule, RouterLink, Alerte, ChampEtiquettes],
+  imports: [ReactiveFormsModule, Alerte, Bouton, EntetePage, Carte, Champ, PucesCompetences, Spinner],
   templateUrl: './profil-etudiant.html',
   styleUrl: './profil-etudiant.scss',
 })
@@ -24,17 +28,17 @@ export class ProfilEtudiant implements OnInit {
   private readonly auth = inject(AuthentificationService);
 
   protected readonly specialites = SPECIALITES;
-  protected readonly disponibilites = Object.entries(LIBELLES_DISPONIBILITE) as [AvailabilityStatus, string][];
+  protected readonly disponibilites = Object.entries(LIBELLES_DISPONIBILITE).map(([valeur, libelle]) => ({ valeur, libelle }));
 
   protected readonly formulaire = this.fb.group({
     specialty: ['', Validators.maxLength(150)],
-    academicYear: [null as number | null, [Validators.min(2000), Validators.max(2100)]],
+    academicYear: ['', [Validators.min(2000), Validators.max(2100)]],
     bio: ['', Validators.maxLength(2000)],
     availabilityStatus: ['NOT_AVAILABLE' as AvailabilityStatus],
     availabilityDate: [''],
+    competences: [[] as string[]],
+    interets: [[] as string[]],
   });
-  protected readonly competences = signal<string[]>([]);
-  protected readonly interets = signal<string[]>([]);
 
   protected readonly profil = signal<StudentProfile | null>(null);
   protected readonly chargement = signal(true);
@@ -63,14 +67,14 @@ export class ProfilEtudiant implements OnInit {
         this.profil.set(p);
         this.formulaire.patchValue({
           specialty: p.specialty ?? '',
-          academicYear: p.academicYear ?? null,
+          academicYear: p.academicYear == null ? '' : String(p.academicYear),
           bio: p.bio ?? '',
           availabilityStatus: p.availabilityStatus ?? 'NOT_AVAILABLE',
           availabilityDate: p.availabilityDate ?? '',
+          competences: p.skills ?? [],
+          interets: p.interests ?? [],
         });
         this.statut.set(p.availabilityStatus ?? 'NOT_AVAILABLE');
-        this.competences.set(p.skills ?? []);
-        this.interets.set(p.interests ?? []);
         this.chargement.set(false);
       },
       error: (e) => {
@@ -95,18 +99,17 @@ export class ProfilEtudiant implements OnInit {
     this.api
       .updateStudentProfile(id, {
         specialty: v.specialty.trim() || undefined,
-        academicYear: v.academicYear ?? undefined,
+        academicYear: v.academicYear ? Number(v.academicYear) : undefined,
         bio: v.bio.trim() || undefined,
-        interests: this.interets(),
-        skills: this.competences(),
+        interests: v.interets,
+        skills: v.competences,
         availabilityStatus: v.availabilityStatus,
         availabilityDate: v.availabilityStatus !== 'NOT_AVAILABLE' && v.availabilityDate ? v.availabilityDate : undefined,
       })
       .subscribe({
         next: (p) => {
           this.profil.set(p);
-          this.competences.set(p.skills ?? []);
-          this.interets.set(p.interests ?? []);
+          this.formulaire.patchValue({ competences: p.skills ?? [], interets: p.interests ?? [] });
           this.enregistrement.set(false);
           this.succes.set(true);
         },

@@ -3,7 +3,7 @@
 .carte-base {
   padding: 20px;
   border: 1px solid var(--bd);
-  border-radius: 16px;
+  border-radius: var(--rayon-l);
   background: var(--sf);
   box-shadow: var(--ombre-carte);
 }

@@ -15,12 +15,11 @@ input {
   &:focus { border-color: var(--g7); outline: 2px solid var(--g1); }
 }
 
-.burger { display: none; flex: none; padding: 6px; border: 0; border-radius: 8px; background: none; color: var(--tx); cursor: pointer; }
+.burger { display: none; flex: none; padding: 6px; border: 0; border-radius: var(--rayon-s); background: none; color: var(--tx); cursor: pointer; }
 .burger:hover { background: var(--g1); }
 
 .droite { margin-left: auto; display: flex; align-items: center; gap: 14px; }
-.role { padding: 4px 12px; border-radius: 99px; background: var(--g1); color: var(--g8); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; }
-.avatar { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--g1), #c9e2d3); color: var(--g8); font-weight: 700; }
+.role { padding: 4px 12px; border-radius: var(--rayon-pilule); background: var(--g1); color: var(--g8); font-size: var(--t-xs); font-weight: 700; letter-spacing: 0.04em; }
 
 @media (max-width: 800px) {
   .burger { display: grid; }

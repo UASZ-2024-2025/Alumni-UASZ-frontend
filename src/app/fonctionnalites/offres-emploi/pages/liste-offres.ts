@@ -13,11 +13,12 @@ import { Pagination } from '../../../commun/components/pagination/pagination';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { creerListePaginee } from '../../../commun/utilitaires/liste-paginee';
 import { MODES, STATUTS, TYPES } from '../offres-libelles';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 /** Liste des offres d'emploi et de stage (ALUM-156) : recherche, filtre par type, pagination, lien vers le détail. */
 @Component({
   selector: 'app-liste-offres',
-  imports: [DatePipe, FormsModule, RouterLink, Alerte, Badge, BarreRecherche, Champ, Pagination, Tableau],
+  imports: [DatePipe, FormsModule, RouterLink, Alerte, Badge, BarreRecherche, Champ, Pagination, Tableau, EntetePage],
   templateUrl: './liste-offres.html',
   styles: `
     .identite-texte { display: flex; flex-direction: column; gap: 2px; }

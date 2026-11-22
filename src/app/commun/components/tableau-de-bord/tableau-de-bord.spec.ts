@@ -67,13 +67,18 @@ describe('TableauDeBord', () => {
     expect(el.querySelectorAll('app-graphique-barres').length).toBe(2);
   });
 
-  it('alimente la liste des spécialités et filtre le rapport', () => {
+  it('alimente la liste des spécialités et filtre le rapport', async () => {
     const el = monter();
+    await Promise.resolve(); // ngModel branche ses contrôles en microtâche
     const options = [...el.querySelectorAll('select option')].map((o) => o.textContent!.trim());
     expect(options).toEqual(['Toutes', 'Génie Logiciel', 'Réseaux']);
 
-    (el.querySelector('input[type="number"]') as HTMLInputElement).value = '2023';
-    (el.querySelector('select') as HTMLSelectElement).value = 'Réseaux';
+    const annee = el.querySelector('input[type="number"]') as HTMLInputElement;
+    annee.value = '2023';
+    annee.dispatchEvent(new Event('input'));
+    const choix = el.querySelector('select') as HTMLSelectElement;
+    choix.value = 'Réseaux';
+    choix.dispatchEvent(new Event('change'));
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
     expect(rapports.getInsertionReport).toHaveBeenLastCalledWith(2023, 'Réseaux');
   });

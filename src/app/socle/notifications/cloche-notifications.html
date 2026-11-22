@@ -1,11 +1,11 @@
-<button type="button" class="cloche" [attr.aria-label]="libelleCloche()" aria-haspopup="true" [attr.aria-expanded]="ouvert()" aria-controls="panneau-notifications" (click)="basculer()">
+<app-bouton class="cloche" variante="discret" [libelleAria]="libelleCloche()" [etendu]="ouvert()" controle="panneau-notifications" (clic)="basculer()">
   <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M8 2a4 4 0 00-4 4c0 4-2 5-2 5h12s-2-1-2-5a4 4 0 00-4-4zM6.5 13.5a1.5 1.5 0 003 0" />
   </svg>
   @if (nonLus() > 0) {
     <span class="compteur" aria-hidden="true">{{ compteurAffiche() }}</span>
   }
-</button>
+</app-bouton>
 
 @if (ouvert()) {
   <section id="panneau-notifications" class="panneau" aria-label="Centre de notifications">
@@ -26,7 +26,7 @@
       <ul class="liste">
         @for (n of notifications(); track n.id) {
           <li>
-            <button type="button" class="element" [class.non-lue]="!n.isRead" (click)="ouvrirNotification(n)">
+            <app-bouton class="element" variante="discret" [pleineLargeur]="true" [class.non-lue]="!n.isRead" (clic)="ouvrirNotification(n)">
               <span class="point" aria-hidden="true"></span>
               <span class="icone" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="icone(n.type)" /></svg>
@@ -37,7 +37,7 @@
                 @if (n.createdAt) { <time class="date" [attr.datetime]="n.createdAt">{{ n.createdAt | date: 'dd/MM/yyyy HH:mm' }}</time> }
               </span>
               @if (!n.isRead) { <span class="cache">Non lue</span> }
-            </button>
+            </app-bouton>
           </li>
         }
       </ul>

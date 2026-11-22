@@ -7,6 +7,7 @@ import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Badge } from '../../../commun/components/badge/badge';
 import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Carte } from '../../../commun/components/carte/carte';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 import { Champ } from '../../../commun/components/champ/champ';
 import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
@@ -27,8 +28,9 @@ const MESSAGES: Record<number, string> = {
  */
 @Component({
   selector: 'app-ma-fiche-entreprise',
-  imports: [ReactiveFormsModule, RouterLink, Alerte, Badge, Bouton, Carte, Champ, Spinner],
+  imports: [ReactiveFormsModule, RouterLink, Alerte, Badge, Bouton, Carte, Champ, EntetePage, Spinner],
   template: `
+    <app-entete-page titre="Ma fiche entreprise" />
     @if (chargement()) {
       <app-spinner libelle="Chargement de votre fiche entreprise…" />
     } @else if (erreurChargement()) {

@@ -1,6 +1,6 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { debounceTime, map, Observable, Subscription } from 'rxjs';
 import { AlumniService } from '../../../api/generes/alumni/api/alumni.service';
@@ -9,10 +9,19 @@ import { StudentsService } from '../../../api/generes/alumni/api/students.servic
 import { AvailabilityStatus } from '../../../api/generes/alumni/model/availabilityStatus';
 import { Company } from '../../../api/generes/alumni/model/company';
 import { Alerte } from '../../../commun/components/alerte/alerte';
+import { Avatar } from '../../../commun/components/avatar/avatar';
+import { Badge } from '../../../commun/components/badge/badge';
+import { Bouton } from '../../../commun/components/bouton/bouton';
+import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
+import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { Onglets } from '../../../commun/components/onglets/onglets';
+import { Pagination } from '../../../commun/components/pagination/pagination';
+import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
+import { Spinner } from '../../../commun/components/spinner/spinner';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { LIBELLES_DISPONIBILITE } from '../../profil-etudiant/modeles/cv.modele';
-import { Pagination } from '../composants/pagination';
-import { CarteAnnuaire, carteAlumni, carteEntreprise, carteEtudiant, initiales, Onglet, ONGLETS, ongletValide } from '../modeles/cartes';
+import { CarteAnnuaire, carteAlumni, carteEntreprise, carteEtudiant, Onglet, ONGLETS, ongletValide } from '../modeles/cartes';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 export const SPECIALITES = ['Génie Logiciel', 'Réseaux et Télécommunications', 'Informatique de Gestion', 'Intelligence Artificielle', 'Cybersécurité'];
 
@@ -23,7 +32,7 @@ interface Page {
 
 @Component({
   selector: 'app-annuaire',
-  imports: [ReactiveFormsModule, RouterLink, Alerte, Pagination],
+  imports: [FormsModule, ReactiveFormsModule, RouterLink, Alerte, Avatar, Badge, Bouton, Champ, EtatVide, Onglets, Pagination, PucesCompetences, Spinner, EntetePage],
   templateUrl: './annuaire.html',
   styleUrls: ['../../profil-etudiant/pages/profil-etudiant.scss', '../annuaire.scss'],
 })
@@ -36,11 +45,18 @@ export class Annuaire implements OnInit {
   private readonly alumni = inject(AlumniService);
   private readonly entreprisesApi = inject(CompaniesService);
 
-  protected readonly onglets = ONGLETS;
-  protected readonly specialites = SPECIALITES;
-  protected readonly disponibilites = Object.entries(LIBELLES_DISPONIBILITE) as [AvailabilityStatus, string][];
+  protected readonly onglets = ONGLETS.map((o) => ({ cle: o.code, libelle: o.libelle }));
+  protected readonly optionsSpecialite: OptionChamp[] = [{ valeur: '', libelle: 'Toutes' }, ...SPECIALITES.map((s) => ({ valeur: s, libelle: s }))];
+  protected readonly optionsDisponibilite: OptionChamp[] = [
+    { valeur: '', libelle: 'Toutes' },
+    ...(Object.entries(LIBELLES_DISPONIBILITE) as [AvailabilityStatus, string][]).map(([valeur, libelle]) => ({ valeur, libelle })),
+  ];
+  protected readonly optionsPartenaire: OptionChamp[] = [
+    { valeur: '', libelle: 'Toutes' },
+    { valeur: 'oui', libelle: 'Partenaires officielles' },
+    { valeur: 'non', libelle: 'Non partenaires' },
+  ];
   protected readonly taille = 12;
-  protected readonly initiales = initiales;
 
   protected readonly onglet = signal<Onglet>('etudiants');
   protected readonly page = signal(0);
@@ -49,11 +65,16 @@ export class Annuaire implements OnInit {
   protected readonly chargement = signal(true);
   protected readonly erreur = signal<string | null>(null);
   protected readonly entreprises = signal<Company[]>([]);
+  protected readonly optionsEntreprise = computed<OptionChamp[]>(() => [
+    { valeur: '', libelle: 'Toutes' },
+    ...this.entreprises().map((c) => ({ valeur: c.id ?? '', libelle: c.name ?? '' })),
+  ]);
+  protected readonly nbPages = computed(() => Math.max(1, Math.ceil(this.total() / this.taille)));
 
   protected readonly filtres = this.fb.group({
     query: [''],
     specialty: [''],
-    annee: [null as number | null],
+    annee: [''],
     disponibilite: ['' as '' | AvailabilityStatus],
     entrepriseId: [''],
     partenaire: ['' as '' | 'oui' | 'non'],
@@ -104,7 +125,7 @@ export class Annuaire implements OnInit {
     switch (this.onglet()) {
       case 'alumni':
         return this.alumni
-          .searchAlumni(texte, f.entrepriseId || undefined, f.annee ?? undefined, undefined, page, this.taille)
+          .searchAlumni(texte, f.entrepriseId || undefined, f.annee ? Number(f.annee) : undefined, undefined, page, this.taille)
           .pipe(map((r) => ({ cartes: (r.content ?? []).map(carteAlumni), total: r.totalElements ?? 0 })));
       case 'entreprises':
         return this.entreprisesApi
@@ -112,7 +133,7 @@ export class Annuaire implements OnInit {
           .pipe(map((r) => ({ cartes: (r.content ?? []).map(carteEntreprise), total: r.totalElements ?? 0 })));
       default:
         return this.etudiants
-          .searchStudents(texte, f.specialty.trim() || undefined, f.annee ?? undefined, f.disponibilite || undefined, page, this.taille)
+          .searchStudents(texte, f.specialty.trim() || undefined, f.annee ? Number(f.annee) : undefined, f.disponibilite || undefined, page, this.taille)
           .pipe(map((r) => ({ cartes: (r.content ?? []).map(carteEtudiant), total: r.totalElements ?? 0 })));
     }
   }

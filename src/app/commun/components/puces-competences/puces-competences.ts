@@ -17,6 +17,9 @@ export class PucesCompetences implements ControlValueAccessor {
 
   readonly libelle = input.required<string>();
   readonly lectureSeule = input(false);
+  readonly placeholder = input('Ajouter une compétence, puis Entrée');
+  readonly max = input(30);
+  readonly texteVide = input('Aucune compétence');
   protected readonly id = `puces-${PucesCompetences.prochainId++}`;
   protected readonly valeur = signal<string[]>([]);
   protected readonly desactive = signal(false);
@@ -28,12 +31,25 @@ export class PucesCompetences implements ControlValueAccessor {
   registerOnTouched(fn: () => void): void { this.contact = fn; }
   setDisabledState(d: boolean): void { this.desactive.set(d); }
 
-  protected ajouter(evenement: Event, champ: HTMLInputElement): void {
-    evenement.preventDefault();
-    const texte = champ.value.trim();
+  protected touche(evenement: KeyboardEvent, champ: HTMLInputElement): void {
+    if (evenement.key === 'Enter' || evenement.key === ',') {
+      evenement.preventDefault();
+      this.valider(champ);
+    } else if (evenement.key === 'Backspace') {
+      this.retirerDernier(champ);
+    }
+  }
+
+  /** Ajoute la saisie en cours (Entrée, virgule ou sortie du champ), sans doublon ni dépassement de la limite. */
+  protected valider(champ: HTMLInputElement): void {
+    const texte = champ.value.replace(/,/g, ' ').trim();
     champ.value = '';
-    if (!texte || this.valeur().some((c) => c.toLowerCase() === texte.toLowerCase())) return;
+    if (!texte || this.valeur().length >= this.max() || this.valeur().some((c) => c.toLowerCase() === texte.toLowerCase())) return;
     this.maj([...this.valeur(), texte]);
+  }
+
+  protected retirerDernier(champ: HTMLInputElement): void {
+    if (champ.value === '' && this.valeur().length) this.maj(this.valeur().slice(0, -1));
   }
 
   protected retirer(competence: string): void {

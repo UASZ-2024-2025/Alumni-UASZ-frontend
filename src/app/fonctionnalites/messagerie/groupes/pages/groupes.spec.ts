@@ -67,7 +67,7 @@ describe('Groupes', () => {
     expect([...el.querySelectorAll('.conversation .nom')].map((n) => n.textContent)).toEqual(['Club Data', 'Promo GL 2025']);
     expect(el.querySelector('.conversation [aria-label="Épinglé"]')).not.toBeNull();
 
-    el.querySelector<HTMLButtonElement>('.entree-archives')!.click();
+    el.querySelector<HTMLButtonElement>('.entree-archives button')!.click();
     fixture.detectChanges();
     expect(el.querySelector('h1')?.textContent).toBe('Archivées');
     expect([...el.querySelectorAll('.conversation .nom')].map((n) => n.textContent)).toEqual(['Vieux projet']);
@@ -76,7 +76,7 @@ describe('Groupes', () => {
   it('filtre les groupes non lus et grise la pastille des groupes en sourdine', () => {
     api.listGroups.mockReturnValue(of([ancien, { ...recent, preferences: { muted: true } }]));
     creer();
-    [...el.querySelectorAll<HTMLButtonElement>('.puce')].find((b) => b.textContent?.includes('Non lus'))!.click();
+    [...el.querySelectorAll<HTMLButtonElement>('app-onglets [role="tab"]')].find((b) => b.textContent?.includes('Non lus'))!.click();
     fixture.detectChanges();
     expect([...el.querySelectorAll('.conversation .nom')].map((n) => n.textContent)).toEqual(['Promo GL 2025']);
     expect(el.querySelector('.pastille')?.classList).toContain('sourdine');
@@ -112,7 +112,7 @@ describe('Groupes', () => {
   it('crée un groupe puis ouvre son fil', async () => {
     creer();
     const naviguer = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    el.querySelector<HTMLButtonElement>('.entete-liste .bouton-rond')!.click();
+    el.querySelector<HTMLButtonElement>('.entete-liste app-bouton button')!.click();
     fixture.detectChanges();
     await fixture.whenStable(); // dans un <form>, ngModel se branche au tour suivant
 

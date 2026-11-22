@@ -89,10 +89,10 @@ describe('GestionUtilisateurs', () => {
 
   it('filtre par statut avec les puces', () => {
     monter();
-    const puce = [...el.querySelectorAll<HTMLButtonElement>('.puce')].find((b) => b.textContent!.trim() === 'Suspendu')!;
+    const puce = [...el.querySelectorAll<HTMLButtonElement>('app-onglets [role="tab"]')].find((b) => b.textContent!.trim() === 'Suspendu')!;
     cliquer(puce);
     expect(api.listUsers).toHaveBeenLastCalledWith(undefined, 'SUSPENDU', 0, 20);
-    expect(puce.getAttribute('aria-pressed')).toBe('true');
+    expect(puce.getAttribute('aria-selected')).toBe('true');
   });
 
   it('pagine : Suivant charge la page 1 et se désactive sur la dernière page', () => {

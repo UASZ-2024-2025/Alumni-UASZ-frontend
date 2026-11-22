@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Application } from '../../../api/generes/offres-emploi/model/application';
 import { ApplicationStatus } from '../../../api/generes/offres-emploi/model/applicationStatus';
 import { Alerte } from '../../../commun/components/alerte/alerte';
@@ -8,7 +9,9 @@ import { Badge } from '../../../commun/components/badge/badge';
 import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Carte } from '../../../commun/components/carte/carte';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { Spinner } from '../../../commun/components/spinner/spinner';
+import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { ConfirmationService } from '../../../commun/services/confirmation.service';
 import { ToastService } from '../../../commun/services/toast.service';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
@@ -18,6 +21,7 @@ import {
   TRANSITIONS_CANDIDATURE,
 } from '../libelles';
 import { OffresEntrepriseService } from '../services/offres-entreprise.service';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 const ERREURS_LISTE: Record<number, string> = {
   401: 'Votre session a expiré. Reconnectez-vous.',
@@ -37,7 +41,7 @@ const ERREURS_STATUT: Record<number, string> = {
  */
 @Component({
   selector: 'app-candidatures-offre',
-  imports: [DatePipe, RouterLink, Alerte, Badge, Bouton, Carte, EtatVide, Spinner],
+  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, EtatVide, Spinner, Tableau, EntetePage],
   templateUrl: './candidatures-offre.html',
   styleUrl: '../offres-emploi.scss',
 })
@@ -49,6 +53,17 @@ export class CandidaturesOffre implements OnInit {
 
   protected readonly libelleCandidature = libelleCandidature;
   protected readonly tonCandidature = tonCandidature;
+
+  protected readonly colonnes: ColonneTableau[] = [
+    { cle: 'etudiant', libelle: 'Étudiant' },
+    { cle: 'date', libelle: 'Reçue le' },
+    { cle: 'cv', libelle: 'CV' },
+    { cle: 'lettre', libelle: 'Lettre' },
+    { cle: 'statut', libelle: 'Statut' },
+    { cle: 'action', libelle: 'Changer le statut' },
+  ];
+  /** Statut choisi dans la liste de chaque ligne, par id de candidature. */
+  protected readonly choix = signal<Partial<Record<string, string>>>({});
 
   protected readonly titreOffre = signal<string | null>(null);
   protected readonly candidatures = signal<Application[]>([]);
@@ -87,6 +102,14 @@ export class CandidaturesOffre implements OnInit {
   /** Statuts proposés au recruteur depuis le statut actuel (aucun si la décision est finale). */
   protected suivants(c: Application): ApplicationStatus[] {
     return c.status ? TRANSITIONS_CANDIDATURE[c.status] : [];
+  }
+
+  protected optionsSuivants(c: Application): OptionChamp[] {
+    return [{ valeur: '', libelle: 'Choisir…' }, ...this.suivants(c).map((s) => ({ valeur: s, libelle: libelleCandidature(s) }))];
+  }
+
+  protected choisir(id: string | undefined, valeur: string): void {
+    if (id) this.choix.update((c) => ({ ...c, [id]: valeur }));
   }
 
   protected async changer(c: Application, valeur: string): Promise<void> {

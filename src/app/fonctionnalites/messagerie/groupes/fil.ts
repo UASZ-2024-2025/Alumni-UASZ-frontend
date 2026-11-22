@@ -71,8 +71,8 @@ export function construireFil(messages: GroupMessage[], moiId: string | undefine
   return fil;
 }
 
-/** Couleurs des noms d'auteurs (contraste AA sur fond blanc), stables pour un même utilisateur. */
-const COULEURS_AUTEURS = ['#0b5d3b', '#8a5a00', '#1d5f8a', '#7a3e9d', '#a1332b', '#336b1e', '#5c4b99', '#9c3d6b'];
+/** Couleurs des noms d'auteurs (variables de la charte, contraste AA sur fond blanc), stables pour un même utilisateur. */
+const COULEURS_AUTEURS = ['var(--g8)', 'var(--wa)', 'var(--dg)', 'var(--ok)', 'var(--g9)', 'var(--mu)'];
 
 export function couleurAuteur(id = ''): string {
   let h = 0;

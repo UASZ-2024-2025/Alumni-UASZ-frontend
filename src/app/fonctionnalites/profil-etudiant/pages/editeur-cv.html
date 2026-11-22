@@ -1,14 +1,11 @@
 <div class="page">
-  <div class="entete">
-    <div>
-      <h1>Mon CV</h1>
-      <p>Remplissez votre CV, vérifiez l'aperçu, puis téléchargez-le en PDF.</p>
-    </div>
-    <a class="btn-sec" routerLink="/mon-espace/profil">Mon profil</a>
-  </div>
+  <app-entete-page titre="Mon CV">
+    <p>Remplissez votre CV, vérifiez l'aperçu, puis téléchargez-le en PDF.</p>
+    <app-bouton actions variante="secondaire" [lien]="['/mon-espace/profil']">Mon profil</app-bouton>
+  </app-entete-page>
 
   @if (chargement()) {
-    <p class="chargement">Chargement de votre CV…</p>
+    <app-spinner libelle="Chargement de votre CV…" />
   } @else {
     @if (erreur()) { <app-alerte>{{ erreur() }}</app-alerte> }
     @if (succes()) { <app-alerte type="succes">CV enregistré.</app-alerte> }
@@ -18,104 +15,91 @@
 
     <div class="disposition">
       <form [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
-        <section class="fiche">
+        <app-carte class="fiche">
+<div class="corps">
           <h2>Général</h2>
           <p class="lecture-seule">Nom, email et téléphone proviennent de votre compte.</p>
-          <label>
-            Titre du CV
-            <input type="text" formControlName="titre" maxlength="150" placeholder="Ex. Développeur Fullstack Java/React" />
-            @if (formulaire.controls.titre.touched && formulaire.controls.titre.invalid) {
-              <span class="invalide">Le titre est obligatoire.</span>
-            }
-          </label>
+          <app-champ libelle="Titre du CV" formControlName="titre" [requis]="true" placeholder="Ex. Développeur Fullstack Java/React"
+            [erreur]="formulaire.controls.titre.touched && formulaire.controls.titre.invalid ? 'Le titre est obligatoire.' : null" />
           <div class="grille">
-            <label>
-              Modèle
-              <select formControlName="modele">
-                @for (m of modeles; track m.code) { <option [value]="m.code">{{ m.libelle }}</option> }
-              </select>
-            </label>
-            <label>
-              Langue du CV
-              <select formControlName="langue">
-                @for (l of languesCv; track l) { <option [value]="l">{{ l }}</option> }
-              </select>
-            </label>
+            <app-champ libelle="Modèle" type="select" formControlName="modele" [options]="modeles" />
+            <app-champ libelle="Langue du CV" type="select" formControlName="langue" [options]="languesCv" />
           </div>
-          <label>
-            Résumé
-            <textarea formControlName="resume" rows="4" maxlength="2000" placeholder="Présentez-vous en quelques lignes."></textarea>
-          </label>
-        </section>
+          <app-champ libelle="Résumé" type="textarea" formControlName="resume" [lignes]="4" placeholder="Présentez-vous en quelques lignes." />
+        </div>
+</app-carte>
 
-        <section class="fiche">
+        <app-carte class="fiche">
+<div class="corps">
           <h2>Compétences</h2>
-          <app-champ-etiquettes [(valeur)]="competences" libelle="Ajouter une compétence" placeholder="Java, Spring Boot, Docker…" />
-        </section>
+          <app-puces-competences libelle="Compétences" formControlName="competences" placeholder="Java, Spring Boot, Docker…" />
+        </div>
+</app-carte>
 
-        <section class="fiche" formArrayName="experiences">
+        <app-carte class="fiche" formArrayName="experiences">
+<div class="corps">
           <div class="titre-ligne"><h2>Expériences</h2></div>
           @for (g of experiences.controls; track g; let i = $index) {
             <div class="ligne-liste" [formGroupName]="i">
               <div class="grille">
-                <label>Poste <input type="text" formControlName="position" placeholder="Stagiaire développeur" /></label>
-                <label>Entreprise <input type="text" formControlName="companyName" placeholder="Orange Sonatel" /></label>
-                <label>Début <input type="date" formControlName="startDate" /></label>
-                <label>Fin <input type="date" formControlName="endDate" /></label>
+                <app-champ libelle="Poste" formControlName="position" placeholder="Stagiaire développeur" />
+                <app-champ libelle="Entreprise" formControlName="companyName" placeholder="Orange Sonatel" />
+                <app-champ libelle="Début" formControlName="startDate" type="date" />
+                <app-champ libelle="Fin" formControlName="endDate" type="date" />
               </div>
               @if (datesInvalides(g)) { <span class="invalide">La date de fin précède la date de début.</span> }
-              <label>Description <textarea formControlName="description" rows="3" maxlength="2000"></textarea></label>
-              <button type="button" class="btn-ligne" (click)="retirer(experiences, i)">Supprimer cette expérience</button>
+              <app-champ libelle="Description" type="textarea" formControlName="description" />
+              <app-bouton variante="danger" [petit]="true" class="btn-ligne" (clic)="retirer(experiences, i)">Supprimer cette expérience</app-bouton>
             </div>
           }
-          <button type="button" class="btn-sec btn-ajout" (click)="ajouterExperience()">+ Ajouter une expérience</button>
-        </section>
+          <app-bouton variante="secondaire" class="btn-ajout" (clic)="ajouterExperience()">+ Ajouter une expérience</app-bouton>
+        </div>
+</app-carte>
 
-        <section class="fiche" formArrayName="formations">
+        <app-carte class="fiche" formArrayName="formations">
+<div class="corps">
           <div class="titre-ligne"><h2>Formation</h2></div>
           @for (g of formations.controls; track g; let i = $index) {
             <div class="ligne-liste" [formGroupName]="i">
               <div class="grille">
-                <label>Diplôme <input type="text" formControlName="degree" placeholder="Master" /></label>
-                <label>Domaine <input type="text" formControlName="fieldOfStudy" placeholder="Génie Logiciel" /></label>
-                <label>Établissement <input type="text" formControlName="institution" placeholder="UASZ" /></label>
+                <app-champ libelle="Diplôme" formControlName="degree" placeholder="Master" />
+                <app-champ libelle="Domaine" formControlName="fieldOfStudy" placeholder="Génie Logiciel" />
+                <app-champ libelle="Établissement" formControlName="institution" placeholder="UASZ" />
                 <span></span>
-                <label>Début <input type="date" formControlName="startDate" /></label>
-                <label>Fin <input type="date" formControlName="endDate" /></label>
+                <app-champ libelle="Début" formControlName="startDate" type="date" />
+                <app-champ libelle="Fin" formControlName="endDate" type="date" />
               </div>
               @if (datesInvalides(g)) { <span class="invalide">La date de fin précède la date de début.</span> }
-              <button type="button" class="btn-ligne" (click)="retirer(formations, i)">Supprimer cette formation</button>
+              <app-bouton variante="danger" [petit]="true" class="btn-ligne" (clic)="retirer(formations, i)">Supprimer cette formation</app-bouton>
             </div>
           }
-          <button type="button" class="btn-sec btn-ajout" (click)="ajouterFormation()">+ Ajouter une formation</button>
-        </section>
+          <app-bouton variante="secondaire" class="btn-ajout" (clic)="ajouterFormation()">+ Ajouter une formation</app-bouton>
+        </div>
+</app-carte>
 
-        <section class="fiche" formArrayName="langues">
+        <app-carte class="fiche" formArrayName="langues">
+<div class="corps">
           <div class="titre-ligne"><h2>Langues</h2></div>
           @for (g of langues.controls; track g; let i = $index) {
             <div class="ligne-liste" [formGroupName]="i">
               <div class="grille">
-                <label>Langue <input type="text" formControlName="language" placeholder="Anglais" /></label>
-                <label>
-                  Niveau
-                  <select formControlName="proficiency">
-                    @for (n of niveaux; track n) { <option [value]="n">{{ n }}</option> }
-                  </select>
-                </label>
+                <app-champ libelle="Langue" formControlName="language" placeholder="Anglais" />
+                <app-champ libelle="Niveau" type="select" formControlName="proficiency" [options]="niveaux" />
               </div>
-              <button type="button" class="btn-ligne" (click)="retirer(langues, i)">Supprimer cette langue</button>
+              <app-bouton variante="danger" [petit]="true" class="btn-ligne" (clic)="retirer(langues, i)">Supprimer cette langue</app-bouton>
             </div>
           }
-          <button type="button" class="btn-sec btn-ajout" (click)="ajouterLangue()">+ Ajouter une langue</button>
-        </section>
+          <app-bouton variante="secondaire" class="btn-ajout" (clic)="ajouterLangue()">+ Ajouter une langue</app-bouton>
+        </div>
+</app-carte>
 
         <div class="barre-actions">
-          <button type="submit" class="btn-prim" [disabled]="enregistrement()">
+          <app-bouton type="submit" [chargement]="enregistrement()">
             {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer le CV' }}
-          </button>
-          <button type="button" class="btn-sec" (click)="telecharger()" [disabled]="telechargement()">
+          </app-bouton>
+          <app-bouton variante="secondaire" [chargement]="telechargement()" (clic)="telecharger()">
             {{ telechargement() ? 'Génération…' : 'Télécharger en PDF' }}
-          </button>
+          </app-bouton>
         </div>
       </form>
 

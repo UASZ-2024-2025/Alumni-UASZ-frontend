@@ -60,6 +60,7 @@ describe('CandidaturesOffre', () => {
     const ligneEl = el.querySelectorAll('tbody tr')[ligne];
     const select = ligneEl.querySelector<HTMLSelectElement>('select')!;
     select.value = statut;
+    select.dispatchEvent(new Event('change'));
     ligneEl.querySelector<HTMLButtonElement>('app-bouton button')!.click();
   };
 

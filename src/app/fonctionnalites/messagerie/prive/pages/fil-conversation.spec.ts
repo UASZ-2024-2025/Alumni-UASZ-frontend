@@ -57,7 +57,7 @@ describe('FilConversation', () => {
     fixture.detectChanges();
   };
   const soumettre = async () => {
-    el.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    el.querySelector('app-zone-saisie-message form')!.dispatchEvent(new Event('submit', { cancelable: true }));
     await stabiliser();
   };
   const boutonEnvoyer = () => el.querySelector<HTMLButtonElement>('button[type="submit"]')!;
@@ -192,10 +192,10 @@ describe('FilConversation', () => {
       await ouvrir();
       saisir('Salut');
       const zone = el.querySelector('textarea')!;
-      zone.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, cancelable: true }));
+      zone.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, cancelable: true, bubbles: true }));
       await stabiliser();
       expect(api.sendPrivateMessage).not.toHaveBeenCalled();
-      zone.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
+      zone.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true, bubbles: true }));
       await stabiliser();
       expect(api.sendPrivateMessage).toHaveBeenCalledTimes(1);
     });
@@ -206,7 +206,7 @@ describe('FilConversation', () => {
       saisir('Un message important');
       await soumettre();
       expect((el.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Un message important');
-      expect(el.querySelector('form app-alerte')).not.toBeNull();
+      expect(el.querySelector('.saisie app-alerte')).not.toBeNull();
     });
   });
 

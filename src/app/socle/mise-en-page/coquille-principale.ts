@@ -40,7 +40,7 @@ import { MENUS } from './menus.config';
       .cadre { grid-template-columns: minmax(0, 1fr); }
       .lateral { position: fixed; inset: 0 auto 0 0; z-index: 20; width: 280px; max-width: 85vw; transform: translateX(-100%); transition: transform 0.2s ease; }
       .lateral.ouvert { transform: none; box-shadow: 0 0 40px rgba(0, 0, 0, 0.3); }
-      .voile.ouvert { display: block; position: fixed; inset: 0; z-index: 10; background: rgba(7, 61, 39, 0.45); }
+      .voile.ouvert { display: block; position: fixed; inset: 0; z-index: 10; background: var(--voile); }
       .contenu { padding: 16px 14px; }
     }
   `,

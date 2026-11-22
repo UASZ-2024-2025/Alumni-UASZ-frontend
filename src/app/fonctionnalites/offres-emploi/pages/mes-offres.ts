@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { Bouton } from '../../../commun/components/bouton/bouton';
 import { RouterLink } from '@angular/router';
 import { finalize, timeout, TimeoutError } from 'rxjs';
 import { JobOffer, OfferStatus, OfferType } from '../../../api/generes/offres-emploi';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Badge, TonBadge } from '../../../commun/components/badge/badge';
 import { Carte } from '../../../commun/components/carte/carte';
+import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
@@ -29,12 +31,12 @@ const MESSAGES_LISTE: Record<number, string> = {
 
 @Component({
   selector: 'app-mes-offres',
-  imports: [RouterLink, DatePipe, Alerte, Badge, Carte, Pagination, Tableau],
+  imports: [RouterLink, DatePipe, Alerte, Badge, Bouton, Carte, EntetePage, Pagination, Tableau],
   template: `
-    <app-carte titre="Mes offres">
-      <p class="entete">
-        <a class="btn btn--principal btn--auto" routerLink="/offres-emploi/publier">Publier une offre</a>
-      </p>
+    <app-entete-page titre="Mes offres">
+      <app-bouton actions [lien]="'/offres-emploi/publier'">Publier une offre</app-bouton>
+    </app-entete-page>
+    <app-carte>
 
       @if (erreur()) {
         <app-alerte>
@@ -58,7 +60,7 @@ const MESSAGES_LISTE: Record<number, string> = {
             }
             @case ('createdAt') { {{ ligne.createdAt | date: 'dd/MM/yyyy' }} }
             @case ('candidatures') {
-              <a [routerLink]="['/offres-emploi', ligne.id, 'candidatures']">Voir</a>
+              <app-bouton variante="secondaire" [petit]="true" [lien]="'/offres-emploi/' + ligne.id + '/candidatures'">Voir</app-bouton>
             }
             @default { {{ ligne[cle] }} }
           }
@@ -69,9 +71,6 @@ const MESSAGES_LISTE: Record<number, string> = {
         <app-pagination [page]="page()" [nbPages]="nbPages()" (changement)="charger($event)" />
       }
     </app-carte>
-  `,
-  styles: `
-    .entete { display: flex; justify-content: flex-end; margin: 0 0 1rem; }
   `,
 })
 export class MesOffres implements OnInit {
