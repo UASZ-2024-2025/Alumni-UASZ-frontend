@@ -13,7 +13,7 @@
   grid-template-columns: 30.5% 1fr;
   aspect-ratio: 210 / 297;
   width: 100%;
-  overflow: auto;
+  overflow: visible; // un CV long agrandit la feuille au lieu de défiler dedans
   background: var(--papier);
   color: var(--encre);
   border: 1px solid var(--bd);
