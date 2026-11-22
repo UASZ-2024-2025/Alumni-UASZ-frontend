@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { PrivateMessagingService } from '../../../../api/generes/notifications-messagerie/api/privateMessaging.service';
 import { PrivateMessage } from '../../../../api/generes/notifications-messagerie/model/privateMessage';
 import { ErreurApi } from '../../../../commun/modeles/erreur-api.model';
+import { ConfirmationService } from '../../../../commun/services/confirmation.service';
+import { ToastService } from '../../../../commun/services/toast.service';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
 import { ConversationsStore } from '../conversations.store';
 import { FilConversation } from './fil-conversation';
@@ -32,8 +34,12 @@ describe('FilConversation', () => {
     getConversationMessages: ReturnType<typeof vi.fn>;
     sendPrivateMessage: ReturnType<typeof vi.fn>;
     markConversationAsRead: ReturnType<typeof vi.fn>;
+    deletePrivateMessage: ReturnType<typeof vi.fn>;
+    editPrivateMessage: ReturnType<typeof vi.fn>;
+    updateConversationPreferences: ReturnType<typeof vi.fn>;
   };
-  let store: { liste: ReturnType<typeof vi.fn>; maj: ReturnType<typeof vi.fn>; apresEnvoi: ReturnType<typeof vi.fn> };
+  let store: Record<'liste' | 'maj' | 'apresEnvoi' | 'apresChangement', ReturnType<typeof vi.fn>>;
+  let confirmation: { demander: ReturnType<typeof vi.fn> };
   let params: BehaviorSubject<ParamMap>;
   let fixture: ComponentFixture<FilConversation>;
   let el: HTMLElement;
@@ -49,7 +55,8 @@ describe('FilConversation', () => {
     fixture.detectChanges();
     await stabiliser();
   };
-  const textes = () => [...el.querySelectorAll('.texte')].map((n) => n.textContent?.trim());
+  /** Texte des bulles, sans l'heure ni les mentions (premier nœud du paragraphe). */
+  const textes = () => [...el.querySelectorAll('.bulle p')].map((n) => n.firstChild?.textContent?.trim());
   const saisir = (texte: string) => {
     const zone = el.querySelector('textarea') as HTMLTextAreaElement;
     zone.value = texte;
@@ -70,12 +77,21 @@ describe('FilConversation', () => {
         of(message('m9', MOI, content, '2026-11-18T09:20:00Z')),
       ),
       markConversationAsRead: vi.fn(() => of(null)),
+      deletePrivateMessage: vi.fn(() => of(null)),
+      editPrivateMessage: vi.fn((id: string, { content }: { content: string }) =>
+        of({ ...reponse, id, content, editedAt: '2026-11-18T09:10:00Z' }),
+      ),
+      updateConversationPreferences: vi.fn(() => of({ pinned: false, archived: false, muted: true })),
     };
-    store = { liste: vi.fn(() => []), maj: vi.fn(), apresEnvoi: vi.fn() };
+    store = { liste: vi.fn(() => []), maj: vi.fn(), apresEnvoi: vi.fn(), apresChangement: vi.fn() };
+    confirmation = { demander: vi.fn(() => Promise.resolve(true)) };
     params = new BehaviorSubject(convertToParamMap({ recipientId: AUTRE }));
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         { provide: PrivateMessagingService, useValue: api },
+        { provide: ConfirmationService, useValue: confirmation },
+        { provide: ToastService, useValue: { succes: vi.fn(), erreur: vi.fn() } },
         { provide: ConversationsStore, useValue: store },
         { provide: ActivatedRoute, useValue: { paramMap: params.asObservable() } },
         { provide: AuthentificationService, useValue: { utilisateur: () => ({ id: MOI }) } },
@@ -97,10 +113,10 @@ describe('FilConversation', () => {
 
   it('aligne mes messages à droite et nomme l’interlocuteur en en-tête', async () => {
     await ouvrir();
-    const miens = el.querySelectorAll('.ligne.moi');
+    const miens = el.querySelectorAll('.bulle.moi');
     expect(miens).toHaveLength(1);
     expect(miens[0].textContent).toContain('Bonjour Awa');
-    expect(el.querySelector('h2')?.textContent).toContain('Awa Diop');
+    expect(el.querySelector('.identite strong')?.textContent).toContain('Awa Diop');
   });
 
   it('marque la conversation comme lue quand l’autre a des messages non lus', async () => {
@@ -127,7 +143,7 @@ describe('FilConversation', () => {
   it('affiche un état vide invitant à écrire le premier message', async () => {
     api.getConversationMessages.mockReturnValue(of(page([])));
     await ouvrir();
-    expect(el.querySelector('app-etat-vide')?.textContent).toContain('Aucun message');
+    expect(el.querySelector('.fil .jour')?.textContent).toContain('Aucun message');
   });
 
   it('affiche une erreur si le chargement échoue, sans spinner', async () => {
@@ -206,8 +222,88 @@ describe('FilConversation', () => {
       saisir('Un message important');
       await soumettre();
       expect((el.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Un message important');
-      expect(el.querySelector('.saisie app-alerte')).not.toBeNull();
+      expect(el.querySelector('.saisie .erreur-envoi')).not.toBeNull();
     });
+  });
+
+  it('affiche l’accusé de lecture sur mes messages : deux coches une fois lus', async () => {
+    api.getConversationMessages.mockReturnValue(of(page([{ ...reponse, isRead: false }, ancien])));
+    await ouvrir();
+    expect(el.querySelector('.bulle.moi .accuse')?.getAttribute('aria-label')).toBe('Envoyé');
+    expect(el.querySelector('.bulle:not(.moi) .accuse')).toBeNull();
+    api.getConversationMessages.mockReturnValue(of(page([reponse, ancien])));
+    await stabiliser(5000);
+    expect(el.querySelector('.bulle.moi .accuse.lu')?.getAttribute('aria-label')).toBe('Lu');
+  });
+
+  describe('suppression et modification', () => {
+    const bouton = (libelle: string) => el.querySelector<HTMLButtonElement>(`.bulle.moi button[aria-label="${libelle}"]`);
+
+    it('supprime mon message pour nous deux après confirmation', async () => {
+      await ouvrir();
+      expect(el.querySelector('.bulle:not(.moi) .actions-bulle')).toBeNull();
+      bouton('Supprimer ce message pour vous deux')!.click();
+      await stabiliser();
+      expect(confirmation.demander).toHaveBeenCalled();
+      expect(api.deletePrivateMessage).toHaveBeenCalledWith('m2');
+      expect(el.querySelector('.bulle.moi.supprime')?.textContent).toContain('Vous avez supprimé ce message');
+      expect(store.apresChangement).toHaveBeenCalledWith(AUTRE, expect.objectContaining({ id: 'm2', deleted: true }));
+    });
+
+    it('affiche « Ce message a été supprimé » pour un message de l’autre', async () => {
+      api.getConversationMessages.mockReturnValue(of(page([{ ...ancien, deleted: true, content: undefined }])));
+      await ouvrir();
+      expect(el.querySelector('.bulle.supprime')?.textContent).toContain('Ce message a été supprimé');
+    });
+
+    it('modifie mon message dans les 15 minutes : la saisie le reprend et « Modifié » s’affiche', async () => {
+      vi.setSystemTime(new Date('2026-11-18T09:10:00Z'));
+      await ouvrir();
+      bouton('Modifier ce message')!.click();
+      await stabiliser();
+      expect((el.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Bonjour Awa');
+      expect(el.querySelector('.bandeau-edition')).not.toBeNull();
+      expect(boutonEnvoyer().textContent).toContain('Enregistrer');
+
+      saisir('Bonjour Awa, ça va ?');
+      await soumettre();
+      expect(api.editPrivateMessage).toHaveBeenCalledWith('m2', { content: 'Bonjour Awa, ça va ?' });
+      expect(api.sendPrivateMessage).not.toHaveBeenCalled();
+      expect(textes()).toContain('Bonjour Awa, ça va ?');
+      expect(el.querySelector('.bulle.moi .modifie')).not.toBeNull();
+      expect(el.querySelector('.bandeau-edition')).toBeNull();
+      expect(store.apresChangement).toHaveBeenCalled();
+    });
+
+    it('ne propose plus la modification après 15 minutes', async () => {
+      vi.setSystemTime(new Date('2026-11-18T09:21:00Z'));
+      await ouvrir();
+      expect(bouton('Modifier ce message')).toBeNull();
+      expect(bouton('Supprimer ce message pour vous deux')).not.toBeNull();
+    });
+
+    it('affiche l’erreur du serveur si le délai est dépassé entre-temps', async () => {
+      vi.setSystemTime(new Date('2026-11-18T09:10:00Z'));
+      api.editPrivateMessage.mockReturnValue(throwError(() => new ErreurApi(400, 'EDIT_WINDOW_EXPIRED', 'Trop tard')));
+      await ouvrir();
+      bouton('Modifier ce message')!.click();
+      await stabiliser();
+      saisir('Trop tard');
+      await soumettre();
+      expect(el.querySelector('.erreur-envoi')?.textContent).toContain('15 minutes');
+      expect((el.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Trop tard');
+    });
+  });
+
+  it('coupe les notifications depuis le menu ⋮', async () => {
+    await ouvrir();
+    el.querySelector<HTMLButtonElement>('.menu app-bouton button')!.click();
+    fixture.detectChanges();
+    [...el.querySelectorAll<HTMLButtonElement>('.options button')].find((b) => b.textContent?.includes('Couper les notifications'))!.click();
+    await stabiliser();
+    expect(api.updateConversationPreferences).toHaveBeenCalledWith(AUTRE, { mute: 'ALWAYS' });
+    expect(store.maj).toHaveBeenCalledWith(AUTRE, { preferences: { pinned: false, archived: false, muted: true } });
+    expect(el.querySelector('.options')).toBeNull();
   });
 
   describe('historique', () => {
@@ -216,19 +312,19 @@ describe('FilConversation', () => {
         of(numero === 0 ? page([recent, reponse], 3) : page([ancien], 3)),
       );
       await ouvrir();
-      const bouton = [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Messages précédents'))!;
+      const bouton = [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('messages précédents'))!;
       expect(bouton).toBeDefined();
 
       bouton.click();
       await stabiliser();
       expect(api.getConversationMessages).toHaveBeenCalledWith(AUTRE, 1, 30);
       expect(textes()).toEqual(['Bonjour Moussa', 'Bonjour Awa', 'Tu as vu le stage ?']);
-      expect([...el.querySelectorAll('button')].some((b) => b.textContent?.includes('Messages précédents'))).toBe(false);
+      expect([...el.querySelectorAll('button')].some((b) => b.textContent?.includes('messages précédents'))).toBe(false);
     });
 
     it('n’affiche pas ce bouton quand tout est chargé', async () => {
       await ouvrir();
-      expect([...el.querySelectorAll('button')].some((b) => b.textContent?.includes('Messages précédents'))).toBe(false);
+      expect([...el.querySelectorAll('button')].some((b) => b.textContent?.includes('messages précédents'))).toBe(false);
     });
   });
 });

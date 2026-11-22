@@ -24,7 +24,7 @@ const messages: GroupMessage[] = [
 ];
 
 describe('FilGroupe', () => {
-  let api: Record<'getGroupById' | 'getGroupMessages' | 'sendGroupMessage' | 'markGroupAsRead' | 'deleteGroupMessage' | 'updateGroupPreferences', ReturnType<typeof vi.fn>>;
+  let api: Record<'getGroupById' | 'getGroupMessages' | 'sendGroupMessage' | 'markGroupAsRead' | 'deleteGroupMessage' | 'updateGroupPreferences' | 'editGroupMessage', ReturnType<typeof vi.fn>>;
   let confirmation: { demander: ReturnType<typeof vi.fn> };
   let store: { maj: ReturnType<typeof vi.fn>; retirer: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<FilGroupe>;
@@ -57,6 +57,8 @@ describe('FilGroupe', () => {
       markGroupAsRead: vi.fn(() => of(null)),
       deleteGroupMessage: vi.fn(() => of(null)),
       updateGroupPreferences: vi.fn(() => of({ pinned: true, archived: false, muted: false })),
+      editGroupMessage: vi.fn((_g: string, id: string, { content }: { content: string }) =>
+        of({ ...messages[0], id, content, editedAt: '2026-11-18T09:10:00Z' })),
     };
     confirmation = { demander: vi.fn(() => Promise.resolve(true)) };
     store = { maj: vi.fn(), retirer: vi.fn() };
@@ -155,13 +157,13 @@ describe('FilGroupe', () => {
     const supprime = el.querySelector('.bulle.supprime')!;
     expect(supprime.textContent).toContain('Ce message a été supprimé');
     // Un simple membre ne supprime que ses propres messages.
-    expect(supprime.querySelector('.supprimer')).toBeNull();
-    expect(el.querySelectorAll('.bulle .supprimer').length).toBe(1);
+    expect(supprime.querySelector('.actions-bulle')).toBeNull();
+    expect(el.querySelectorAll('.bulle .actions-bulle').length).toBe(1);
   });
 
   it('supprime son message pour tous après confirmation', async () => {
     creer();
-    el.querySelector<HTMLButtonElement>('.bulle.moi .supprimer button')!.click();
+    el.querySelector<HTMLButtonElement>('.bulle.moi button[aria-label^="Supprimer"]')!.click();
     await fixture.whenStable();
     fixture.detectChanges();
     expect(api.deleteGroupMessage).toHaveBeenCalledWith('g1', 'm2');
@@ -171,7 +173,7 @@ describe('FilGroupe', () => {
   it('un administrateur du groupe peut supprimer le message des autres', () => {
     api.getGroupById.mockReturnValue(of({ ...groupe, members: [groupe.members![0], { userId: 'moi', groupRole: 'ADMIN' }] }));
     creer();
-    expect(el.querySelectorAll('.bulle .supprimer').length).toBe(2);
+    expect(el.querySelectorAll('.bulle .actions-bulle').length).toBe(2);
   });
 
   it('remplace la saisie quand seuls les administrateurs peuvent écrire', () => {
@@ -190,5 +192,56 @@ describe('FilGroupe', () => {
     expect(api.updateGroupPreferences).toHaveBeenCalledWith('g1', { pinned: true });
     expect(store.maj).toHaveBeenCalledWith('g1', { preferences: { pinned: true, archived: false, muted: false } });
     expect(el.querySelector('.options')).toBeNull();
+  });
+
+  describe('modification d’un message', () => {
+    const boutonModifier = () => el.querySelector<HTMLButtonElement>('.bulle.moi button[aria-label="Modifier ce message"]');
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-18T09:10:00Z')); // 5 minutes après « Merci ! »
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('reprend le message dans la saisie, l’enregistre et affiche « Modifié »', async () => {
+      creer();
+      expect(el.querySelector('.bulle:not(.moi) button[aria-label="Modifier ce message"]')).toBeNull(); // pas le message des autres
+      boutonModifier()!.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(zone().value).toBe('Merci !');
+      expect(el.querySelector('.bandeau-edition')?.textContent).toContain('Modifier le message');
+      expect(el.querySelector('app-zone-saisie-message button[type="submit"]')?.textContent).toContain('Enregistrer');
+
+      saisir('Merci beaucoup !');
+      entree();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(api.editGroupMessage).toHaveBeenCalledWith('g1', 'm2', { content: 'Merci beaucoup !' });
+      expect(api.sendGroupMessage).not.toHaveBeenCalled();
+      expect(el.querySelector('.bulle.moi')?.textContent).toContain('Merci beaucoup !');
+      expect(el.querySelector('.bulle.moi .modifie')?.textContent).toContain('Modifié');
+      expect(el.querySelector('.bandeau-edition')).toBeNull();
+      expect(zone().value).toBe('');
+      expect(store.maj).toHaveBeenCalledWith('g1', { lastMessage: 'Merci beaucoup !' });
+    });
+
+    it('Échap annule la modification et rend le brouillon en cours', () => {
+      creer();
+      saisir('brouillon');
+      boutonModifier()!.click();
+      fixture.detectChanges();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+      expect(el.querySelector('.bandeau-edition')).toBeNull();
+      expect(zone().value).toBe('brouillon');
+    });
+
+    it('ne propose plus la modification 15 minutes après l’envoi', () => {
+      vi.setSystemTime(new Date('2026-11-18T09:21:00Z'));
+      creer();
+      expect(boutonModifier()).toBeNull();
+    });
   });
 });

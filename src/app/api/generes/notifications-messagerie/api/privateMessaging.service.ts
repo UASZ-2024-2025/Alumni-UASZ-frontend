@@ -19,7 +19,13 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { ConversationSummary } from '../model/conversationSummary';
 // @ts-ignore
+import { EditMessageRequest } from '../model/editMessageRequest';
+// @ts-ignore
 import { ErrorResponse } from '../model/errorResponse';
+// @ts-ignore
+import { GroupPreferences } from '../model/groupPreferences';
+// @ts-ignore
+import { GroupPreferencesUpdateRequest } from '../model/groupPreferencesUpdateRequest';
 // @ts-ignore
 import { PrivateMessage } from '../model/privateMessage';
 // @ts-ignore
@@ -44,7 +50,8 @@ export class PrivateMessagingService extends BaseService {
     }
 
     /**
-     * Supprimer un message privé
+     * Supprimer un message privé pour les deux interlocuteurs
+     * Seul l\&#39;expéditeur supprime son message (404 pour tout autre appelant). Le message reste dans le fil avec &#x60;deleted&#x60; à true et un contenu vide. 
      * @endpoint delete /messages/{messageId}
      * @param messageId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -92,6 +99,80 @@ export class PrivateMessagingService extends BaseService {
         return this.httpClient.request<any>('delete', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Modifier un message privé envoyé
+     * Seul l\&#39;expéditeur modifie son message (404 pour tout autre appelant), dans les 15 minutes qui suivent l\&#39;envoi. Un message supprimé ne se modifie pas (400). &#x60;editedAt&#x60; est renseigné. 
+     * @endpoint patch /messages/{messageId}
+     * @param messageId 
+     * @param editMessageRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public editPrivateMessage(messageId: string, editMessageRequest: EditMessageRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<PrivateMessage>;
+    public editPrivateMessage(messageId: string, editMessageRequest: EditMessageRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PrivateMessage>>;
+    public editPrivateMessage(messageId: string, editMessageRequest: EditMessageRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PrivateMessage>>;
+    public editPrivateMessage(messageId: string, editMessageRequest: EditMessageRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (messageId === null || messageId === undefined) {
+            throw new Error('Required parameter messageId was null or undefined when calling editPrivateMessage.');
+        }
+        if (editMessageRequest === null || editMessageRequest === undefined) {
+            throw new Error('Required parameter editMessageRequest was null or undefined when calling editPrivateMessage.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/messages/${this.configuration.encodeParam({name: "messageId", value: messageId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PrivateMessage>('patch', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: editMessageRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -187,6 +268,7 @@ export class PrivateMessagingService extends BaseService {
 
     /**
      * Lister les conversations privées de l\&#39;utilisateur connecté
+     * Conversations épinglées d\&#39;abord, puis par dernier message le plus récent.
      * @endpoint get /messages/conversations
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -362,6 +444,80 @@ export class PrivateMessagingService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: sendMessageRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Modifier ses préférences personnelles sur une conversation (épingler, archiver, mettre en sourdine)
+     * Préférences propres à l\&#39;utilisateur connecté, invisibles de son interlocuteur. Seuls les champs fournis sont modifiés. 
+     * @endpoint patch /messages/conversations/{recipientId}/preferences
+     * @param recipientId 
+     * @param groupPreferencesUpdateRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateConversationPreferences(recipientId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<GroupPreferences>;
+    public updateConversationPreferences(recipientId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<GroupPreferences>>;
+    public updateConversationPreferences(recipientId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<GroupPreferences>>;
+    public updateConversationPreferences(recipientId: string, groupPreferencesUpdateRequest: GroupPreferencesUpdateRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (recipientId === null || recipientId === undefined) {
+            throw new Error('Required parameter recipientId was null or undefined when calling updateConversationPreferences.');
+        }
+        if (groupPreferencesUpdateRequest === null || groupPreferencesUpdateRequest === undefined) {
+            throw new Error('Required parameter groupPreferencesUpdateRequest was null or undefined when calling updateConversationPreferences.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/messages/conversations/${this.configuration.encodeParam({name: "recipientId", value: recipientId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/preferences`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<GroupPreferences>('patch', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: groupPreferencesUpdateRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

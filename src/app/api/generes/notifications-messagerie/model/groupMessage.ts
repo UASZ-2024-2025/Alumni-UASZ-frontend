@@ -25,6 +25,10 @@ export interface GroupMessage {
     content?: string;
     deleted?: boolean;
     createdAt?: string;
+    /**
+     * Date de la dernière modification ; absent si le message n\'a jamais été modifié.
+     */
+    editedAt?: string;
 }
 export namespace GroupMessage {
 }

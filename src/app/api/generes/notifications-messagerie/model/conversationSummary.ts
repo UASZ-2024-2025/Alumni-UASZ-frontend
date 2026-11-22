@@ -7,14 +7,24 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { GroupPreferences } from './groupPreferences';
 
 
 export interface ConversationSummary { 
     recipientId?: string;
     recipientName?: string;
     recipientRole?: string;
+    /**
+     * Contenu du dernier message (vide s\'il a été supprimé).
+     */
     lastMessage?: string;
+    /**
+     * Auteur du dernier message (l\'appelant ou son interlocuteur).
+     */
+    lastMessageSenderId?: string;
+    lastMessageDeleted?: boolean;
     lastMessageTime?: string;
     unreadCount?: number;
+    preferences?: GroupPreferences;
 }
 

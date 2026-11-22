@@ -18,8 +18,16 @@ export interface PrivateMessage {
     senderName?: string;
     recipientId?: string;
     recipientName?: string;
+    /**
+     * Texte du message ; vide si le message a été supprimé.
+     */
     content?: string;
     isRead?: boolean;
+    deleted?: boolean;
     createdAt?: string;
+    /**
+     * Date de la dernière modification ; absent si le message n\'a jamais été modifié.
+     */
+    editedAt?: string;
 }
 

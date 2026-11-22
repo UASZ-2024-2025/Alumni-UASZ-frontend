@@ -1,49 +1,137 @@
-<header class="entete">
-  <app-avatar [nom]="interlocuteur().nom" />
+<header class="entete-fil">
+  <a class="retour" routerLink="/messagerie" aria-label="Retour à mes discussions">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+  </a>
   <div class="identite">
-    <h2>{{ interlocuteur().nom }}</h2>
-    @if (interlocuteur().role) {
-      <p class="role">{{ libelleRole(interlocuteur().role) }}</p>
+    <app-avatar [nom]="interlocuteur().nom" />
+    <span class="texte">
+      <strong>
+        {{ interlocuteur().nom }}
+        @if (preferences()?.muted) {
+          <svg class="sourdine" viewBox="0 0 16 16" role="img" [attr.aria-label]="libelleSourdine(preferences()?.mutedUntil)">
+            <path d="M3 6h2l3-3v10l-3-3H3zM11 6l4 4M15 6l-4 4" />
+          </svg>
+        }
+      </strong>
+      @if (interlocuteur().role) {
+        <small>{{ libelleRole(interlocuteur().role) }}</small>
+      }
+    </span>
+  </div>
+
+  <div class="menu">
+    <app-bouton variante="discret" [petit]="true" libelleAria="Plus d'options" [etendu]="menuOuvert()" controle="options-discussion"
+      (clic)="basculerMenu($event)">
+      <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v.01M8 8v.01M8 12.5v.01" /></svg>
+    </app-bouton>
+    @if (menuOuvert()) {
+      <ul id="options-discussion" class="options" (click)="$event.stopPropagation()">
+        <li>
+          @if (preferences()?.muted) {
+            <app-bouton variante="discret" [pleineLargeur]="true" (clic)="preference({ mute: 'NONE' }, 'Notifications réactivées.')">Réactiver les notifications</app-bouton>
+          } @else {
+            <app-bouton variante="discret" [pleineLargeur]="true" (clic)="preference({ mute: 'ALWAYS' }, 'Notifications coupées.')">Couper les notifications</app-bouton>
+          }
+        </li>
+        <li>
+          <app-bouton variante="discret" [pleineLargeur]="true"
+            (clic)="preference({ pinned: !preferences()?.pinned }, preferences()?.pinned ? 'Discussion désépinglée.' : 'Discussion épinglée en haut de la liste.')">
+            {{ preferences()?.pinned ? 'Désépingler' : 'Épingler' }}
+          </app-bouton>
+        </li>
+        <li>
+          <app-bouton variante="discret" [pleineLargeur]="true"
+            (clic)="preference({ archived: !preferences()?.archived }, preferences()?.archived ? 'Discussion désarchivée.' : 'Discussion archivée.')">
+            {{ preferences()?.archived ? 'Désarchiver' : 'Archiver' }}
+          </app-bouton>
+        </li>
+      </ul>
     }
   </div>
 </header>
 
-<div class="messages" #defilement role="log" aria-live="polite" [attr.aria-busy]="chargement()">
+<div class="defilement" #defilement [attr.aria-busy]="chargement()">
   @if (chargement()) {
-    <app-spinner libelle="Chargement de la conversation…" />
+    <div class="etat"><app-spinner libelle="Chargement de la discussion…" /></div>
   } @else {
     @if (erreur(); as message) {
       <app-alerte>{{ message }}</app-alerte>
     }
-
-    @if (resteAnciens()) {
-      <div class="anciens">
-        <app-bouton variante="secondaire" [petit]="true" [chargement]="chargementAnciens()" (clic)="chargerAnciens()">Messages précédents</app-bouton>
-      </div>
-    }
-
-    @if (elements().length === 0 && !erreur()) {
-      <app-etat-vide titre="Aucun message">Écrivez le premier message à {{ interlocuteur().nom }}.</app-etat-vide>
-    }
-
-    @for (element of elements(); track element.cle) {
-      @if (element.type === 'jour') {
-        <p class="jour"><span>{{ element.libelle }}</span></p>
-      } @else {
-        <div class="ligne" [class.moi]="element.moi">
-          <div class="bulle">
-            <p class="texte">{{ element.message.content }}</p>
-            <p class="meta"><time [attr.datetime]="element.message.createdAt">{{ heure(element.message.createdAt) }}</time></p>
-          </div>
-        </div>
+    <ol class="fil" aria-label="Messages de la discussion" aria-live="polite">
+      @if (resteAnciens()) {
+        <li class="plus-anciens">
+          <app-bouton variante="secondaire" [petit]="true" [chargement]="chargementAnciens()" (clic)="chargerAnciens()">
+            {{ chargementAnciens() ? 'Chargement…' : 'Afficher les messages précédents' }}
+          </app-bouton>
+        </li>
       }
-    }
+      @for (el of elements(); track el.cle) {
+        @if (el.type === 'jour') {
+          <li class="jour"><span>{{ el.libelle }}</span></li>
+        } @else {
+          <li class="bulle" [class.moi]="el.moi" [class.debut]="el.debutSerie" [class.supprime]="el.message.deleted"
+            [class.en-edition]="edition()?.id === el.message.id">
+            @if (el.message.deleted) {
+              <p>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 108 2a6 6 0 000 12zM3.8 3.8l8.4 8.4" /></svg>
+                {{ el.moi ? 'Vous avez supprimé ce message' : 'Ce message a été supprimé' }}<span class="meta"><time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time></span>
+              </p>
+            } @else {
+              <p>{{ el.message.content }}<span class="meta">
+                @if (el.message.editedAt) {
+                  <span class="modifie">Modifié</span>
+                }
+                <time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time>
+                @if (el.moi) {
+                  <svg class="accuse" [class.lu]="el.message.isRead" viewBox="0 0 18 12" role="img"
+                    [attr.aria-label]="el.message.isRead ? 'Lu' : 'Envoyé'">
+                    <path d="M1 6.5l3 3L10 3" />
+                    @if (el.message.isRead) {
+                      <path d="M7 9.5L13.5 3" />
+                    }
+                  </svg>
+                }
+              </span></p>
+            }
+            @if (el.moi && !el.message.deleted) {
+              <span class="actions-bulle">
+                @if (peutModifier(el.message)) {
+                  <app-bouton variante="discret" [petit]="true" libelleAria="Modifier ce message" (clic)="commencerEdition(el.message)">
+                    <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z" /></svg>
+                  </app-bouton>
+                }
+                <app-bouton variante="discret" [petit]="true" libelleAria="Supprimer ce message pour vous deux" (clic)="supprimerMessage(el.message)">
+                  <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
+                </app-bouton>
+              </span>
+            }
+          </li>
+        }
+      } @empty {
+        @if (!erreur()) {
+          <li class="jour"><span>Aucun message pour l'instant. Écrivez le premier message à {{ interlocuteur().nom }}.</span></li>
+        }
+      }
+    </ol>
   }
 </div>
 
-<div class="saisie">
+<footer class="saisie">
   @if (erreurEnvoi(); as message) {
-    <app-alerte>{{ message }}</app-alerte>
+    <p class="erreur-envoi" role="alert">{{ message }}</p>
   }
-  <app-zone-saisie-message [(texte)]="brouillon" placeholder="Écrivez votre message…" [envoiEnCours]="envoiEnCours()" (envoyer)="envoyer()" />
-</div>
+  @if (edition(); as m) {
+    <div class="bandeau-edition">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z" /></svg>
+      <span class="texte-edition">
+        <strong>Modifier le message</strong>
+        <small>{{ m.content }}</small>
+      </span>
+      <app-bouton variante="discret" [petit]="true" libelleAria="Annuler la modification" (clic)="annulerEdition()">
+        <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </app-bouton>
+    </div>
+  }
+  <app-zone-saisie-message #saisie [(texte)]="brouillon" [lignes]="1" [longueurMax]="messageMax" [envoiEnCours]="envoiEnCours()"
+    [libelleBouton]="edition() ? 'Enregistrer' : 'Envoyer'" (envoyer)="envoyer()" />
+</footer>

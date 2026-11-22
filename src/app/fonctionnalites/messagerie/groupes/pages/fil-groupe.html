@@ -91,23 +91,36 @@
             } @else if (el.type === 'systeme') {
               <li class="evenement"><span>{{ el.message.content }}</span></li>
             } @else {
-              <li class="bulle" [class.moi]="el.moi" [class.debut]="el.debutSerie" [class.supprime]="el.message.deleted">
+              <li class="bulle" [class.moi]="el.moi" [class.debut]="el.debutSerie" [class.supprime]="el.message.deleted"
+                [class.en-edition]="edition()?.id === el.message.id">
                 @if (!el.moi && el.debutSerie) {
                   <span class="auteur" [style.color]="couleurAuteur(el.message.senderId)">{{ el.message.senderName || 'Membre' }}</span>
                 }
                 @if (el.message.deleted) {
                   <p>
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 108 2a6 6 0 000 12zM3.8 3.8l8.4 8.4" /></svg>
-                    {{ el.moi ? 'Vous avez supprimé ce message' : 'Ce message a été supprimé' }}<time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time>
+                    {{ el.moi ? 'Vous avez supprimé ce message' : 'Ce message a été supprimé' }}<span class="meta"><time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time></span>
                   </p>
                 } @else {
-                  <p>{{ el.message.content }}<time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time></p>
+                  <p>{{ el.message.content }}<span class="meta">
+                    @if (el.message.editedAt) {
+                      <span class="modifie">Modifié</span>
+                    }
+                    <time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time>
+                  </span></p>
                 }
                 @if (peutSupprimer(el.message)) {
-                  <app-bouton class="supprimer" variante="discret" [petit]="true" libelleAria="Supprimer ce message pour tous"
-                    (clic)="supprimerMessage(el.message)">
-                    <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
-                  </app-bouton>
+                  <span class="actions-bulle">
+                    @if (peutModifier(el.message)) {
+                      <app-bouton variante="discret" [petit]="true" libelleAria="Modifier ce message" (clic)="commencerEdition(el.message)">
+                        <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z" /></svg>
+                      </app-bouton>
+                    }
+                    <app-bouton variante="discret" [petit]="true" libelleAria="Supprimer ce message pour tous"
+                      (clic)="supprimerMessage(el.message)">
+                      <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6l.7-9.5" /></svg>
+                    </app-bouton>
+                  </span>
                 }
               </li>
             }
@@ -127,8 +140,20 @@
           @if (erreurEnvoi(); as message) {
             <p class="erreur-envoi" role="alert">{{ message }}</p>
           }
+          @if (edition(); as m) {
+            <div class="bandeau-edition">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z" /></svg>
+              <span class="texte-edition">
+                <strong>Modifier le message</strong>
+                <small>{{ m.content }}</small>
+              </span>
+              <app-bouton variante="discret" [petit]="true" libelleAria="Annuler la modification" (clic)="annulerEdition()">
+                <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+              </app-bouton>
+            </div>
+          }
           <app-zone-saisie-message #saisie [(texte)]="brouillon" [lignes]="1" [longueurMax]="messageMax" [envoiEnCours]="envoi()"
-            (envoyer)="envoyer()" />
+            [libelleBouton]="edition() ? 'Enregistrer' : 'Envoyer'" (envoyer)="envoyer()" />
           @if (brouillon().length > messageMax - 200) {
             <p class="compteur">{{ brouillon().length }} / {{ messageMax }}</p>
           }

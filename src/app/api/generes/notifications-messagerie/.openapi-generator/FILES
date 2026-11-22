@@ -11,6 +11,7 @@ encoder.ts
 git_push.sh
 index.ts
 model/conversationSummary.ts
+model/editMessageRequest.ts
 model/errorResponse.ts
 model/group.ts
 model/groupCreateRequest.ts

@@ -10,7 +10,7 @@
 
 
 /**
- * Préférences de l\'utilisateur connecté sur un groupe (personnelles, invisibles des autres membres).
+ * Préférences de l\'utilisateur connecté sur un groupe ou une conversation privée (personnelles, invisibles des autres participants). 
  */
 export interface GroupPreferences { 
     pinned?: boolean;
