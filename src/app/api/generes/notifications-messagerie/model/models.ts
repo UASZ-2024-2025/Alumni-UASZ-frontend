@@ -1,4 +1,5 @@
 export * from './conversationSummary';
+export * from './editMessageRequest';
 export * from './errorResponse';
 export * from './group';
 export * from './groupCreateRequest';

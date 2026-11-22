@@ -16,7 +16,7 @@ import { Champ } from '../champ/champ';
       <app-champ type="textarea" [libelle]="libelle()" [libelleCache]="true" [placeholder]="placeholder()" [lignes]="lignes()"
         [longueurMax]="longueurMax()" [ngModel]="texte()" (ngModelChange)="texte.set($event)" [ngModelOptions]="{ standalone: true }"
         (keydown)="touche($event)" />
-      <app-bouton type="submit" [desactive]="!peutEnvoyer()" [chargement]="envoiEnCours()">Envoyer</app-bouton>
+      <app-bouton type="submit" [desactive]="!peutEnvoyer()" [chargement]="envoiEnCours()">{{ libelleBouton() }}</app-bouton>
     </form>
   `,
   styles: `
@@ -29,6 +29,8 @@ export class ZoneSaisieMessage {
   readonly texte = model('');
   readonly libelle = input('Votre message');
   readonly placeholder = input('Écrire un message');
+  /** « Enregistrer » pendant la modification d'un message déjà envoyé. */
+  readonly libelleBouton = input('Envoyer');
   readonly lignes = input(2);
   readonly longueurMax = input<number | null>(null);
   readonly envoiEnCours = input(false);

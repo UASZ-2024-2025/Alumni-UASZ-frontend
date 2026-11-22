@@ -1,47 +1,113 @@
-<app-entete-page titre="Messagerie" />
-
 <div class="messagerie" [class.fil-ouvert]="filOuvert()">
-  <section class="liste" aria-label="Conversations">
-    @if (store.erreur(); as message) {
-      <app-alerte>{{ message }}</app-alerte>
+  <aside class="colonne-liste" aria-label="Mes discussions">
+    @if (vueArchives()) {
+      <header class="entete-liste">
+        <app-bouton variante="discret" [petit]="true" libelleAria="Retour aux discussions" (clic)="vueArchives.set(false)">
+          <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+        </app-bouton>
+        <h1 class="titre-archives">Archivées</h1>
+      </header>
+      <p class="note-archives">Les discussions archivées restent à part, même quand un nouveau message arrive.</p>
+    } @else {
+      <header class="entete-liste">
+        <h1>Discussions</h1>
+      </header>
     }
 
-    <div [attr.aria-busy]="store.chargement()">
-      @if (store.chargement() && !store.charge()) {
-        <app-spinner libelle="Chargement des conversations…" />
-      } @else if (store.liste().length > 0) {
-        <ul class="conversations">
-          @for (c of store.liste(); track c.recipientId) {
-            <li>
-              <a class="conversation" [routerLink]="['/messagerie', c.recipientId]" routerLinkActive="active"
-                ariaCurrentWhenActive="page" [class.non-lue]="(c.unreadCount ?? 0) > 0">
-                <app-avatar [nom]="c.recipientName ?? ''" />
-                <span class="texte">
-                  <span class="ligne">
-                    <strong class="nom">{{ c.recipientName || 'Utilisateur' }}</strong>
-                    <time class="heure" [attr.datetime]="c.lastMessageTime">{{ horodatage(c.lastMessageTime) }}</time>
+    <div class="recherche">
+      <app-champ libelle="Rechercher une discussion" type="search" [libelleCache]="true" placeholder="Rechercher une discussion"
+        name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
+    </div>
+
+    @if (!vueArchives()) {
+      <app-onglets [onglets]="onglets()" [actif]="filtre()" (actifChange)="choisirFiltre($event)" />
+    }
+
+    <div class="defilement" [attr.aria-busy]="store.chargement()">
+      @if (store.erreur(); as message) {
+        <div class="message-liste">
+          <app-alerte>{{ message }}</app-alerte>
+          <app-bouton variante="secondaire" [petit]="true" (clic)="store.charger()">Réessayer</app-bouton>
+        </div>
+      } @else if (store.chargement() && !store.charge()) {
+        <div class="message-liste"><app-spinner libelle="Chargement des discussions…" /></div>
+      } @else if (store.liste().length === 0) {
+        <div class="message-liste vide">
+          <strong>Aucune discussion pour l'instant</strong>
+          <span>Écrivez à un étudiant, un Alumni ou un enseignant depuis sa fiche dans l'annuaire.</span>
+          <app-bouton [petit]="true" lien="/annuaire">Ouvrir l'annuaire</app-bouton>
+        </div>
+      } @else {
+        @if (!vueArchives() && !recherche() && store.archives().length) {
+          <app-bouton class="entree-archives" variante="discret" [pleineLargeur]="true" (clic)="vueArchives.set(true)">
+            <span class="icone-archives">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12v3H2zM3 6v7h10V6M6.5 9h3" /></svg>
+            </span>
+            <span class="libelle">Archivées</span>
+            <span class="nombre">{{ store.archives().length }}</span>
+          </app-bouton>
+        }
+        @if (affichees().length === 0) {
+          <p class="message-liste">
+            @if (recherche()) {
+              Aucune discussion ne correspond à « {{ recherche() }} ».
+            } @else if (filtre() === 'non-lus') {
+              Aucun message non lu. Vous êtes à jour !
+            } @else {
+              Aucune discussion à afficher.
+            }
+          </p>
+        } @else {
+          <ul class="conversations">
+            @for (c of affichees(); track c.recipientId) {
+              <li>
+                <a class="conversation" [routerLink]="['/messagerie', c.recipientId]" routerLinkActive="active" ariaCurrentWhenActive="page">
+                  <app-avatar [nom]="c.recipientName ?? ''" />
+                  <span class="resume">
+                    <span class="ligne">
+                      <strong class="nom">{{ c.recipientName || 'Utilisateur' }}</strong>
+                      <time class="date" [class.non-lu]="c.unreadCount && !c.preferences?.muted" [attr.datetime]="c.lastMessageTime">
+                        {{ horodatage(c.lastMessageTime) }}
+                      </time>
+                    </span>
+                    <span class="ligne">
+                      <span class="apercu" [class.systeme]="c.lastMessageDeleted">{{ apercu(c) }}</span>
+                      <span class="indicateurs">
+                        @if (c.preferences?.muted) {
+                          <svg class="indicateur" viewBox="0 0 16 16" role="img" aria-label="Notifications coupées">
+                            <path d="M3 6h2l3-3v10l-3-3H3zM11 6l4 4M15 6l-4 4" />
+                          </svg>
+                        }
+                        @if (c.unreadCount) {
+                          <span class="pastille" [class.sourdine]="c.preferences?.muted"
+                            [attr.aria-label]="c.unreadCount + ' message(s) non lu(s)'">{{ c.unreadCount }}</span>
+                        }
+                        @if (c.preferences?.pinned) {
+                          <svg class="indicateur" viewBox="0 0 16 16" role="img" aria-label="Épinglée">
+                            <path d="M10 2l4 4-2 1-2 3 1 3-1 1-3-3-4 4M5 8l3 3" />
+                          </svg>
+                        }
+                      </span>
+                    </span>
                   </span>
-                  <span class="ligne">
-                    <span class="apercu">{{ c.lastMessage }}</span>
-                    <app-compteur [valeur]="c.unreadCount ?? 0" libelle="messages non lus" />
-                  </span>
-                </span>
-              </a>
-            </li>
-          }
-        </ul>
-      } @else if (store.charge()) {
-        <app-etat-vide titre="Aucune conversation">Vos échanges avec les étudiants, Alumni et enseignants apparaîtront ici.</app-etat-vide>
+                </a>
+              </li>
+            }
+          </ul>
+        }
       }
     </div>
-  </section>
+  </aside>
 
-  <section class="zone-fil" aria-label="Conversation ouverte">
-    @if (filOuvert()) {
-      <a class="retour" routerLink="/messagerie">← Conversations</a>
-    } @else {
-      <app-etat-vide titre="Sélectionnez une conversation">Choisissez un interlocuteur dans la liste pour lire et envoyer des messages.</app-etat-vide>
-    }
+  <section class="colonne-fil">
     <router-outlet (activate)="filOuvert.set(true)" (deactivate)="filOuvert.set(false)" />
+    @if (!filOuvert()) {
+      <div class="accueil-fil">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h12v9H6l-3 3v-3H2z" /></svg>
+        <h2>Messagerie privée</h2>
+        <p>Choisissez une discussion dans la liste pour lire et envoyer des messages.</p>
+        <p class="discret">Vos échanges ne sont visibles que de vous et de votre interlocuteur.</p>
+      </div>
+    }
   </section>
 </div>

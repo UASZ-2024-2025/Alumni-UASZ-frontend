@@ -17,6 +17,7 @@ import { ConfirmationService } from '../../../../commun/services/confirmation.se
 import { ToastService } from '../../../../commun/services/toast.service';
 import { messageErreur } from '../../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
+import { encoreModifiable, ERREURS_MODIFICATION } from '../../edition-message';
 import { InfosGroupe } from '../composants/infos-groupe';
 import { construireFil, couleurAuteur, fusionnerMessages, heure, libelleSourdine } from '../fil';
 import { GroupesStore } from '../groupes.store';
@@ -40,7 +41,7 @@ const ERREURS_ENVOI: Record<number, string> = {
   imports: [RouterLink, Alerte, Avatar, Bouton, InfosGroupe, Modale, Spinner, ZoneSaisieMessage],
   templateUrl: './fil-groupe.html',
   styleUrl: './fil-groupe.scss',
-  host: { '(document:click)': 'menuOuvert.set(false)', '(document:keydown.escape)': 'menuOuvert.set(false)' },
+  host: { '(document:click)': 'menuOuvert.set(false)', '(document:keydown.escape)': 'echap()' },
 })
 export class FilGroupe {
   private readonly api = inject(GroupMessagingService);
@@ -75,6 +76,9 @@ export class FilGroupe {
   protected readonly erreurEnvoi = signal<string | null>(null);
   protected readonly infosOuvertes = signal(false);
   protected readonly menuOuvert = signal(false);
+  /** Message en cours de modification : la saisie le reprend, « Enregistrer » remplace « Envoyer ». */
+  protected readonly edition = signal<GroupMessage | null>(null);
+  private brouillonAvantEdition = '';
 
   private readonly moiMembre = computed(() => this.groupe()?.members?.find((m) => m.userId === this.moiId));
   /** Propriétaire ou administrateur du groupe. */
@@ -120,6 +124,7 @@ export class FilGroupe {
     this.erreurEnvoi.set(null);
     this.infosOuvertes.set(false);
     this.menuOuvert.set(false);
+    this.edition.set(null);
 
     return forkJoin([this.api.getGroupById(id), this.api.getGroupMessages(id, 0, TAILLE_PAGE)]).pipe(
       tap(([groupe, page]) => {
@@ -154,14 +159,17 @@ export class FilGroupe {
   }
 
   /**
-   * Intègre la page relue : nouveaux messages, et messages supprimés entre-temps.
+   * Intègre la page relue : nouveaux messages, et messages modifiés ou supprimés entre-temps.
    * Un nouvel événement (ajout, réglage, rôle...) recharge aussi le groupe pour mettre à jour droits et participants.
    */
   private integrer(recus: GroupMessage[], total?: number): void {
     const actuels = new Map(this.messages().map((m) => [m.id, m]));
     const nouveaux = recus.filter((m) => !actuels.has(m.id));
-    const supprimes = recus.some((m) => m.deleted && actuels.get(m.id)?.deleted === false);
-    if (!nouveaux.length && !supprimes) return;
+    const changes = recus.some((m) => {
+      const actuel = actuels.get(m.id);
+      return !!actuel && (actuel.deleted !== m.deleted || actuel.editedAt !== m.editedAt);
+    });
+    if (!nouveaux.length && !changes) return;
     const etaitEnBas = this.estEnBas();
     const fusion = fusionnerMessages(this.messages(), recus);
     this.total.update((t) => Math.max(t + nouveaux.length, total ?? 0));
@@ -212,6 +220,10 @@ export class FilGroupe {
   }
 
   protected envoyer(): void {
+    if (this.edition()) {
+      this.enregistrerEdition();
+      return;
+    }
     const content = this.brouillon().trim();
     if (!content || this.envoi() || content.length > MESSAGE_MAX) return;
     const id = this.id();
@@ -245,6 +257,54 @@ export class FilGroupe {
     return m.type !== 'SYSTEM' && !m.deleted && (m.senderId === this.moiId || this.estAdminGroupe());
   }
 
+  /** Seul l'auteur modifie son message, pendant 15 minutes, et tant qu'il peut écrire dans le groupe. */
+  protected peutModifier(m: GroupMessage): boolean {
+    return m.type !== 'SYSTEM' && m.senderId === this.moiId && !this.ecritureFermee() && encoreModifiable(m);
+  }
+
+  protected commencerEdition(m: GroupMessage): void {
+    if (!this.edition()) this.brouillonAvantEdition = this.brouillon();
+    this.edition.set(m);
+    this.erreurEnvoi.set(null);
+    this.brouillon.set(m.content ?? '');
+    this.saisie()?.focus();
+  }
+
+  protected annulerEdition(): void {
+    if (!this.edition()) return;
+    this.edition.set(null);
+    this.brouillon.set(this.brouillonAvantEdition);
+    this.brouillonAvantEdition = '';
+  }
+
+  private enregistrerEdition(): void {
+    const m = this.edition();
+    const content = this.brouillon().trim();
+    if (!m?.id || !content || this.envoi() || content.length > MESSAGE_MAX) return;
+    if (content === m.content) {
+      this.annulerEdition();
+      return;
+    }
+    const id = this.id();
+    this.envoi.set(true);
+    this.erreurEnvoi.set(null);
+    this.api.editGroupMessage(id, m.id, { content }).subscribe({
+      next: (modifie) => {
+        this.envoi.set(false);
+        if (id !== this.id()) return;
+        const dernier = this.messages().at(-1);
+        this.messages.update((l) => fusionnerMessages(l, [modifie]));
+        if (dernier?.id === modifie.id) this.store.maj(id, { lastMessage: modifie.content });
+        this.annulerEdition();
+        this.saisie()?.focus();
+      },
+      error: (e) => {
+        this.envoi.set(false);
+        this.erreurEnvoi.set(messageErreur(e, ERREURS_MODIFICATION));
+      },
+    });
+  }
+
   protected async supprimerMessage(m: GroupMessage): Promise<void> {
     const ok = await this.confirmation.demander({
       titre: 'Supprimer le message',
@@ -258,6 +318,7 @@ export class FilGroupe {
       next: () => {
         if (id !== this.id()) return;
         this.messages.update((l) => l.map((x) => (x.id === m.id ? { ...x, deleted: true, content: undefined } : x)));
+        if (this.edition()?.id === m.id) this.annulerEdition();
       },
       error: (e) => this.toast.erreur(messageErreur(e, { 403: 'Vous ne pouvez supprimer que vos propres messages.' })),
     });
@@ -267,6 +328,11 @@ export class FilGroupe {
   protected basculerMenu(e: Event): void {
     e.stopPropagation(); // sinon le clic sur le document referme aussitôt le menu
     this.menuOuvert.update((o) => !o);
+  }
+
+  protected echap(): void {
+    this.menuOuvert.set(false);
+    this.annulerEdition();
   }
 
   protected preference(changement: GroupPreferencesUpdateRequest, confirmationToast: string): void {

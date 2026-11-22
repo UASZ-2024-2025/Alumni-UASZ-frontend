@@ -21,6 +21,8 @@
 }
 .icone { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .identite { flex: 1; min-width: 0; }
+// Fil privé : l'en-tête n'ouvre pas de panneau, l'identité est un simple bloc.
+div.identite { display: flex; align-items: center; gap: 10px; padding: 2px 6px; app-avatar { width: 2.5rem; flex: none; } }
 .identite .texte { display: flex; flex-direction: column; min-width: 0; }
 .identite strong, .identite small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .identite small { color: var(--mu); font-size: var(--t-s); }
@@ -65,22 +67,32 @@
 }
 .auteur { display: block; margin-bottom: 1px; font-size: var(--t-s); font-weight: 700; }
 .bulle p { margin: 0; font-size: .9375rem; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-// L'heure flotte en bas à droite de la bulle, sans ligne à elle seule quand il y a la place.
-.bulle time { float: right; margin: 6px 0 -4px 10px; color: var(--mu); font-size: var(--t-xs); line-height: 1; }
+// « Modifié », l'heure et l'accusé flottent en bas à droite de la bulle, sans ligne à eux seuls quand il y a la place.
+.meta {
+  float: right; display: inline-flex; align-items: center; gap: 4px; margin: 6px 0 -4px 10px;
+  color: var(--mu); font-size: var(--t-xs); line-height: 1; white-space: nowrap;
+}
+.modifie { font-style: italic; }
+// Accusé façon WhatsApp : une coche à l'envoi, deux coches vertes une fois lu.
+.accuse { width: 16px; height: 11px; fill: none; stroke: var(--mu); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.accuse.lu { stroke: var(--g7); }
+// Bulle en cours de modification : repérée dans le fil pendant que la saisie la reprend.
+.bulle.en-edition { outline: 2px solid var(--g7); outline-offset: 1px; }
 
 // Message supprimé : texte gris en italique précédé d'un symbole « interdit », comme WhatsApp.
 .bulle.supprime p { color: var(--mu); font-style: italic; }
 .bulle.supprime p svg { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 
-// Corbeille qui apparaît au survol (ou au focus clavier) de la bulle.
-// Le bouton garde le focus clavier visible même quand il est transparent.
-.supprimer {
-  position: absolute; top: 50%; right: calc(100% + 4px); opacity: 0; transform: translateY(-50%); transition: opacity .12s;
+// Actions (modifier, supprimer) qui apparaissent au survol (ou au focus clavier) de la bulle.
+// Les boutons gardent le focus clavier visible même quand ils sont transparents.
+.actions-bulle {
+  position: absolute; top: 50%; right: calc(100% + 4px); display: flex; gap: 2px;
+  opacity: 0; transform: translateY(-50%); transition: opacity .12s;
   &:focus-within { opacity: 1; }
 }
-.bulle:not(.moi) .supprimer { right: auto; left: calc(100% + 4px); }
-.bulle:hover .supprimer { opacity: 1; }
-@media (hover: none) { .supprimer { opacity: .7; } }
+.bulle:not(.moi) .actions-bulle { right: auto; left: calc(100% + 4px); }
+.bulle:hover .actions-bulle { opacity: 1; }
+@media (hover: none) { .actions-bulle { opacity: .7; } }
 
 // Événement du groupe (création, ajout, départ, réglage) : pastille centrée, sans auteur.
 .evenement { align-self: center; max-width: 85%; margin: 8px 0; text-align: center; }
@@ -92,6 +104,16 @@
 
 // --- Saisie ---
 .saisie { padding: 8px 12px 10px; border-top: 1px solid var(--bd); background: var(--sf); }
+.bandeau-edition {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 6px 6px 6px 10px;
+  border-left: 4px solid var(--g7); border-radius: var(--rayon-s); background: var(--g0);
+  > svg { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--g7); stroke-width: 1.6; stroke-linejoin: round; }
+}
+.texte-edition {
+  display: flex; flex: 1; flex-direction: column; min-width: 0;
+  strong { color: var(--g8); font-size: var(--t-s); }
+  small { overflow: hidden; color: var(--mu); text-overflow: ellipsis; white-space: nowrap; }
+}
 .erreur-envoi { margin: 0 0 6px; color: var(--dg); font-size: var(--t-s); }
 .compteur { margin: 4px 0 0; color: var(--mu); font-size: var(--t-xs); text-align: right; }
 .lecture-seule {

@@ -6,7 +6,7 @@ import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 
 /**
  * Liste des conversations partagée entre la page (colonne de gauche) et le fil ouvert (route enfant).
- * Fournie par la page `Conversations` : le fil y reporte ses changements (message envoyé, lecture).
+ * Fournie par la page `Conversations` : le fil y reporte ses changements (message envoyé, modifié, lecture, préférences).
  */
 @Injectable()
 export class ConversationsStore {
@@ -17,10 +17,17 @@ export class ConversationsStore {
   readonly erreur = signal<string | null>(null);
   readonly charge = signal(false);
 
-  /** Les conversations les plus récentes en premier. */
+  /** Comme les groupes (et WhatsApp) : épinglées en haut, puis les conversations les plus récentes. */
   readonly liste = computed(() =>
-    [...this.conversations()].sort((a, b) => (b.lastMessageTime ?? '').localeCompare(a.lastMessageTime ?? '')),
+    [...this.conversations()].sort(
+      (a, b) =>
+        Number(!!b.preferences?.pinned) - Number(!!a.preferences?.pinned) ||
+        (b.lastMessageTime ?? '').localeCompare(a.lastMessageTime ?? ''),
+    ),
   );
+  /** La liste principale exclut les conversations archivées, rangées dans leur propre section. */
+  readonly actives = computed(() => this.liste().filter((c) => !c.preferences?.archived));
+  readonly archives = computed(() => this.liste().filter((c) => c.preferences?.archived));
 
   /** Premier chargement, visible (spinner, message d'erreur). */
   charger(): void {
@@ -51,6 +58,10 @@ export class ConversationsStore {
     });
   }
 
+  trouver(recipientId: string | null): ConversationSummary | undefined {
+    return this.conversations().find((c) => c.recipientId === recipientId);
+  }
+
   maj(recipientId: string, changements: Partial<ConversationSummary>): void {
     this.conversations.update((l) => l.map((c) => (c.recipientId === recipientId ? { ...c, ...changements } : c)));
   }
@@ -59,15 +70,24 @@ export class ConversationsStore {
   apresEnvoi(message: PrivateMessage): void {
     const id = message.recipientId;
     if (!id) return;
-    const existante = this.conversations().find((c) => c.recipientId === id);
+    const existante = this.trouver(id);
     const maj: ConversationSummary = {
       ...existante,
       recipientId: id,
       recipientName: existante?.recipientName ?? message.recipientName,
       lastMessage: message.content,
+      lastMessageSenderId: message.senderId,
+      lastMessageDeleted: false,
       lastMessageTime: message.createdAt,
       unreadCount: 0,
     };
     this.conversations.update((l) => [maj, ...l.filter((c) => c.recipientId !== id)]);
+  }
+
+  /** Un message modifié ou supprimé n'est repris dans l'aperçu que s'il est le dernier de la conversation. */
+  apresChangement(recipientId: string, message: PrivateMessage): void {
+    const c = this.trouver(recipientId);
+    if (!c || c.lastMessageTime !== message.createdAt) return;
+    this.maj(recipientId, { lastMessage: message.deleted ? undefined : message.content, lastMessageDeleted: !!message.deleted });
   }
 }
