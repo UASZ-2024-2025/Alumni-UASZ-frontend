@@ -10,7 +10,7 @@
       [placeholder]="onglet() === 'etudiants' ? 'Nom, prénom ou compétence' : onglet() === 'alumni' ? 'Nom, entreprise ou poste' : 'Nom ou secteur'" />
 
     @if (onglet() === 'etudiants') {
-      <app-champ libelle="Spécialité" type="select" [options]="optionsSpecialite" formControlName="specialty" />
+      <app-champ libelle="Spécialité" placeholder="Toutes" [suggestions]="specialites" formControlName="specialty" />
       <app-champ libelle="Promotion" type="number" placeholder="Ex. 2026" formControlName="annee" />
       <app-champ libelle="Disponibilité" type="select" [options]="optionsDisponibilite" formControlName="disponibilite" />
     }

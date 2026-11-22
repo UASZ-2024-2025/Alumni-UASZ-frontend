@@ -96,6 +96,18 @@ describe('CvPdfService', () => {
       expect(contenu).toContain('Entreprise 9');
     });
 
+    it('garde toute la colonne gauche (30 compétences et 30 centres d’intérêt) sur 2 pages au plus', async () => {
+      const d = {
+        ...donnees(),
+        competences: Array.from({ length: 30 }, (_, i) => `Compétence${i + 1}`),
+        interets: Array.from({ length: 30 }, (_, i) => `Intérêt${i + 1}`),
+      };
+      const contenu = await texte(await service.generer(d));
+      expect(await pages(d)).toBeLessThanOrEqual(2);
+      expect(contenu).toContain('Compétence30');
+      expect(contenu).toContain('Intérêt30');
+    });
+
     it('affiche les centres d’intérêt', async () => {
       expect(await texte(await service.generer({ ...donnees(), interets: ['Échecs'] }))).toContain('CENTRES D');
     });

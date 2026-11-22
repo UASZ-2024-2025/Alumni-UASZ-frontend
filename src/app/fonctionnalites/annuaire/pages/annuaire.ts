@@ -46,7 +46,7 @@ export class Annuaire implements OnInit {
   private readonly entreprisesApi = inject(CompaniesService);
 
   protected readonly onglets = ONGLETS.map((o) => ({ cle: o.code, libelle: o.libelle }));
-  protected readonly optionsSpecialite: OptionChamp[] = [{ valeur: '', libelle: 'Toutes' }, ...SPECIALITES.map((s) => ({ valeur: s, libelle: s }))];
+  protected readonly specialites = SPECIALITES;
   protected readonly optionsDisponibilite: OptionChamp[] = [
     { valeur: '', libelle: 'Toutes' },
     ...(Object.entries(LIBELLES_DISPONIBILITE) as [AvailabilityStatus, string][]).map(([valeur, libelle]) => ({ valeur, libelle })),

@@ -120,66 +120,6 @@ export class CvPdfService {
 
     fondColonne();
 
-    // ----- Colonne gauche (page 1 ; un élément qui ne tient pas est omis en entier, jamais coupé) -----
-    let yg = MARGE + 6;
-    doc.setFillColor(...(theme.colonnePleine ? BLANC : theme.accent));
-    doc.circle(COL_G / 2, yg + 11, 11, 'F');
-    police('bold', 17);
-    doc.setTextColor(...(theme.colonnePleine ? theme.accent : BLANC));
-    doc.text(versLatin(initialesCv(d)), COL_G / 2, yg + 14, { align: 'center' });
-    yg += 34;
-    const limiteGauche = HAUTEUR - MARGE;
-    const titreGauche = (libelle: string) => {
-      yg += 4 * e;
-      police('bold', 10);
-      doc.setTextColor(...texteGauche);
-      doc.text(versLatin(libelle.toUpperCase()), MARGE, yg);
-      doc.setDrawColor(...texteGauche);
-      doc.setLineWidth(0.3);
-      doc.line(MARGE, yg + 1.6 * e, COL_G - MARGE, yg + 1.6 * e);
-      yg += 7 * e;
-    };
-    /** Écrit un élément (1 à n lignes de styles différents) seulement s'il tient en entier. */
-    const elementGauche = (lignes: { texte: string; style?: Style; taille?: number; puce?: boolean }[], espace: number) => {
-      const decoupees = lignes.map((l) => {
-        const taille = l.taille ?? 9;
-        police(l.style ?? 'normal', taille);
-        const brutes = doc.splitTextToSize(versLatin((l.puce ? '•  ' : '') + l.texte), LARGEUR_GAUCHE) as string[];
-        return { l, taille, brutes };
-      });
-      const hauteur = decoupees.reduce((h, x) => h + x.brutes.length * x.taille * e * 0.45, 0);
-      if (yg + hauteur > limiteGauche) return;
-      doc.setTextColor(...texteGauche);
-      for (const { l, taille, brutes } of decoupees) {
-        police(l.style ?? 'normal', taille);
-        brutes.forEach((ligne, i) => {
-          doc.text(i > 0 && l.puce ? '   ' + ligne : ligne, MARGE, yg);
-          yg += taille * e * 0.45;
-        });
-      }
-      yg += espace * e;
-    };
-
-    const contact = [d.email, d.telephone].filter(Boolean);
-    if (contact.length) {
-      titreGauche(t.contact);
-      contact.forEach((c) => elementGauche([{ texte: c }], 1.5));
-    }
-    if (d.competences.length) {
-      titreGauche(t.competences);
-      d.competences.forEach((c) => elementGauche([{ texte: c, puce: true }], 0.8));
-    }
-    if (d.langues.length) {
-      titreGauche(t.langues);
-      d.langues.forEach((l) =>
-        elementGauche([{ texte: l.language, style: 'bold' }, ...(l.proficiency ? [{ texte: l.proficiency, style: 'italic' as Style, taille: 8.5 }] : [])], 1.5),
-      );
-    }
-    if (d.interets.length) {
-      titreGauche(t.interets);
-      d.interets.forEach((c) => elementGauche([{ texte: c, puce: true }], 0.8));
-    }
-
     // ----- Colonne principale : en-tête puis sections -----
     y = MARGE + 10;
     police('bold', 24);
@@ -222,6 +162,80 @@ export class CvPdfService {
           ),
         ),
       );
+    }
+
+    // ----- Colonne gauche (commence page 1, se poursuit page 2 si besoin ; jamais d'élément coupé ni omis) -----
+    let pageG = 1;
+    doc.setPage(1);
+    let yg = MARGE + 6;
+    doc.setFillColor(...(theme.colonnePleine ? BLANC : theme.accent));
+    doc.circle(COL_G / 2, yg + 11, 11, 'F');
+    police('bold', 17);
+    doc.setTextColor(...(theme.colonnePleine ? theme.accent : BLANC));
+    doc.text(versLatin(initialesCv(d)), COL_G / 2, yg + 14, { align: 'center' });
+    yg += 34;
+    const limiteGauche = HAUTEUR - MARGE;
+    /** Passe en haut de la page suivante (créée au besoin) si `hauteur` ne tient plus. */
+    const placeGauche = (hauteur: number) => {
+      if (yg + hauteur <= limiteGauche) return;
+      pageG++;
+      if (pageG > doc.getNumberOfPages()) {
+        doc.addPage();
+        fondColonne();
+      }
+      doc.setPage(pageG);
+      yg = MARGE + 2;
+    };
+    const titreGauche = (libelle: string) => {
+      placeGauche(4 * e + 7 * e + 9 * e); // le titre reste avec son premier élément
+      yg += 4 * e;
+      police('bold', 10);
+      doc.setTextColor(...texteGauche);
+      doc.text(versLatin(libelle.toUpperCase()), MARGE, yg);
+      doc.setDrawColor(...texteGauche);
+      doc.setLineWidth(0.3);
+      doc.line(MARGE, yg + 1.6 * e, COL_G - MARGE, yg + 1.6 * e);
+      yg += 7 * e;
+    };
+    /** Écrit un élément (1 à n lignes de styles différents), entier, sur la page courante de la colonne. */
+    const elementGauche = (lignes: { texte: string; style?: Style; taille?: number; puce?: boolean }[], espace: number) => {
+      const decoupees = lignes.map((l) => {
+        const taille = l.taille ?? 9;
+        police(l.style ?? 'normal', taille);
+        const brutes = doc.splitTextToSize(versLatin((l.puce ? '•  ' : '') + l.texte), LARGEUR_GAUCHE) as string[];
+        return { l, taille, brutes };
+      });
+      const hauteur = decoupees.reduce((h, x) => h + x.brutes.length * x.taille * e * 0.45, 0);
+      placeGauche(hauteur);
+      doc.setTextColor(...texteGauche);
+      for (const { l, taille, brutes } of decoupees) {
+        police(l.style ?? 'normal', taille);
+        brutes.forEach((ligne, i) => {
+          doc.text(i > 0 && l.puce ? '   ' + ligne : ligne, MARGE, yg);
+          yg += taille * e * 0.45;
+        });
+      }
+      yg += espace * e;
+    };
+
+    const contact = [d.email, d.telephone].filter(Boolean);
+    if (contact.length) {
+      titreGauche(t.contact);
+      contact.forEach((c) => elementGauche([{ texte: c }], 1.5));
+    }
+    if (d.competences.length) {
+      titreGauche(t.competences);
+      d.competences.forEach((c) => elementGauche([{ texte: c, puce: true }], 0.8));
+    }
+    if (d.langues.length) {
+      titreGauche(t.langues);
+      d.langues.forEach((l) =>
+        elementGauche([{ texte: l.language, style: 'bold' }, ...(l.proficiency ? [{ texte: l.proficiency, style: 'italic' as Style, taille: 8.5 }] : [])], 1.5),
+      );
+    }
+    if (d.interets.length) {
+      titreGauche(t.interets);
+      d.interets.forEach((c) => elementGauche([{ texte: c, puce: true }], 0.8));
     }
 
     doc.setProperties({ title: versLatin(d.titre || `CV ${nomComplet}`), author: versLatin(nomComplet) });

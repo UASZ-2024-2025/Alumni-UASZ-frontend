@@ -42,7 +42,7 @@
                 <div class="changement-statut">
                   <app-champ libelle="Nouveau statut" type="select" [options]="optionsSuivants(c)" [name]="'statut-' + c.id"
                     [ngModel]="choix()[c.id ?? '']" (ngModelChange)="choisir(c.id, $event)" />
-                  <app-bouton [petit]="true" [chargement]="enCours() === c.id" [desactive]="enCours() === c.id"
+                  <app-bouton [petit]="true" [chargement]="enCours() === c.id" [desactive]="enCours() === c.id || !choix()[c.id ?? '']"
                     (clic)="changer(c, choix()[c.id ?? ''] ?? '')">Appliquer</app-bouton>
                 </div>
               } @else {

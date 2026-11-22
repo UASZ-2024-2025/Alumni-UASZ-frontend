@@ -29,7 +29,7 @@ const INTRO: Record<string, string> = {
   selector: 'app-accueil',
   imports: [Alerte, Bouton, Carte, CarteStat, EntetePage, EtatVide],
   template: `
-    <app-entete-page [titre]="'Bonjour ' + auth.utilisateur()?.firstName">
+    <app-entete-page [titre]="salutation()">
       <p class="intro">{{ intro() }}</p>
     </app-entete-page>
 
@@ -38,14 +38,13 @@ const INTRO: Record<string, string> = {
         {{ message }}
         <app-bouton variante="secondaire" [petit]="true" (clic)="charger()">Réessayer</app-bouton>
       </app-alerte>
-    } @else {
-      <div class="chiffres">
-        <app-carte-stat libelle="Notifications non lues" [valeur]="nonLues()" />
-        @for (c of chiffres(); track c.libelle) {
-          <app-carte-stat [libelle]="c.libelle" [valeur]="c.valeur" />
-        }
-      </div>
     }
+    <div class="chiffres">
+      <app-carte-stat libelle="Notifications non lues" [valeur]="nonLues()" />
+      @for (c of chiffres(); track c.libelle) {
+        <app-carte-stat [libelle]="c.libelle" [valeur]="c.valeur" />
+      }
+    </div>
 
     <app-carte titre="Accès rapides">
       @if (raccourcis().length === 0) {
@@ -73,6 +72,10 @@ export class Accueil implements OnInit {
   private readonly offres = inject(OffersService);
   private readonly candidatures = inject(ApplicationsService);
 
+  protected readonly salutation = computed(() => {
+    const prenom = this.auth.utilisateur()?.firstName?.trim();
+    return prenom ? `Bonjour ${prenom}` : 'Bonjour';
+  });
   protected readonly nonLues = signal<number | undefined>(undefined);
   protected readonly erreur = signal<string | null>(null);
   /** Chiffres propres au rôle ; un chiffre indisponible reste à « — » sans bloquer la page. */

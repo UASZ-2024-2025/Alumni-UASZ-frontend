@@ -56,11 +56,12 @@ describe('CandidaturesOffre', () => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
-  const choisir = (el: HTMLElement, ligne: number, statut: string) => {
+  const choisir = (fixture: ComponentFixture<CandidaturesOffre>, el: HTMLElement, ligne: number, statut: string) => {
     const ligneEl = el.querySelectorAll('tbody tr')[ligne];
     const select = ligneEl.querySelector<HTMLSelectElement>('select')!;
     select.value = statut;
     select.dispatchEvent(new Event('change'));
+    fixture.detectChanges(); // le bouton « Appliquer » n'est actif qu'une fois un statut choisi
     ligneEl.querySelector<HTMLButtonElement>('app-bouton button')!.click();
   };
 
@@ -139,7 +140,7 @@ describe('CandidaturesOffre', () => {
 
   it('change le statut, met la ligne à jour et prévient par un toast', async () => {
     const { fixture, el } = monter(of([RECUE]));
-    choisir(el, 0, 'UNDER_REVIEW');
+    choisir(fixture, el, 0, 'UNDER_REVIEW');
     await attendre(fixture);
 
     expect(confirmation.demander).not.toHaveBeenCalled();
@@ -152,14 +153,14 @@ describe('CandidaturesOffre', () => {
 
   it("n'envoie rien tant qu'aucun nouveau statut n'est choisi", async () => {
     const { fixture, el } = monter(of([RECUE]));
-    choisir(el, 0, '');
+    choisir(fixture, el, 0, '');
     await attendre(fixture);
     expect(service.changerStatut).not.toHaveBeenCalled();
   });
 
   it('demande une confirmation avant de refuser et envoie le refus une fois confirmé', async () => {
     const { fixture, el } = monter(of([RECUE]));
-    choisir(el, 0, 'REJECTED');
+    choisir(fixture, el, 0, 'REJECTED');
     await attendre(fixture);
 
     expect(confirmation.demander).toHaveBeenCalledWith(expect.objectContaining({ danger: true }));
@@ -170,7 +171,7 @@ describe('CandidaturesOffre', () => {
   it("n'envoie rien si le refus n'est pas confirmé", async () => {
     confirmation.demander.mockResolvedValue(false);
     const { fixture, el } = monter(of([RECUE]));
-    choisir(el, 0, 'REJECTED');
+    choisir(fixture, el, 0, 'REJECTED');
     await attendre(fixture);
 
     expect(service.changerStatut).not.toHaveBeenCalled();
@@ -180,7 +181,7 @@ describe('CandidaturesOffre', () => {
   it('garde la liste et affiche un message si la transition est refusée (400)', async () => {
     service.changerStatut.mockReturnValue(throwError(() => new ErreurApi(400, 'INVALID_STATUS_TRANSITION', 'Transition interdite')));
     const { fixture, el } = monter(of([RECUE]));
-    choisir(el, 0, 'UNDER_REVIEW');
+    choisir(fixture, el, 0, 'UNDER_REVIEW');
     await attendre(fixture);
 
     expect(el.querySelector('[role="alert"]')!.textContent).toContain("n'est pas autorisé");
@@ -192,7 +193,7 @@ describe('CandidaturesOffre', () => {
   it('affiche le refus (403) lors du changement de statut', async () => {
     service.changerStatut.mockReturnValue(throwError(() => new ErreurApi(403, 'FORBIDDEN', 'Refusé')));
     const { fixture, el } = monter(of([RECUE]));
-    choisir(el, 0, 'UNDER_REVIEW');
+    choisir(fixture, el, 0, 'UNDER_REVIEW');
     await attendre(fixture);
     expect(el.querySelector('[role="alert"]')!.textContent).toContain('Accès refusé');
   });
