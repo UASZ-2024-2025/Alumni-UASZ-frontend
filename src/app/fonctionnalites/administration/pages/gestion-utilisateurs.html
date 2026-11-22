@@ -37,27 +37,27 @@
             @case ('statut') { <app-badge [ton]="tonStatut(u.status)">{{ libelleStatut(u.status) }}</app-badge> }
             @case ('creation') { {{ u.createdAt ? (u.createdAt | date: 'dd/MM/yyyy') : '—' }} }
             @default {
-              <div class="actions">
+              <app-menu-actions [libelle]="'Actions pour ' + nomComplet(u)">
                 @if (u.status !== 'ACTIF') {
-                  <app-bouton [petit]="true" [desactive]="enCours() === u.id" [libelleAria]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)" (clic)="activer(u)">
+                  <app-bouton [desactive]="enCours() === u.id" [libelleAria]="(u.status === 'SUSPENDU' ? 'Réactiver ' : 'Activer ') + nomComplet(u)" (clic)="activer(u)">
                     {{ u.status === 'SUSPENDU' ? 'Réactiver' : 'Activer' }}
                   </app-bouton>
                 }
                 @if (u.status === 'ACTIF') {
-                  <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
+                  <app-bouton variante="secondaire" [desactive]="enCours() === u.id || estMoi(u)"
                     [libelleAria]="'Suspendre ' + nomComplet(u)" (clic)="suspendre(u)">
                     Suspendre
                   </app-bouton>
                 }
-                <app-bouton variante="secondaire" [petit]="true" [desactive]="enCours() === u.id"
+                <app-bouton variante="secondaire" [desactive]="enCours() === u.id"
                   [libelleAria]="'Modifier ' + nomComplet(u)" (clic)="ouvrirEdition(u)">
                   Modifier
                 </app-bouton>
-                <app-bouton variante="danger" [petit]="true" [desactive]="enCours() === u.id || estMoi(u)"
+                <app-bouton variante="danger" [desactive]="enCours() === u.id || estMoi(u)"
                   [libelleAria]="'Supprimer ' + nomComplet(u)" (clic)="supprimer(u)">
                   Supprimer
                 </app-bouton>
-              </div>
+              </app-menu-actions>
             }
           }
         </ng-template>

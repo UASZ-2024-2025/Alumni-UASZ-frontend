@@ -50,12 +50,12 @@
                 [ngModel]="!!c.isPartner" [disabled]="enCours() === c.id" (ngModelChange)="basculerPartenaire(c, $event)" />
             }
             @default {
-              <div class="actions">
-                <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Modifier ' + c.name"
+              <app-menu-actions [libelle]="'Actions pour ' + c.name">
+                <app-bouton variante="secondaire" [libelleAria]="'Modifier ' + c.name"
                   (clic)="modifier(c)">Modifier</app-bouton>
-                <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Rattacher ' + c.name + ' à un compte'"
+                <app-bouton variante="secondaire" [libelleAria]="'Rattacher ' + c.name + ' à un compte'"
                   (clic)="ouvrirRattachement(c)">Rattacher</app-bouton>
-              </div>
+              </app-menu-actions>
             }
           }
         </ng-template>

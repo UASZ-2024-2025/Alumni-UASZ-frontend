@@ -84,6 +84,8 @@ describe('GestionEntreprises', () => {
   });
 
   const ouvrirRattachement = () => {
+    el.querySelector<HTMLButtonElement>('button[aria-label^="Actions pour"]')!.click();
+    fixture.detectChanges();
     const bouton = [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Rattacher')!;
     bouton.click();
     fixture.detectChanges();
@@ -172,6 +174,8 @@ describe('GestionEntreprises', () => {
   });
 
   it('modifie une entreprise existante à partir du formulaire prérempli', () => {
+    el.querySelector<HTMLButtonElement>('button[aria-label="Actions pour Orange"]')!.click();
+    fixture.detectChanges();
     el.querySelector<HTMLButtonElement>('button[aria-label="Modifier Orange"]')!.click();
     fixture.detectChanges();
     expect(el.querySelector<HTMLInputElement>('app-champ[formControlName="name"] input')!.value).toBe('Orange');

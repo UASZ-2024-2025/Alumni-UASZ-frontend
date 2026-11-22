@@ -11,6 +11,7 @@ import { Bouton } from '../../../commun/components/bouton/bouton';
 import { CaseACocher } from '../../../commun/components/case-a-cocher/case-a-cocher';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
+import { MenuActions } from '../../../commun/components/menu-actions/menu-actions';
 import { Modale } from '../../../commun/components/modale/modale';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
@@ -21,7 +22,7 @@ import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 
 @Component({
   selector: 'app-gestion-entreprises',
-  imports: [FormsModule, ReactiveFormsModule, Alerte, Avatar, Bouton, Carte, CaseACocher, Champ, EtatVide, Modale, Pagination, Spinner, Tableau, EntetePage],
+  imports: [FormsModule, ReactiveFormsModule, Alerte, Avatar, Bouton, Carte, CaseACocher, Champ, EtatVide, Modale, Pagination, Spinner, Tableau, EntetePage, MenuActions],
   templateUrl: './gestion-entreprises.html',
   styleUrl: '../administration.scss',
 })

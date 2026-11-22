@@ -38,3 +38,14 @@
     td.cellule-actions .actions > * { flex: 1; }
   }
 }
+
+// Boutons rangés dans un <app-menu-actions> : lignes de menu sobres, alignées à gauche.
+.menu-actions__liste .btn {
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--tx);
+  &:hover:not(:disabled) { background: var(--g0); color: var(--g8); transform: none; }
+  &.btn--danger { color: var(--dg); &:hover:not(:disabled) { background: var(--erreur-fond); color: var(--dg); filter: none; } }
+}

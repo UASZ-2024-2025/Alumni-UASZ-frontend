@@ -26,8 +26,14 @@ describe('GestionUtilisateurs', () => {
     fixture.detectChanges();
     el = fixture.nativeElement;
   };
-  const bouton = (nom: string) =>
-    el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
+  const bouton = (nom: string) => {
+    const cible = nom.slice(nom.indexOf(' ') + 1);
+    if (!el.querySelector(`button[aria-label="${nom}"]`)) {
+      el.querySelector<HTMLButtonElement>(`button[aria-label="Actions pour ${cible}"]`)?.click();
+      fixture.detectChanges();
+    }
+    return el.querySelector<HTMLButtonElement>(`button[aria-label="${nom}"]`)!;
+  };
   const cliquer = (b: HTMLButtonElement) => { b.click(); fixture.detectChanges(); };
   const cliquerEtAttendre = async (b: HTMLButtonElement) => { b.click(); await fixture.whenStable(); fixture.detectChanges(); };
 

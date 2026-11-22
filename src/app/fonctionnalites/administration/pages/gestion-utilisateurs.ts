@@ -12,6 +12,7 @@ import { Badge } from '../../../commun/components/badge/badge';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
+import { MenuActions } from '../../../commun/components/menu-actions/menu-actions';
 import { Modale } from '../../../commun/components/modale/modale';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Onglet, Onglets } from '../../../commun/components/onglets/onglets';
@@ -28,7 +29,7 @@ import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 @Component({
   selector: 'app-gestion-utilisateurs',
   templateUrl: './gestion-utilisateurs.html',
-  imports: [DatePipe, FormsModule, ReactiveFormsModule, Alerte, Avatar, Badge, Bouton, Carte, Champ, EtatVide, Modale, Onglets, Pagination, Spinner, Tableau, EntetePage],
+  imports: [DatePipe, FormsModule, ReactiveFormsModule, Alerte, Avatar, Badge, Bouton, Carte, Champ, EtatVide, Modale, Onglets, Pagination, Spinner, Tableau, EntetePage, MenuActions],
   styleUrl: '../administration.scss',
 })
 export class GestionUtilisateurs {
