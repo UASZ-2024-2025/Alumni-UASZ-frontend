@@ -8,6 +8,7 @@ import { OfferType } from '../../../api/generes/offres-emploi/model/offerType';
 import { Alerte } from '../../../commun/components/alerte/alerte';
 import { Badge, TonBadge } from '../../../commun/components/badge/badge';
 import { BarreRecherche } from '../../../commun/components/barre-recherche/barre-recherche';
+import { Carte } from '../../../commun/components/carte/carte';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
 import { Pagination } from '../../../commun/components/pagination/pagination';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
@@ -18,9 +19,10 @@ import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 /** Liste des offres d'emploi et de stage (ALUM-156) : recherche, filtre par type, pagination, lien vers le détail. */
 @Component({
   selector: 'app-liste-offres',
-  imports: [DatePipe, FormsModule, RouterLink, Alerte, Badge, BarreRecherche, Champ, Pagination, Tableau, EntetePage],
+  imports: [DatePipe, FormsModule, RouterLink, Alerte, Badge, BarreRecherche, Champ, Pagination, Tableau, EntetePage, Carte],
   templateUrl: './liste-offres.html',
   styles: `
+    app-carte { display: block; margin-top: 1rem; }
     .identite-texte { display: flex; flex-direction: column; gap: 2px; }
     .identite-texte small { color: var(--mu); }
   `,

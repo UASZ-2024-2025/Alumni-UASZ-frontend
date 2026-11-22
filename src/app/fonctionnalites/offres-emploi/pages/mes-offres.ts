@@ -60,7 +60,7 @@ const MESSAGES_LISTE: Record<number, string> = {
             }
             @case ('createdAt') { {{ ligne.createdAt | date: 'dd/MM/yyyy' }} }
             @case ('candidatures') {
-              <app-bouton variante="secondaire" [petit]="true" [lien]="'/offres-emploi/' + ligne.id + '/candidatures'">Voir</app-bouton>
+              <a class="lien-retour" [routerLink]="'/offres-emploi/' + ligne.id + '/candidatures'">Voir les candidatures</a>
             }
             @default { {{ ligne[cle] }} }
           }

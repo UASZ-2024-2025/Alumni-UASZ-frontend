@@ -1,5 +1,5 @@
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ApplicationsService } from '../../api/generes/offres-emploi/api/applications.service';
 import { OffersService } from '../../api/generes/offres-emploi/api/offers.service';
@@ -8,12 +8,9 @@ import { NotificationsService } from '../../api/generes/notifications-messagerie
 import { Alerte } from '../../commun/components/alerte/alerte';
 import { Bouton } from '../../commun/components/bouton/bouton';
 import { EntetePage } from '../../commun/components/entete-page/entete-page';
-import { Carte } from '../../commun/components/carte/carte';
 import { CarteStat } from '../../commun/components/carte-stat/carte-stat';
-import { EtatVide } from '../../commun/components/etat-vide/etat-vide';
 import { messageErreur } from '../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../socle/authentification/services/authentification.service';
-import { MENUS } from '../../socle/mise-en-page/menus.config';
 
 /** Phrase d'accueil propre à chaque rôle (ALUM-231 étudiant, ALUM-234 Alumni, ALUM-237 entreprise). */
 const INTRO: Record<string, string> = {
@@ -24,10 +21,10 @@ const INTRO: Record<string, string> = {
   ADMINISTRATEUR: 'Pilotez la plateforme : comptes, promotions, entreprises et statistiques.',
 };
 
-/** Page d'accueil : bonjour, notifications non lues, et raccourcis vers le menu du rôle. */
+/** Page d'accueil : bonjour, notifications non lues et chiffres clés du rôle (la navigation est dans le menu). */
 @Component({
   selector: 'app-accueil',
-  imports: [Alerte, Bouton, Carte, CarteStat, EntetePage, EtatVide],
+  imports: [Alerte, Bouton, CarteStat, EntetePage],
   template: `
     <app-entete-page [titre]="salutation()">
       <p class="intro">{{ intro() }}</p>
@@ -45,25 +42,11 @@ const INTRO: Record<string, string> = {
         <app-carte-stat [libelle]="c.libelle" [valeur]="c.valeur" />
       }
     </div>
-
-    <app-carte titre="Accès rapides">
-      @if (raccourcis().length === 0) {
-        <app-etat-vide titre="Aucun raccourci disponible" />
-      } @else {
-        <ul class="raccourcis">
-          @for (r of raccourcis(); track r.chemin) {
-            <li><app-bouton variante="secondaire" [pleineLargeur]="true" [lien]="r.chemin">{{ r.libelle }}</app-bouton></li>
-          }
-        </ul>
-      }
-    </app-carte>
   `,
   styles: `
     .intro { margin: .25rem 0 0; color: var(--mu); }
     .chiffres { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 10px; margin-bottom: 14px; }
-    app-carte, app-alerte { display: block; margin-bottom: 14px; }
-    .raccourcis app-bouton { display: block; }
-    .raccourcis { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+    app-alerte { display: block; margin-bottom: 14px; }
   `,
 })
 export class Accueil implements OnInit {
@@ -82,11 +65,6 @@ export class Accueil implements OnInit {
   protected readonly chiffres = signal<{ libelle: string; valeur?: number }[]>([]);
 
   protected readonly intro = computed(() => INTRO[this.auth.role() ?? ''] ?? '');
-  /** Les liens du menu du rôle, sans la messagerie ni les notifications (déjà dans la barre latérale). */
-  protected readonly raccourcis = computed(() =>
-    (MENUS[this.auth.role() ?? 'ETUDIANT'] ?? []).filter((m) => m.chemin !== '/notifications' && m.chemin !== '/messagerie'),
-  );
-
   ngOnInit(): void {
     this.charger();
   }
@@ -120,6 +98,17 @@ export class Accueil implements OnInit {
     }
     if (role === 'ENTREPRISE' && companyId) {
       ajouter('Mes offres', this.offres.searchOffers(undefined, undefined, companyId, undefined, undefined, undefined, 0, 1).pipe(map((r) => r.totalElements)));
+      // ponytail: le serveur n'a pas de total global, on additionne offre par offre (100 offres au plus) ; endpoint dédié si ça devient lourd
+      ajouter(
+        'Candidatures reçues',
+        this.offres.searchOffers(undefined, undefined, companyId, undefined, undefined, undefined, 0, 100).pipe(
+          switchMap((r) => {
+            const ids = (r.content ?? []).map((o) => o.id).filter((id): id is string => !!id);
+            return ids.length ? forkJoin(ids.map((id) => this.candidatures.getApplicationsForOffer(id))) : of([]);
+          }),
+          map((listes) => listes.reduce((t, l) => t + l.length, 0)),
+        ),
+      );
     }
   }
 }

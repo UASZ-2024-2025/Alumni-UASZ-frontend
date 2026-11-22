@@ -31,6 +31,7 @@ export function datesCoherentes(g: AbstractControl): ValidationErrors | null {
   imports: [ReactiveFormsModule, Alerte, Bouton, EntetePage, Carte, CaseACocher, Champ, EtatVide, Spinner],
   templateUrl: './profil-alumni.html',
   styleUrls: ['../../profil-etudiant/pages/profil-etudiant.scss', '../../annuaire/annuaire.scss'],
+  styles: `.page-pleine { max-width: 760px; } /* aligné à gauche comme les autres pages, sans le centrage de .page */`,
 })
 export class ProfilAlumni implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);

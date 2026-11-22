@@ -1,7 +1,7 @@
 // Styles communs aux pages « Mon profil » et « Mon CV ».
 :host { display: block; }
 
-.page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.page { max-width: 1180px; padding-bottom: 3rem; } // aligné à gauche comme les autres pages
 .page--etroite { max-width: 760px; }
 
 .entete {

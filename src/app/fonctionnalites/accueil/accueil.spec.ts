@@ -14,8 +14,8 @@ describe('Accueil', () => {
       providers: [
         provideRouter([]),
         { provide: AuthentificationService, useValue: { role: () => role, utilisateur: () => ({ firstName: 'Awa', companyId: 'c1' }) } },
-        { provide: OffersService, useValue: { searchOffers: () => of({ totalElements: 7 }) } },
-        { provide: ApplicationsService, useValue: { listMyApplications: () => of({ totalElements: 3 }) } },
+        { provide: OffersService, useValue: { searchOffers: () => of({ totalElements: 7, content: [{ id: 'o1' }] }) } },
+        { provide: ApplicationsService, useValue: { listMyApplications: () => of({ totalElements: 3 }), getApplicationsForOffer: () => of([{}, {}]) } },
         { provide: NotificationsService, useValue: { getUnreadNotificationCount: () => compteur } },
       ],
     });
@@ -28,17 +28,17 @@ describe('Accueil', () => {
     const el = monter('ETUDIANT', of({ unreadCount: 4 }));
     expect(el.querySelector('h1')!.textContent).toContain('Awa');
     expect(el.querySelector('app-carte-stat')!.textContent).toContain('4');
-    const liens = [...el.querySelectorAll('a')].map((a) => a.textContent!.trim());
-    expect(liens).toContain('Mon CV');
-    expect(liens).not.toContain('Notifications');
+    expect(el.querySelector('app-carte')).toBeNull(); // pas de raccourcis : le menu de gauche suffit
     const stats = [...el.querySelectorAll('app-carte-stat')].map((c) => c.textContent!.replace(/\s+/g, ' '));
     expect(stats.some((t) => t.includes('Mes candidatures') && t.includes('3'))).toBe(true);
     expect(stats.some((t) => t.includes('Offres ouvertes') && t.includes('7'))).toBe(true);
   });
 
-  it('adapte les raccourcis à l’entreprise', () => {
+  it('affiche les offres et les candidatures reçues de l’entreprise', () => {
     const el = monter('ENTREPRISE', of({ unreadCount: 0 }));
-    expect([...el.querySelectorAll('a')].map((a) => a.textContent!.trim())).toContain('Publier une offre');
+    const stats = [...el.querySelectorAll('app-carte-stat')].map((c) => c.textContent!.replace(/\s+/g, ' '));
+    expect(stats.some((t) => t.includes('Mes offres') && t.includes('7'))).toBe(true);
+    expect(stats.some((t) => t.includes('Candidatures reçues') && t.includes('2'))).toBe(true);
   });
 
   it('signale l’erreur de chargement', () => {

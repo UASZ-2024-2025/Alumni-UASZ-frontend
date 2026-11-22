@@ -68,7 +68,7 @@ h1 { margin: 0; font: 700 1.5rem/1.2 var(--police-titre); }
 .accueil-fil {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
-  padding: 24px; border-bottom: 4px solid var(--g7); color: var(--mu); text-align: center;
+  padding: 24px; color: var(--mu); text-align: center;
   svg { width: 64px; height: 64px; margin-bottom: .5rem; fill: var(--g1); stroke: var(--g7); stroke-width: .6; stroke-linejoin: round; }
   h2 { margin: 0; color: var(--tx); font: 700 1.5rem/1.2 var(--police-titre); }
   p { max-width: 26rem; margin: 0; }

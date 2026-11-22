@@ -22,6 +22,7 @@
   <app-alerte>{{ message }}</app-alerte>
 }
 
+<app-carte>
 <app-tableau
   [colonnes]="colonnes"
   [lignes]="liste.elements()"
@@ -55,6 +56,7 @@
     }
   </ng-template>
 </app-tableau>
+</app-carte>
 
 @if (!liste.erreur() && liste.total() > 0) {
   <app-pagination [page]="liste.page()" [nbPages]="liste.nbPages()" (changement)="liste.aller($event)" />
