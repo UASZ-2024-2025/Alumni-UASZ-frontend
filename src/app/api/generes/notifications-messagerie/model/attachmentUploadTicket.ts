@@ -20,5 +20,9 @@ export interface AttachmentUploadTicket {
      * Formats acceptés par Cloudinary (champ `allowed_formats`), absent pour un document.
      */
     allowedFormats?: string;
+    /**
+     * Toujours false, à envoyer tel quel (champ `overwrite`, signé) : un fichier déjà déposé ne peut pas être remplacé avec la même autorisation.
+     */
+    overwrite?: boolean;
 }
 

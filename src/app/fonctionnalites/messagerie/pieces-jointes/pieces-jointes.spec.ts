@@ -45,7 +45,7 @@ describe('PiecesJointesService', () => {
       getAttachmentSettings: vi.fn(() => of(REGLAGES)),
       createAttachmentUpload: vi.fn(() => of({
         uploadUrl: 'https://api.cloudinary.com/v1_1/demo/raw/upload', apiKey: 'k', timestamp: 1700000000,
-        signature: 'sig-ticket', publicId: 'alumni/u1/abc.pdf', type: 'authenticated',
+        signature: 'sig-ticket', publicId: 'alumni/u1/abc.pdf', type: 'authenticated', overwrite: false,
       })),
     };
     TestBed.configureTestingModule({
@@ -109,6 +109,7 @@ describe('PiecesJointesService', () => {
     expect(corps.get('signature')).toBe('sig-ticket');
     expect(corps.get('type')).toBe('authenticated');
     expect(corps.has('allowed_formats')).toBe(false);
+    expect(corps.get('overwrite')).toBe('false');
     req.event({ type: HttpEventType.UploadProgress, loaded: 50, total: 100 });
     req.flush({ public_id: 'alumni/u1/abc.pdf', version: 7, signature: 'sig-reponse', bytes: 8 });
 

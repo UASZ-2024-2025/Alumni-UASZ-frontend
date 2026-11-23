@@ -110,6 +110,8 @@ export class PiecesJointesService {
     form.append('public_id', ticket.publicId ?? '');
     form.append('type', ticket.type ?? '');
     if (ticket.allowedFormats) form.append('allowed_formats', ticket.allowedFormats);
+    // signé par le service : la même autorisation ne peut pas remplacer un fichier déjà déposé
+    form.append('overwrite', String(ticket.overwrite ?? false));
     return this.stockage.post<ReponseStockage>(ticket.uploadUrl ?? '', form, { reportProgress: true, observe: 'events' }).pipe(
       catchError(() =>
         throwError(() => new ErreurApi(0, 'STOCKAGE', "Le fichier n'a pas pu être envoyé. Vérifiez votre connexion et réessayez.")),

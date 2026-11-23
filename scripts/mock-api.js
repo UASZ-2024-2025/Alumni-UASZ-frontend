@@ -913,7 +913,7 @@ function routesPiecesJointes(req, res, chemin, corps) {
     const rt = { IMAGE: 'image', AUDIO: 'video', FILE: 'raw' }[corps.kind];
     const publicId = `alumni-uasz/messages/${moi.id}/${randomUUID()}${corps.kind === 'FILE' ? `.${ext}` : ''}`;
     return envoyer(res, 200, { uploadUrl: `${STOCKAGE_MOCK}/mock-cloudinary/${rt}/upload`, apiKey: 'mock', timestamp: Math.floor(Date.now() / 1000),
-      signature: 'mock', publicId, type: 'authenticated',
+      signature: 'mock', publicId, type: 'authenticated', overwrite: false,
       allowedFormats: corps.kind === 'FILE' ? undefined : (corps.kind === 'IMAGE' ? IMAGES_PJ : ['webm', 'ogg', 'mp4', 'm4a']).join(',') }) ?? true;
   }
   return false;
