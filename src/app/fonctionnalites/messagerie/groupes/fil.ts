@@ -1,5 +1,6 @@
 import { GroupMessage } from '../../../api/generes/notifications-messagerie/model/groupMessage';
 import { GroupSummary } from '../../../api/generes/notifications-messagerie/model/groupSummary';
+import { texteDernierMessage } from '../pieces-jointes/format';
 
 /** Élément affiché dans le fil : un séparateur de jour, un événement du groupe (message SYSTEM), ou une bulle. */
 export type ElementFil =
@@ -83,10 +84,11 @@ export function couleurAuteur(id = ''): string {
 /** Aperçu de la liste : « Vous : … » ou « Awa : … » pour un message, l'événement tel quel pour un message système. */
 export function apercuGroupe(g: GroupSummary, moiNom?: string): string {
   const n = g.memberCount ?? 0;
-  if (!g.lastMessage) return `${n} participant${n > 1 ? 's' : ''}`;
-  if (g.lastMessageType === 'SYSTEM' || !g.lastMessageSenderName) return g.lastMessage;
+  const texte = texteDernierMessage(g.lastMessageType, g.lastMessageAttachmentKind, g.lastMessage);
+  if (!texte) return `${n} participant${n > 1 ? 's' : ''}`;
+  if (g.lastMessageType === 'SYSTEM' || !g.lastMessageSenderName) return texte;
   const auteur = moiNom && g.lastMessageSenderName === moiNom ? 'Vous' : g.lastMessageSenderName.split(' ')[0];
-  return `${auteur} : ${g.lastMessage}`;
+  return `${auteur} : ${texte}`;
 }
 
 const formatJusqua = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });

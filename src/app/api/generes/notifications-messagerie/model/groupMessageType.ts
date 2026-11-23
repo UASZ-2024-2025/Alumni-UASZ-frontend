@@ -10,11 +10,13 @@
 
 
 /**
- * TEXT pour un message d\'un membre, SYSTEM pour un événement du groupe (création, ajout, départ...).
+ * TEXT pour un message d\'un membre, SYSTEM pour un événement du groupe (création, ajout, départ...), STICKER et ATTACHMENT (image, document ou message vocal). Aussi utilisé par la messagerie privée (jamais SYSTEM). 
  */
 export const GroupMessageType = {
     Text: 'TEXT',
     System: 'SYSTEM',
+    Sticker: 'STICKER',
+    Attachment: 'ATTACHMENT',
 } as const;
 export type GroupMessageType = typeof GroupMessageType[keyof typeof GroupMessageType];
 

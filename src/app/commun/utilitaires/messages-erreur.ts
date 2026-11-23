@@ -1,7 +1,11 @@
 import { ErreurApi } from '../modeles/erreur-api.model';
 
 /** Codes dont le message du back est plus précis que le message générique de l'écran pour ce statut. */
-const CODES_MESSAGE_DU_BACK = new Set(['ACCOUNT_NOT_LINKED']);
+const CODES_MESSAGE_DU_BACK = new Set([
+  'ACCOUNT_NOT_LINKED',
+  // Pièces jointes (ALUM-262) : le service et l'écran disent précisément ce qui ne va pas avec le fichier.
+  'ATTACHMENT_TOO_LARGE', 'UNSUPPORTED_FILE_TYPE', 'INVALID_ATTACHMENT', 'ATTACHMENTS_DISABLED', 'FICHIER_REFUSE', 'STOCKAGE',
+]);
 
 /**
  * Message à afficher pour une erreur de l'API.

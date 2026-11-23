@@ -663,9 +663,10 @@ const groupes = [
     settings: { ...reglagesParDefaut(), onlyAdminsCanSend: true }, createdAt: ilYA(30, 8) },
 ];
 let numeroMessage = 0;
-const msg = (groupId, senderId, content, createdAt, type = 'TEXT') => ({
-  id: `m${++numeroMessage}`, groupId, senderId, senderName: nomDe(senderId), type, content, deleted: false, createdAt,
+const msg = (groupId, senderId, content, createdAt, type = 'TEXT', extra = {}) => ({
+  id: `m${++numeroMessage}`, groupId, senderId, senderName: nomDe(senderId), type, content, deleted: false, createdAt, ...extra,
 });
+const vueMsgGroupe = (m) => ({ ...m, attachment: m.deleted ? undefined : vuePj(m.attachment) });
 const messagesGroupes = [
   msg('g1', '3', 'Fatou Sow a créé le groupe « Promo GL 2025 »', ilYA(10, 9), 'SYSTEM'),
   msg('g1', '3', 'Bonjour à tous, bienvenue dans le groupe de la promo !', ilYA(3, 9, 5)),
@@ -723,8 +724,9 @@ function routesGroupes(req, res, chemin, corps) {
         return {
           id: g.id, name: g.name, memberCount: g.members.length,
           lastMessage: dernier?.deleted ? undefined : dernier?.content, lastMessageType: dernier?.type,
+          lastMessageAttachmentKind: dernier?.deleted ? undefined : dernier?.attachment?.kind,
           lastMessageSenderName: dernier?.senderName, lastMessageTime: dernier?.createdAt ?? g.createdAt,
-          unreadCount: fil.filter((m) => m.type === 'TEXT' && !m.deleted && m.senderId !== moi.id && m.createdAt > depuis).length,
+          unreadCount: fil.filter((m) => m.type !== 'SYSTEM' && !m.deleted && m.senderId !== moi.id && m.createdAt > depuis).length,
           preferences: prefs(g),
         };
       });
@@ -842,23 +844,23 @@ function routesGroupes(req, res, chemin, corps) {
     const page = Number(q.get('page') ?? 0);
     const size = Number(q.get('size') ?? 30);
     const fil = messagesGroupes.filter((x) => x.groupId === g.id).reverse();
-    return envoyer(res, 200, { content: fil.slice(page * size, (page + 1) * size).reverse(), totalElements: fil.length, page, size }) ?? true;
+    return envoyer(res, 200, { content: fil.slice(page * size, (page + 1) * size).reverse().map(vueMsgGroupe), totalElements: fil.length, page, size }) ?? true;
   }
   if (suite === '/messages' && !cible && req.method === 'POST') {
     if (g.settings.onlyAdminsCanSend && !estAdminDe(g)) return interdit('Seuls les administrateurs peuvent envoyer des messages dans ce groupe.');
-    const texte = corps.content?.trim();
-    if (!texte || texte.length > 4000) return erreur(res, 400, 'INVALID_MESSAGE', 'Le message doit contenir entre 1 et 4000 caractères.') ?? true;
-    const nouveau = msg(g.id, moi.id, texte, maintenant());
+    const { erreur: invalide, type, content, ...extra } = contenuMessage(corps, 4000);
+    if (invalide) return erreur(res, 400, ...invalide) ?? true;
+    const nouveau = msg(g.id, moi.id, content, maintenant(), type, extra);
     messagesGroupes.push(nouveau);
     lus.set(`${g.id}:${moi.id}`, nouveau.createdAt);
-    return envoyer(res, 201, nouveau) ?? true;
+    return envoyer(res, 201, vueMsgGroupe(nouveau)) ?? true;
   }
   if (suite === '/messages' && cible && req.method === 'DELETE') {
     const message = messagesGroupes.find((x) => x.groupId === g.id && x.id === cible);
     if (!message) return erreur(res, 404, 'MESSAGE_NOT_FOUND', 'Message introuvable.') ?? true;
     if (message.type === 'SYSTEM') return erreur(res, 400, 'INVALID_MESSAGE', 'Les messages système ne peuvent pas être supprimés.') ?? true;
     if (message.senderId !== moi.id && !estAdminDe(g)) return interdit('Vous ne pouvez supprimer que vos propres messages.');
-    Object.assign(message, { deleted: true, content: undefined });
+    Object.assign(message, { deleted: true, content: undefined, sticker: undefined, attachment: undefined });
     return envoyer(res, 204) ?? true;
   }
   if (suite === '/read' && req.method === 'PATCH') {
@@ -866,6 +868,95 @@ function routesGroupes(req, res, chemin, corps) {
     return envoyer(res, 204) ?? true;
   }
   return false;
+}
+
+// --- Pièces jointes (ALUM-261/262) : Cloudinary simulé par le mock (envoi direct, fichiers servis en mémoire) ---
+const STOCKAGE_MOCK = 'http://localhost:8085';
+const fichiersMock = new Map(); // publicId -> { type, contenu }
+const IMAGES_PJ = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+const DOCUMENTS_PJ = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'txt', 'csv', 'rtf'];
+const extensionPj = (nom = '') => (nom.includes('.') ? nom.split('.').pop().toLowerCase() : '');
+const reglagesPj = () => ({ enabled: true, maxImageBytes: 10485760, maxFileBytes: 10485760, maxAudioSeconds: 120,
+  fileExtensions: DOCUMENTS_PJ, imageExtensions: IMAGES_PJ });
+/** Vue d'une pièce jointe envoyée (comme le back : liens vers le stockage, aperçu pour une image). */
+const vuePj = (a) => a && ({ kind: a.kind, fileName: a.fileName, format: a.format, sizeBytes: a.sizeBytes, durationSeconds: a.durationSeconds,
+  width: a.width, height: a.height, url: `${STOCKAGE_MOCK}/mock-files/${a.publicId}`,
+  previewUrl: a.kind === 'IMAGE' ? `${STOCKAGE_MOCK}/mock-files/${a.publicId}` : undefined });
+/** Contenu d'un envoi (texte, sticker ou pièce jointe) ; renvoie { erreur } si la requête est invalide. */
+function contenuMessage(corps, max) {
+  const texte = typeof corps.content === 'string' ? corps.content.trim() : '';
+  if (texte.length > max) return { erreur: ['MESSAGE_TOO_LONG', `Le message dépasse ${max} caractères.`] };
+  if (corps.sticker && corps.attachment) return { erreur: ['INVALID_MESSAGE', 'Un message contient soit un sticker, soit une pièce jointe.'] };
+  if (corps.sticker) {
+    if (texte) return { erreur: ['INVALID_MESSAGE', "Un sticker s'envoie sans texte."] };
+    if (!/^[a-z0-9-]{1,40}$/.test(corps.sticker)) return { erreur: ['INVALID_STICKER', 'Sticker inconnu.'] };
+    return { type: 'STICKER', sticker: corps.sticker };
+  }
+  if (corps.attachment) {
+    const a = corps.attachment;
+    if (!fichiersMock.has(a.publicId)) return { erreur: ['INVALID_ATTACHMENT', 'Pièce jointe invalide : renvoyez le fichier.'] };
+    return { type: 'ATTACHMENT', content: texte || undefined, attachment: { ...a, format: a.format ?? extensionPj(a.fileName) } };
+  }
+  if (!texte) return { erreur: ['EMPTY_MESSAGE', 'Le message ne peut pas être vide.'] };
+  return { type: 'TEXT', content: texte };
+}
+
+function routesPiecesJointes(req, res, chemin, corps) {
+  if (!/^\/v1\/messages\/attachments\//.test(chemin)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const moi = utilisateurConnecte(req);
+  if (req.method === 'GET' && chemin === '/v1/messages/attachments/settings') return envoyer(res, 200, reglagesPj()) ?? true;
+  if (req.method === 'POST' && chemin === '/v1/messages/attachments/uploads') {
+    const ext = extensionPj(corps.fileName);
+    const acceptees = { IMAGE: IMAGES_PJ, FILE: DOCUMENTS_PJ }[corps.kind];
+    if (acceptees && !acceptees.includes(ext)) return erreur(res, 400, 'UNSUPPORTED_FILE_TYPE', `Type de fichier non accepté : .${ext || 'sans extension'}`) ?? true;
+    const rt = { IMAGE: 'image', AUDIO: 'video', FILE: 'raw' }[corps.kind];
+    const publicId = `alumni-uasz/messages/${moi.id}/${randomUUID()}${corps.kind === 'FILE' ? `.${ext}` : ''}`;
+    return envoyer(res, 200, { uploadUrl: `${STOCKAGE_MOCK}/mock-cloudinary/${rt}/upload`, apiKey: 'mock', timestamp: Math.floor(Date.now() / 1000),
+      signature: 'mock', publicId, type: 'authenticated',
+      allowedFormats: corps.kind === 'FILE' ? undefined : (corps.kind === 'IMAGE' ? IMAGES_PJ : ['webm', 'ogg', 'mp4', 'm4a']).join(',') }) ?? true;
+  }
+  return false;
+}
+
+/** Envoi direct « Cloudinary » (multipart) et lecture des fichiers : corps binaire, traité avant le JSON. */
+function routesStockageMock(req, res, chemin) {
+  const fichier = chemin.match(/^\/mock-files\/(.+)$/);
+  if (req.method === 'GET' && fichier) {
+    const f = fichiersMock.get(decodeURIComponent(fichier[1]));
+    if (!f) return envoyer(res, 404) ?? true;
+    res.writeHead(200, { 'Content-Type': f.type, 'Content-Length': f.contenu.length, ...CORS });
+    return res.end(f.contenu) ?? true;
+  }
+  if (req.method !== 'POST' || !/^\/mock-cloudinary\/(image|video|raw)\/upload$/.test(chemin)) return false;
+  const morceaux = [];
+  req.on('data', (c) => morceaux.push(c));
+  req.on('end', () => {
+    const brut = Buffer.concat(morceaux);
+    const limite = Buffer.from(`--${(req.headers['content-type'] || '').split('boundary=')[1]}`);
+    const champs = {};
+    let debut = brut.indexOf(limite);
+    while (debut !== -1) {
+      const suivant = brut.indexOf(limite, debut + limite.length);
+      if (suivant === -1) break;
+      const partie = brut.subarray(debut + limite.length + 2, suivant - 2);
+      const finEntete = partie.indexOf('\r\n\r\n');
+      const entete = partie.subarray(0, finEntete).toString();
+      const nom = entete.match(/name="([^"]+)"/)?.[1];
+      champs[nom] = { entete, valeur: partie.subarray(finEntete + 4) };
+      debut = suivant;
+    }
+    const publicId = champs.public_id?.valeur.toString();
+    const fichierRecu = champs.file;
+    if (!publicId || !fichierRecu) return envoyer(res, 400, { error: { message: 'Fichier manquant' } });
+    const type = fichierRecu.entete.match(/Content-Type: (.+)/i)?.[1].trim() || 'application/octet-stream';
+    const nomFichier = fichierRecu.entete.match(/filename="([^"]*)"/)?.[1] ?? '';
+    fichiersMock.set(publicId, { type, contenu: fichierRecu.valeur });
+    console.log(`[stockage] ${publicId} (${fichierRecu.valeur.length} octets)`);
+    envoyer(res, 200, { public_id: publicId, version: Math.floor(Date.now() / 1000), signature: 'mock',
+      format: chemin.includes('/raw/') ? undefined : extensionPj(nomFichier) || type.split('/')[1]?.split(';')[0], bytes: fichierRecu.valeur.length });
+  });
+  return true;
 }
 
 // --- Messagerie privée (service notification-messaging, port 8085) ---
@@ -881,6 +972,8 @@ const msgNom = (u) => `${u.firstName} ${u.lastName}`;
 const msgMoi = (req) => utilisateurs[accessEmails.get((req.headers.authorization || '').replace('Bearer ', ''))]?.id;
 const msgEnrichir = (m) => ({
   ...m,
+  type: m.type ?? 'TEXT',
+  attachment: m.deleted ? undefined : vuePj(m.attachment),
   senderName: msgNom(msgUtilisateur(m.senderId)),
   recipientName: msgNom(msgUtilisateur(m.recipientId)),
 });
@@ -910,6 +1003,9 @@ function routesMessagerie(req, res, chemin, corps) {
           recipientName: msgNom(autre),
           recipientRole: autre.role,
           lastMessage: dernier.content,
+          lastMessageSenderId: dernier.senderId,
+          lastMessageType: dernier.type ?? 'TEXT',
+          lastMessageAttachmentKind: dernier.attachment?.kind,
           lastMessageTime: dernier.createdAt,
           unreadCount: fil.filter((m) => m.senderId === id && !m.isRead).length,
         };
@@ -933,11 +1029,11 @@ function routesMessagerie(req, res, chemin, corps) {
     return envoyer(res, 200, { ...page, content: page.content.map(msgEnrichir) }) ?? true;
   }
   if (req.method === 'POST' && !m[2]) {
-    const texte = typeof corps.content === 'string' ? corps.content.trim() : '';
-    if (!texte) return erreur(res, 400, 'VALIDATION_ERROR', 'Le message ne peut pas être vide.') ?? true;
+    const contenu = contenuMessage(corps, 5000);
+    if (contenu.erreur) return erreur(res, 400, ...contenu.erreur) ?? true;
     if (autreId === moi || !msgUtilisateur(autreId))
       return erreur(res, 400, 'INVALID_RECIPIENT', 'Destinataire invalide.') ?? true;
-    const nouveau = { id: `m${messagesPrives.length + 1}`, senderId: moi, recipientId: autreId, content: texte, isRead: false, createdAt: new Date().toISOString() };
+    const nouveau = { id: `p${messagesPrives.length + 1}`, senderId: moi, recipientId: autreId, ...contenu, isRead: false, createdAt: new Date().toISOString() };
     messagesPrives.push(nouveau);
     console.log(`[messages] ${moi} -> ${autreId}`);
     return envoyer(res, 201, msgEnrichir(nouveau)) ?? true;
@@ -947,6 +1043,7 @@ function routesMessagerie(req, res, chemin, corps) {
 
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
+    if (routesStockageMock(req, res, req.url.split('?')[0])) return;
     let brut = '';
     req.on('data', (c) => (brut += c));
     req.on('end', () => {
@@ -962,6 +1059,7 @@ const traiter = (req, res) => {
       if (routesCv(req, res, chemin)) return;
       if (routesNotifications(req, res, chemin)) return;
       if (routesGroupes(req, res, chemin, corps)) return;
+      if (routesPiecesJointes(req, res, chemin, corps)) return;
 
       if (req.method === 'POST' && chemin === '/v1/auth/login') {
         const u = utilisateurs[corps.email];

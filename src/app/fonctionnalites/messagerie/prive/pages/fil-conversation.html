@@ -70,13 +70,17 @@
           <li class="jour"><span>{{ el.libelle }}</span></li>
         } @else {
           <li class="bulle" [class.moi]="el.moi" [class.debut]="el.debutSerie" [class.supprime]="el.message.deleted"
-            [class.en-edition]="edition()?.id === el.message.id">
+            [class.en-edition]="edition()?.id === el.message.id"
+            [class.sticker]="el.message.type === 'STICKER' && !el.message.deleted" [class.media]="!!el.message.attachment && !el.message.deleted">
             @if (el.message.deleted) {
               <p>
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14A6 6 0 108 2a6 6 0 000 12zM3.8 3.8l8.4 8.4" /></svg>
                 {{ el.moi ? 'Vous avez supprimé ce message' : 'Ce message a été supprimé' }}<span class="meta"><time [attr.datetime]="el.message.createdAt">{{ heure(el.message.createdAt) }}</time></span>
               </p>
             } @else {
+              @if (el.message.type === 'STICKER' || el.message.attachment) {
+                <app-contenu-piece [message]="el.message" />
+              }
               <p>{{ el.message.content }}<span class="meta">
                 @if (el.message.editedAt) {
                   <span class="modifie">Modifié</span>
@@ -132,6 +136,12 @@
       </app-bouton>
     </div>
   }
+  @if (piece(); as p) {
+    <app-piece-a-envoyer [piece]="p" [progression]="progression()" (retirer)="retirerPiece()" />
+  }
   <app-zone-saisie-message #saisie [(texte)]="brouillon" [lignes]="1" [longueurMax]="messageMax" [envoiEnCours]="envoiEnCours()"
-    [edition]="!!edition()" (envoyer)="envoyer()" />
+    [edition]="!!edition()" (envoyer)="envoyer()" [stickers]="true" [piecesJointes]="piecesJointes.actives()"
+    [acceptImages]="piecesJointes.acceptImages()" [acceptDocuments]="piecesJointes.acceptDocuments()" [dureeVocalMax]="piecesJointes.dureeVocalMax()"
+    [pieceEnAttente]="!!piece()" (fichier)="choisirFichier($event)" (sticker)="envoyerSticker($event)" (vocal)="envoyerVocal($event)"
+    (erreur)="erreurEnvoi.set($event)" />
 </footer>

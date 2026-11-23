@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { GroupPreferences } from './groupPreferences';
+import { AttachmentKind } from './attachmentKind';
 import { GroupMessageType } from './groupMessageType';
 
 
@@ -21,6 +22,7 @@ export interface GroupSummary {
     lastMessage?: string;
     lastMessageSenderName?: string;
     lastMessageType?: GroupMessageType;
+    lastMessageAttachmentKind?: AttachmentKind;
     lastMessageTime?: string;
     unreadCount?: number;
     preferences?: GroupPreferences;

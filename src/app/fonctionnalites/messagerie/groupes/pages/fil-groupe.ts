@@ -1,23 +1,28 @@
-import { Component, computed, ElementRef, inject, Injector, afterNextRender, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, Injector, afterNextRender, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, distinctUntilChanged, EMPTY, exhaustMap, forkJoin, interval, map, merge, Observable, Subject, switchMap, tap } from 'rxjs';
+import { catchError, distinctUntilChanged, EMPTY, exhaustMap, forkJoin, interval, map, merge, Observable, Subject, Subscription, switchMap, tap } from 'rxjs';
 import { GroupMessagingService } from '../../../../api/generes/notifications-messagerie/api/groupMessaging.service';
 import { Group } from '../../../../api/generes/notifications-messagerie/model/group';
 import { GroupMessage } from '../../../../api/generes/notifications-messagerie/model/groupMessage';
 import { GroupPreferencesUpdateRequest } from '../../../../api/generes/notifications-messagerie/model/groupPreferencesUpdateRequest';
+import { SendMessageRequest } from '../../../../api/generes/notifications-messagerie/model/sendMessageRequest';
 import { Alerte } from '../../../../commun/components/alerte/alerte';
 import { Avatar } from '../../../../commun/components/avatar/avatar';
 import { Bouton } from '../../../../commun/components/bouton/bouton';
 import { Modale } from '../../../../commun/components/modale/modale';
 import { Spinner } from '../../../../commun/components/spinner/spinner';
-import { ZoneSaisieMessage } from '../../../../commun/components/zone-saisie-message/zone-saisie-message';
+import { VocalEnregistre } from '../../../../commun/components/enregistreur-vocal/enregistreur-vocal';
+import { FichierChoisi, ZoneSaisieMessage } from '../../../../commun/components/zone-saisie-message/zone-saisie-message';
 import { ErreurApi } from '../../../../commun/modeles/erreur-api.model';
 import { ConfirmationService } from '../../../../commun/services/confirmation.service';
 import { ToastService } from '../../../../commun/services/toast.service';
 import { messageErreur } from '../../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
 import { encoreModifiable, ERREURS_MODIFICATION } from '../../edition-message';
+import { ContenuPiece } from '../../pieces-jointes/contenu-piece';
+import { PieceAEnvoyer } from '../../pieces-jointes/piece-a-envoyer';
+import { PieceEnPreparation, PiecesJointesService } from '../../pieces-jointes/pieces-jointes.service';
 import { InfosGroupe } from '../composants/infos-groupe';
 import { construireFil, couleurAuteur, fusionnerMessages, heure, libelleSourdine } from '../fil';
 import { GroupesStore } from '../groupes.store';
@@ -38,7 +43,7 @@ const ERREURS_ENVOI: Record<number, string> = {
 /** Fil d'un groupe (route `/groupes/:id`) : seuls les membres y ont accès, le back renvoie 403 aux autres. */
 @Component({
   selector: 'app-fil-groupe',
-  imports: [RouterLink, Alerte, Avatar, Bouton, InfosGroupe, Modale, Spinner, ZoneSaisieMessage],
+  imports: [RouterLink, Alerte, Avatar, Bouton, ContenuPiece, InfosGroupe, Modale, PieceAEnvoyer, Spinner, ZoneSaisieMessage],
   templateUrl: './fil-groupe.html',
   styleUrl: './fil-groupe.scss',
   host: { '(document:click)': 'menuOuvert.set(false)', '(document:keydown.escape)': 'echap()' },
@@ -51,6 +56,7 @@ export class FilGroupe {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(ToastService);
   protected readonly moiId = inject(AuthentificationService).utilisateur()?.id;
+  protected readonly piecesJointes = inject(PiecesJointesService);
 
   private readonly defilement = viewChild<ElementRef<HTMLElement>>('defilement');
   private readonly saisie = viewChild(ZoneSaisieMessage);
@@ -79,6 +85,10 @@ export class FilGroupe {
   /** Message en cours de modification : la saisie le reprend, « Enregistrer » remplace « Envoyer ». */
   protected readonly edition = signal<GroupMessage | null>(null);
   private brouillonAvantEdition = '';
+  /** Photo, document ou vocal en attente au-dessus de la saisie (ALUM-262), et progression de son envoi. */
+  protected readonly piece = signal<PieceEnPreparation | null>(null);
+  protected readonly progression = signal<number | null>(null);
+  private envoiPiece?: Subscription;
 
   private readonly moiMembre = computed(() => this.groupe()?.members?.find((m) => m.userId === this.moiId));
   /** Propriétaire ou administrateur du groupe. */
@@ -99,6 +109,8 @@ export class FilGroupe {
   private readonly relance = new Subject<void>();
 
   constructor() {
+    this.piecesJointes.charger();
+    inject(DestroyRef).onDestroy(() => this.retirerPiece());
     const ids = inject(ActivatedRoute).paramMap.pipe(
       map((p) => p.get('id') ?? ''),
       distinctUntilChanged(),
@@ -125,6 +137,7 @@ export class FilGroupe {
     this.infosOuvertes.set(false);
     this.menuOuvert.set(false);
     this.edition.set(null);
+    this.retirerPiece();
 
     return forkJoin([this.api.getGroupById(id), this.api.getGroupMessages(id, 0, TAILLE_PAGE)]).pipe(
       tap(([groupe, page]) => {
@@ -177,8 +190,8 @@ export class FilGroupe {
     if (!nouveaux.length) return;
     const dernier = fusion[fusion.length - 1];
     this.store.maj(this.id(), {
-      lastMessage: dernier.content, lastMessageTime: dernier.createdAt,
-      lastMessageType: dernier.type, lastMessageSenderName: dernier.senderName,
+      lastMessage: dernier.content, lastMessageTime: dernier.createdAt, lastMessageType: dernier.type,
+      lastMessageAttachmentKind: dernier.attachment?.kind, lastMessageSenderName: dernier.senderName,
     });
     this.marquerLu(this.id());
     if (nouveaux.some((m) => m.type === 'SYSTEM')) this.relireGroupe();
@@ -225,31 +238,105 @@ export class FilGroupe {
       return;
     }
     const content = this.brouillon().trim();
-    if (!content || this.envoi() || content.length > MESSAGE_MAX) return;
+    if (this.envoi() || content.length > MESSAGE_MAX) return;
+    const piece = this.piece();
+    if (piece) this.envoyerPiece(piece, content);
+    else if (content) this.publier({ content }, () => this.brouillon.set(''));
+  }
+
+  protected envoyerSticker(sticker: string): void {
+    if (!this.envoi()) this.publier({ sticker });
+  }
+
+  /** Photo ou document choisi : contrôlé tout de suite, puis affiché au-dessus de la saisie (la saisie devient sa légende). */
+  protected choisirFichier({ fichier, kind }: FichierChoisi): void {
+    this.erreurEnvoi.set(null);
+    try {
+      const piece = this.piecesJointes.preparer(fichier, kind);
+      this.retirerPiece();
+      this.piece.set(piece);
+    } catch (e) {
+      this.erreurEnvoi.set(messageErreur(e));
+    }
+  }
+
+  /** Un vocal part dès la fin de l'enregistrement, comme sur WhatsApp. */
+  protected envoyerVocal({ fichier, duree }: VocalEnregistre): void {
+    if (this.envoi()) return;
+    const piece: PieceEnPreparation = { fichier, kind: 'AUDIO', duree };
+    this.retirerPiece();
+    this.piece.set(piece);
+    this.envoyerPiece(piece, '');
+  }
+
+  /** Retire la pièce en attente ; pendant l'envoi, l'annule. */
+  protected retirerPiece(): void {
+    if (this.envoiPiece) {
+      this.envoiPiece.unsubscribe();
+      this.envoiPiece = undefined;
+      this.envoi.set(false);
+    }
+    this.progression.set(null);
+    this.piecesJointes.liberer(this.piece());
+    this.piece.set(null);
+  }
+
+  private envoyerPiece(piece: PieceEnPreparation, legende: string): void {
     const id = this.id();
     this.envoi.set(true);
     this.erreurEnvoi.set(null);
-    this.api.sendGroupMessage(id, { content }).subscribe({
-      next: (message) => {
-        this.envoi.set(false);
-        this.store.maj(id, {
-          lastMessage: message.content ?? content, lastMessageTime: message.createdAt,
-          lastMessageType: 'TEXT', lastMessageSenderName: message.senderName,
-        });
-        if (id !== this.id()) return; // un autre groupe a été ouvert entre-temps
-        this.brouillon.set('');
-        this.messages.update((l) => fusionnerMessages(l, [message]));
-        this.total.update((t) => t + 1);
-        this.allerEnBas();
-        this.saisie()?.focus();
-      },
-      error: (e) => {
-        this.envoi.set(false);
-        this.erreurEnvoi.set(messageErreur(e, ERREURS_ENVOI));
-        // Le réglage d'envoi a pu changer : on relit le groupe pour afficher le bon état de la saisie.
-        if (e instanceof ErreurApi && e.statut === 403) this.relireGroupe();
-      },
+    this.progression.set(0);
+    this.envoiPiece = this.piecesJointes
+      .envoyer(piece, { groupId: id }, (attachment) => this.api.sendGroupMessage(id, { content: legende || undefined, attachment }))
+      .subscribe({
+        next: (a) => {
+          if ('progression' in a) {
+            this.progression.set(a.progression);
+            return;
+          }
+          this.envoiPiece = undefined;
+          this.messageEnvoye(id, a.resultat, () => {
+            if (legende) this.brouillon.set('');
+            this.retirerPiece();
+          });
+        },
+        error: (e) => {
+          this.envoiPiece = undefined;
+          this.progression.set(null);
+          this.echecEnvoi(e);
+        },
+      });
+  }
+
+  private publier(requete: SendMessageRequest, apresEnvoi?: () => void): void {
+    const id = this.id();
+    this.envoi.set(true);
+    this.erreurEnvoi.set(null);
+    this.api.sendGroupMessage(id, requete).subscribe({
+      next: (message) => this.messageEnvoye(id, message, apresEnvoi),
+      error: (e) => this.echecEnvoi(e),
     });
+  }
+
+  private messageEnvoye(id: string, message: GroupMessage, apresEnvoi?: () => void): void {
+    this.envoi.set(false);
+    this.store.maj(id, {
+      lastMessage: message.content, lastMessageTime: message.createdAt, lastMessageType: message.type ?? 'TEXT',
+      lastMessageAttachmentKind: message.attachment?.kind, lastMessageSenderName: message.senderName,
+    });
+    if (id !== this.id()) return; // un autre groupe a été ouvert entre-temps
+    apresEnvoi?.();
+    this.messages.update((l) => fusionnerMessages(l, [message]));
+    this.total.update((t) => t + 1);
+    this.allerEnBas();
+    this.saisie()?.focus();
+  }
+
+  private echecEnvoi(e: unknown): void {
+    this.envoi.set(false);
+    this.erreurEnvoi.set(messageErreur(e, ERREURS_ENVOI));
+    // Le réglage d'envoi a pu changer : on relit le groupe pour afficher le bon état de la saisie.
+    if (e instanceof ErreurApi && e.statut === 403) this.relireGroupe();
   }
 
   /** L'auteur supprime son message ; le propriétaire et les administrateurs suppriment celui de n'importe qui. */
@@ -257,9 +344,13 @@ export class FilGroupe {
     return m.type !== 'SYSTEM' && !m.deleted && (m.senderId === this.moiId || this.estAdminGroupe());
   }
 
-  /** Seul l'auteur modifie son message, pendant 15 minutes, et tant qu'il peut écrire dans le groupe. */
+  /**
+   * Seul l'auteur modifie son message, pendant 15 minutes, et tant qu'il peut écrire dans le groupe.
+   * Texte, ou légende d'une photo ou d'un document ; un sticker ou un vocal ne se modifie pas.
+   */
   protected peutModifier(m: GroupMessage): boolean {
-    return m.type !== 'SYSTEM' && m.senderId === this.moiId && !this.ecritureFermee() && encoreModifiable(m);
+    return m.type !== 'SYSTEM' && m.type !== 'STICKER' && m.attachment?.kind !== 'AUDIO'
+      && m.senderId === this.moiId && !this.ecritureFermee() && encoreModifiable(m);
   }
 
   protected commencerEdition(m: GroupMessage): void {
@@ -317,7 +408,8 @@ export class FilGroupe {
     this.api.deleteGroupMessage(id, m.id).subscribe({
       next: () => {
         if (id !== this.id()) return;
-        this.messages.update((l) => l.map((x) => (x.id === m.id ? { ...x, deleted: true, content: undefined } : x)));
+        this.messages.update((l) =>
+          l.map((x) => (x.id === m.id ? { ...x, deleted: true, content: undefined, sticker: undefined, attachment: undefined } : x)));
         if (this.edition()?.id === m.id) this.annulerEdition();
       },
       error: (e) => this.toast.erreur(messageErreur(e, { 403: 'Vous ne pouvez supprimer que vos propres messages.' })),

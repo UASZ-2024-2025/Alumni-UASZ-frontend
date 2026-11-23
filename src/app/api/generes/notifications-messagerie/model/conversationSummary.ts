@@ -8,6 +8,8 @@
  * Do not edit the class manually.
  */
 import { GroupPreferences } from './groupPreferences';
+import { AttachmentKind } from './attachmentKind';
+import { GroupMessageType } from './groupMessageType';
 
 
 export interface ConversationSummary { 
@@ -23,8 +25,13 @@ export interface ConversationSummary {
      */
     lastMessageSenderId?: string;
     lastMessageDeleted?: boolean;
+    lastMessageType?: GroupMessageType;
+    lastMessageAttachmentKind?: AttachmentKind;
     lastMessageTime?: string;
     unreadCount?: number;
     preferences?: GroupPreferences;
 }
+export namespace ConversationSummary {
+}
+
 
