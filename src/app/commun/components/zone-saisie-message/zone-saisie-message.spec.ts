@@ -19,6 +19,16 @@ describe('ZoneSaisieMessage', () => {
     expect(monter('Salut').bouton().disabled).toBe(false);
   });
 
+  it('affiche un bouton rond à icône : « Envoyer », puis « Enregistrer la modification » en modification', async () => {
+    const { f, bouton } = monter('Salut');
+    expect(bouton().getAttribute('aria-label')).toBe('Envoyer');
+    expect(bouton().textContent?.trim()).toBe('');
+    expect(bouton().querySelector('svg')).not.toBeNull();
+    f.componentRef.setInput('edition', true);
+    f.detectChanges();
+    expect(bouton().getAttribute('aria-label')).toBe('Enregistrer la modification');
+  });
+
   it('envoie avec Entrée mais pas avec Maj+Entrée', async () => {
     const { f, zone, envoyes } = monter('Salut');
     zone().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }));

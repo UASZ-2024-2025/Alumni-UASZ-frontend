@@ -212,7 +212,7 @@ describe('FilGroupe', () => {
       fixture.detectChanges();
       expect(zone().value).toBe('Merci !');
       expect(el.querySelector('.bandeau-edition')?.textContent).toContain('Modifier le message');
-      expect(el.querySelector('app-zone-saisie-message button[type="submit"]')?.textContent).toContain('Enregistrer');
+      expect(el.querySelector('app-zone-saisie-message button[type="submit"]')?.getAttribute('aria-label')).toBe('Enregistrer la modification');
 
       saisir('Merci beaucoup !');
       entree();

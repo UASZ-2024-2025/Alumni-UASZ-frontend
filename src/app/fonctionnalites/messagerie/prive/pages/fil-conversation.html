@@ -133,5 +133,5 @@
     </div>
   }
   <app-zone-saisie-message #saisie [(texte)]="brouillon" [lignes]="1" [longueurMax]="messageMax" [envoiEnCours]="envoiEnCours()"
-    [libelleBouton]="edition() ? 'Enregistrer' : 'Envoyer'" (envoyer)="envoyer()" />
+    [edition]="!!edition()" (envoyer)="envoyer()" />
 </footer>
