@@ -25,16 +25,12 @@
           @switch (cle) {
             @case ('etudiant') { <strong>{{ c.studentName || '—' }}</strong> }
             @case ('date') { {{ c.createdAt ? (c.createdAt | date: 'dd/MM/yyyy') : '—' }} }
-            @case ('cv') { {{ c.cvId ? 'CV joint' : 'Aucun CV' }} }
-            @case ('lettre') {
-              @if (c.coverLetter) {
-                <details>
-                  <summary>Lire la lettre</summary>
-                  <blockquote>{{ c.coverLetter }}</blockquote>
-                </details>
-              } @else {
-                —
-              }
+            @case ('dossier') {
+              <div class="dossier">
+                <app-bouton variante="secondaire" [petit]="true" [libelleAria]="'Voir le dossier de ' + (c.studentName || 'ce candidat')"
+                  (clic)="dossier.set(c)">Voir le dossier</app-bouton>
+                <span class="pieces">{{ c.cvId ? 'CV' : 'Sans CV' }} · {{ c.coverLetter ? 'Lettre' : 'Sans lettre' }}</span>
+              </div>
             }
             @case ('statut') { <app-badge [ton]="tonCandidature(c.status)">{{ libelleCandidature(c.status) }}</app-badge> }
             @default {
@@ -55,3 +51,9 @@
     </app-carte>
   }
 </div>
+
+<app-modale [large]="true" [titre]="'Candidature de ' + (dossier()?.studentName || 'ce candidat')" [ouvert]="!!dossier()" (fermer)="dossier.set(null)">
+  @if (dossier(); as c) {
+    <app-dossier-candidature [candidature]="c" />
+  }
+</app-modale>

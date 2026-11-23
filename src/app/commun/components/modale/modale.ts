@@ -10,6 +10,8 @@ import { Component, input, output } from '@angular/core';
 export class Modale {
   readonly ouvert = input(false);
   readonly titre = input.required<string>();
+  /** Fenêtre large (960 px) pour un contenu riche, par exemple l'aperçu d'un CV. */
+  readonly large = input(false);
   readonly fermer = output<void>();
 
   /** Ferme au clic sur le fond seulement. Pas d'expression `a && b` dans le gabarit : quand elle vaut `false`, Angular bloque l'action par défaut (donc l'envoi d'un formulaire). */

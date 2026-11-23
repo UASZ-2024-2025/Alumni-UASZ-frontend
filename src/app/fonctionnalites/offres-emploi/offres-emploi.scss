@@ -18,8 +18,8 @@ blockquote { margin: 0; padding: .6rem .9rem; border-left: 3px solid var(--g7); 
 
 .entete-page .meta { margin-top: .25rem; }
 .changement-statut { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-details summary { cursor: pointer; color: var(--g7); }
-details blockquote { margin-top: .5rem; }
+.dossier { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.pieces { color: var(--mu); font-size: var(--t-s); }
 
 @media (max-width: 600px) {
   h1 { font-size: 1.375rem; }

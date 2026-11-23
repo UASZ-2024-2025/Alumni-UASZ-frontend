@@ -38,7 +38,7 @@ describe('DetailOffre', () => {
         provideRouter([]),
         { provide: OffersService, useValue: api },
         { provide: ApplicationsService, useValue: candidaturesApi },
-        { provide: StudentsService, useValue: { getStudentCv: vi.fn(() => of({ id: 'cv-1', title: 'Mon CV' })) } },
+        { provide: StudentsService, useValue: { getStudentCv: vi.fn(() => of({ id: 'cv-1', title: 'Mon CV' })), getStudentById: vi.fn(() => of({})) } },
         { provide: ToastService, useValue: toast },
         { provide: AuthentificationService, useValue: { role: () => role, utilisateur: () => ({ id: 'etu-1' }) } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } },
