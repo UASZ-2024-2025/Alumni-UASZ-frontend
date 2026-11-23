@@ -263,7 +263,7 @@ describe('FilConversation', () => {
       await stabiliser();
       expect((el.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Bonjour Awa');
       expect(el.querySelector('.bandeau-edition')).not.toBeNull();
-      expect(boutonEnvoyer().textContent).toContain('Enregistrer');
+      expect(boutonEnvoyer().getAttribute('aria-label')).toBe('Enregistrer la modification');
 
       saisir('Bonjour Awa, ça va ?');
       await soumettre();
