@@ -1,3 +1,8 @@
+export * from './attachmentKind';
+export * from './attachmentSettings';
+export * from './attachmentUpload';
+export * from './attachmentUploadRequest';
+export * from './attachmentUploadTicket';
 export * from './conversationSummary';
 export * from './editMessageRequest';
 export * from './errorResponse';
@@ -15,6 +20,7 @@ export * from './groupPreferencesUpdateRequest';
 export * from './groupSettings';
 export * from './groupSummary';
 export * from './groupUpdateRequest';
+export * from './messageAttachment';
 export * from './muteDuration';
 export * from './notification';
 export * from './notificationChannel';

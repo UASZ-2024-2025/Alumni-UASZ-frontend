@@ -7,9 +7,15 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AttachmentUpload } from './attachmentUpload';
 
 
+/**
+ * Un texte (`content`), un sticker (`sticker`, sans texte) ou une pièce jointe (`attachment`, avec `content` en légende facultative). 400 `EMPTY_MESSAGE` si rien n\'est fourni, `INVALID_MESSAGE` si sticker et pièce jointe sont combinés, `INVALID_STICKER`, `INVALID_ATTACHMENT` (signature, propriétaire ou type incorrects) ou `ATTACHMENT_TOO_LARGE`. 
+ */
 export interface SendMessageRequest { 
-    content: string;
+    content?: string;
+    sticker?: string;
+    attachment?: AttachmentUpload;
 }
 

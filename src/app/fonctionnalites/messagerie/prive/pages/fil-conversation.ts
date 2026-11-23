@@ -1,21 +1,26 @@
-import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catchError, EMPTY, exhaustMap, filter, map, switchMap, tap, timer } from 'rxjs';
+import { catchError, EMPTY, exhaustMap, filter, map, Subscription, switchMap, tap, timer } from 'rxjs';
 import { PrivateMessagingService } from '../../../../api/generes/notifications-messagerie/api/privateMessaging.service';
 import { GroupPreferencesUpdateRequest } from '../../../../api/generes/notifications-messagerie/model/groupPreferencesUpdateRequest';
 import { PrivateMessage } from '../../../../api/generes/notifications-messagerie/model/privateMessage';
 import { PrivateMessagePagedResponse } from '../../../../api/generes/notifications-messagerie/model/privateMessagePagedResponse';
+import { SendMessageRequest } from '../../../../api/generes/notifications-messagerie/model/sendMessageRequest';
 import { Alerte } from '../../../../commun/components/alerte/alerte';
 import { Avatar } from '../../../../commun/components/avatar/avatar';
 import { Bouton } from '../../../../commun/components/bouton/bouton';
 import { Spinner } from '../../../../commun/components/spinner/spinner';
-import { ZoneSaisieMessage } from '../../../../commun/components/zone-saisie-message/zone-saisie-message';
+import { VocalEnregistre } from '../../../../commun/components/enregistreur-vocal/enregistreur-vocal';
+import { FichierChoisi, ZoneSaisieMessage } from '../../../../commun/components/zone-saisie-message/zone-saisie-message';
 import { ConfirmationService } from '../../../../commun/services/confirmation.service';
 import { ToastService } from '../../../../commun/services/toast.service';
 import { messageErreur } from '../../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
 import { encoreModifiable, ERREURS_MODIFICATION } from '../../edition-message';
+import { ContenuPiece } from '../../pieces-jointes/contenu-piece';
+import { PieceAEnvoyer } from '../../pieces-jointes/piece-a-envoyer';
+import { PieceEnPreparation, PiecesJointesService } from '../../pieces-jointes/pieces-jointes.service';
 import { ConversationsStore } from '../conversations.store';
 import { construireFil, fusionnerMessages, heure, libelleRole, libelleSourdine } from '../fil-prive';
 
@@ -39,7 +44,7 @@ const ERREURS_ENVOI: Record<number, string> = {
  */
 @Component({
   selector: 'app-fil-conversation',
-  imports: [RouterLink, Alerte, Avatar, Bouton, Spinner, ZoneSaisieMessage],
+  imports: [RouterLink, Alerte, Avatar, Bouton, ContenuPiece, PieceAEnvoyer, Spinner, ZoneSaisieMessage],
   templateUrl: './fil-conversation.html',
   styleUrl: '../../groupes/pages/fil-groupe.scss',
   host: { '(document:click)': 'menuOuvert.set(false)', '(document:keydown.escape)': 'echap()' },
@@ -51,6 +56,7 @@ export class FilConversation {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(ToastService);
   private readonly moiId = inject(AuthentificationService).utilisateur()?.id;
+  protected readonly piecesJointes = inject(PiecesJointesService);
   private readonly zone = viewChild<ElementRef<HTMLElement>>('defilement');
   private readonly saisie = viewChild(ZoneSaisieMessage);
 
@@ -74,6 +80,10 @@ export class FilConversation {
   /** Message en cours de modification : la saisie le reprend, « Enregistrer » remplace « Envoyer ». */
   protected readonly edition = signal<PrivateMessage | null>(null);
   private brouillonAvantEdition = '';
+  /** Photo, document ou vocal en attente au-dessus de la saisie (ALUM-262), et progression de son envoi. */
+  protected readonly piece = signal<PieceEnPreparation | null>(null);
+  protected readonly progression = signal<number | null>(null);
+  private envoiPiece?: Subscription;
 
   protected readonly elements = computed(() => construireFil(this.messages(), this.moiId));
   protected readonly resteAnciens = computed(() => this.messages().length < this.total());
@@ -92,6 +102,8 @@ export class FilConversation {
   private marquageEchoue = false;
 
   constructor() {
+    this.piecesJointes.charger();
+    inject(DestroyRef).onDestroy(() => this.retirerPiece());
     // Un seul abonnement : à chaque changement d'interlocuteur, l'ancien rafraîchissement est annulé (switchMap).
     this.route.paramMap
       .pipe(
@@ -127,6 +139,7 @@ export class FilConversation {
     this.erreurEnvoi.set(null);
     this.menuOuvert.set(false);
     this.edition.set(null);
+    this.retirerPiece();
     this.marquageEchoue = false;
   }
 
@@ -194,33 +207,110 @@ export class FilConversation {
       this.enregistrerEdition();
       return;
     }
-    const id = this.recipientId();
     const texte = this.brouillon().trim();
-    if (!id || !texte || this.envoiEnCours() || texte.length > MESSAGE_MAX) return;
+    if (this.envoiEnCours() || texte.length > MESSAGE_MAX) return;
+    const piece = this.piece();
+    if (piece) this.envoyerPiece(piece, texte);
+    else if (texte) this.publier({ content: texte }, () => this.brouillon.set(''));
+  }
+
+  protected envoyerSticker(sticker: string): void {
+    if (!this.envoiEnCours()) this.publier({ sticker });
+  }
+
+  /** Photo ou document choisi : contrôlé tout de suite, puis affiché au-dessus de la saisie (la saisie devient sa légende). */
+  protected choisirFichier({ fichier, kind }: FichierChoisi): void {
+    this.erreurEnvoi.set(null);
+    try {
+      const piece = this.piecesJointes.preparer(fichier, kind);
+      this.retirerPiece();
+      this.piece.set(piece);
+    } catch (e) {
+      this.erreurEnvoi.set(messageErreur(e));
+    }
+  }
+
+  /** Un vocal part dès la fin de l'enregistrement, comme sur WhatsApp. */
+  protected envoyerVocal({ fichier, duree }: VocalEnregistre): void {
+    if (this.envoiEnCours()) return;
+    const piece: PieceEnPreparation = { fichier, kind: 'AUDIO', duree };
+    this.retirerPiece();
+    this.piece.set(piece);
+    this.envoyerPiece(piece, '');
+  }
+
+  /** Retire la pièce en attente ; pendant l'envoi, l'annule. */
+  protected retirerPiece(): void {
+    if (this.envoiPiece) {
+      this.envoiPiece.unsubscribe();
+      this.envoiPiece = undefined;
+      this.envoiEnCours.set(false);
+    }
+    this.progression.set(null);
+    this.piecesJointes.liberer(this.piece());
+    this.piece.set(null);
+  }
+
+  private envoyerPiece(piece: PieceEnPreparation, legende: string): void {
+    const id = this.recipientId();
+    if (!id) return;
     this.envoiEnCours.set(true);
     this.erreurEnvoi.set(null);
-    this.api.sendPrivateMessage(id, { content: texte }).subscribe({
-      next: (message) => {
-        this.envoiEnCours.set(false);
-        this.store.apresEnvoi(message);
-        if (this.recipientId() !== id) return;
-        this.messages.update((l) => fusionnerMessages(l, [message]));
-        this.total.update((t) => Math.max(t, this.messages().length));
-        this.brouillon.set('');
-        this.defiler();
-        this.saisie()?.focus();
-      },
-      // Le texte saisi est conservé : rien n'est perdu si l'envoi échoue.
-      error: (e) => {
-        this.envoiEnCours.set(false);
-        this.erreurEnvoi.set(messageErreur(e, ERREURS_ENVOI));
-      },
+    this.progression.set(0);
+    this.envoiPiece = this.piecesJointes
+      .envoyer(piece, { recipientId: id }, (attachment) => this.api.sendPrivateMessage(id, { content: legende || undefined, attachment }))
+      .subscribe({
+        next: (a) => {
+          if ('progression' in a) {
+            this.progression.set(a.progression);
+            return;
+          }
+          this.envoiPiece = undefined;
+          this.messageEnvoye(id, a.resultat, () => {
+            if (legende) this.brouillon.set('');
+            this.retirerPiece();
+          });
+        },
+        error: (e) => {
+          this.envoiPiece = undefined;
+          this.progression.set(null);
+          this.echecEnvoi(e);
+        },
+      });
+  }
+
+  private publier(requete: SendMessageRequest, apresEnvoi?: () => void): void {
+    const id = this.recipientId();
+    if (!id) return;
+    this.envoiEnCours.set(true);
+    this.erreurEnvoi.set(null);
+    this.api.sendPrivateMessage(id, requete).subscribe({
+      next: (message) => this.messageEnvoye(id, message, apresEnvoi),
+      error: (e) => this.echecEnvoi(e),
     });
   }
 
+  private messageEnvoye(id: string, message: PrivateMessage, apresEnvoi?: () => void): void {
+    this.envoiEnCours.set(false);
+    this.store.apresEnvoi(message);
+    if (this.recipientId() !== id) return;
+    apresEnvoi?.();
+    this.messages.update((l) => fusionnerMessages(l, [message]));
+    this.total.update((t) => Math.max(t, this.messages().length));
+    this.defiler();
+    this.saisie()?.focus();
+  }
+
+  /** Le texte saisi et la pièce jointe sont conservés : rien n'est perdu si l'envoi échoue. */
+  private echecEnvoi(e: unknown): void {
+    this.envoiEnCours.set(false);
+    this.erreurEnvoi.set(messageErreur(e, ERREURS_ENVOI));
+  }
+
   // --- Modification et suppression de ses propres messages ---
+  /** Texte, ou légende d'une photo ou d'un document ; un sticker ou un vocal ne se modifie pas. */
   protected peutModifier(m: PrivateMessage): boolean {
-    return m.senderId === this.moiId && encoreModifiable(m);
+    return m.type !== 'STICKER' && m.attachment?.kind !== 'AUDIO' && m.senderId === this.moiId && encoreModifiable(m);
   }
 
   protected commencerEdition(m: PrivateMessage): void {
@@ -276,7 +366,7 @@ export class FilConversation {
     if (!ok || !m.id || !id) return;
     this.api.deletePrivateMessage(m.id).subscribe({
       next: () => {
-        const supprime: PrivateMessage = { ...m, deleted: true, content: undefined };
+        const supprime: PrivateMessage = { ...m, deleted: true, content: undefined, sticker: undefined, attachment: undefined };
         this.store.apresChangement(id, supprime);
         if (this.recipientId() !== id) return;
         this.messages.update((l) => fusionnerMessages(l, [supprime]));

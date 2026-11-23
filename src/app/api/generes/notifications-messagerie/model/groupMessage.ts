@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { MessageAttachment } from './messageAttachment';
 import { GroupMessageType } from './groupMessageType';
 
 
@@ -20,9 +21,14 @@ export interface GroupMessage {
     senderName?: string;
     type?: GroupMessageType;
     /**
-     * Texte du message ; vide si le message a été supprimé.
+     * Texte du message, ou légende d\'une pièce jointe ; vide si le message a été supprimé.
      */
     content?: string;
+    /**
+     * Code du sticker quand `type` vaut STICKER.
+     */
+    sticker?: string;
+    attachment?: MessageAttachment;
     deleted?: boolean;
     createdAt?: string;
     /**
