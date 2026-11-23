@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { timer } from 'rxjs';
 import { ConversationSummary } from '../../../../api/generes/notifications-messagerie/model/conversationSummary';
 import { Alerte } from '../../../../commun/components/alerte/alerte';
@@ -11,6 +11,7 @@ import { Champ } from '../../../../commun/components/champ/champ';
 import { Onglet, Onglets } from '../../../../commun/components/onglets/onglets';
 import { Spinner } from '../../../../commun/components/spinner/spinner';
 import { AuthentificationService } from '../../../../socle/authentification/services/authentification.service';
+import { Contact, NouvelleDiscussion } from '../composants/nouvelle-discussion';
 import { ConversationsStore } from '../conversations.store';
 import { apercuConversation, horodatageListe } from '../fil-prive';
 
@@ -25,14 +26,17 @@ type Filtre = 'tous' | 'non-lus';
  */
 @Component({
   selector: 'app-conversations',
-  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet, Alerte, Avatar, Bouton, Champ, Onglets, Spinner],
+  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet, Alerte, Avatar, Bouton, Champ, NouvelleDiscussion, Onglets, Spinner],
   providers: [ConversationsStore],
   templateUrl: './conversations.html',
   styleUrl: '../../groupes/pages/groupes.scss',
 })
 export class Conversations {
   protected readonly store = inject(ConversationsStore);
-  private readonly moiId = inject(AuthentificationService).utilisateur()?.id;
+  private readonly router = inject(Router);
+  protected readonly moiId = inject(AuthentificationService).utilisateur()?.id;
+  /** ALUM-263 : la colonne de gauche affiche le choix d'un destinataire à la place de la liste. */
+  protected readonly nouvelle = signal(false);
   /** Vrai quand un fil est ouvert : sur mobile, il remplace la liste. */
   protected readonly filOuvert = signal(false);
 
@@ -62,6 +66,13 @@ export class Conversations {
     timer(INTERVALLE_LISTE_MS, INTERVALLE_LISTE_MS)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.store.rafraichir());
+  }
+
+  /** Ouvre le fil avec la personne choisie (conversation existante ou nouvelle). */
+  protected ecrireA(c: Contact): void {
+    this.store.retenir({ userId: c.userId, nom: c.nom, role: c.role });
+    this.nouvelle.set(false);
+    void this.router.navigate(['/messagerie', c.userId]);
   }
 
   protected choisirFiltre(cle: string): void {

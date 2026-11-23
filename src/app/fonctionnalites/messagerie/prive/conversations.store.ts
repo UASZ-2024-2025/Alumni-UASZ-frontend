@@ -4,6 +4,13 @@ import { ConversationSummary } from '../../../api/generes/notifications-messager
 import { PrivateMessage } from '../../../api/generes/notifications-messagerie/model/privateMessage';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 
+/** Personne choisie pour une nouvelle discussion : son nom et son rôle, tant qu'aucun message n'existe. */
+export interface ContactChoisi {
+  userId: string;
+  nom: string;
+  role: string;
+}
+
 /**
  * Liste des conversations partagée entre la page (colonne de gauche) et le fil ouvert (route enfant).
  * Fournie par la page `Conversations` : le fil y reporte ses changements (message envoyé, modifié, lecture, préférences).
@@ -16,6 +23,8 @@ export class ConversationsStore {
   readonly chargement = signal(false);
   readonly erreur = signal<string | null>(null);
   readonly charge = signal(false);
+  /** ALUM-263 : personnes choisies via « Nouvelle discussion » (en-tête du fil avant le premier message). */
+  private readonly contacts = signal<Record<string, ContactChoisi>>({});
 
   /** Comme les groupes (et WhatsApp) : épinglées en haut, puis les conversations les plus récentes. */
   readonly liste = computed(() =>
@@ -58,6 +67,14 @@ export class ConversationsStore {
     });
   }
 
+  retenir(contact: ContactChoisi): void {
+    this.contacts.update((c) => ({ ...c, [contact.userId]: contact }));
+  }
+
+  contact(userId: string | null): ContactChoisi | undefined {
+    return userId ? this.contacts()[userId] : undefined;
+  }
+
   trouver(recipientId: string | null): ConversationSummary | undefined {
     return this.conversations().find((c) => c.recipientId === recipientId);
   }
@@ -74,7 +91,8 @@ export class ConversationsStore {
     const maj: ConversationSummary = {
       ...existante,
       recipientId: id,
-      recipientName: existante?.recipientName ?? message.recipientName,
+      recipientName: existante?.recipientName ?? message.recipientName ?? this.contact(id)?.nom,
+      recipientRole: existante?.recipientRole ?? this.contact(id)?.role,
       lastMessage: message.content,
       lastMessageSenderId: message.senderId,
       lastMessageDeleted: false,

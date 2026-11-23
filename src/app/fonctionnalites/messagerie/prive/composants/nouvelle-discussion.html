@@ -1,0 +1,46 @@
+<section class="nouvelle" aria-labelledby="titre-nouvelle">
+  <header class="entete">
+    <app-bouton variante="discret" [petit]="true" libelleAria="Retour aux discussions" (clic)="fermer.emit()">
+      <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+    </app-bouton>
+    <h1 id="titre-nouvelle">Nouvelle discussion</h1>
+  </header>
+
+  <div class="recherche">
+    <app-champ libelle="Rechercher une personne" type="search" [libelleCache]="true" placeholder="Rechercher un nom, une entreprise…"
+      name="destinataire" [ngModel]="requete()" (ngModelChange)="saisir($event)" />
+  </div>
+
+  <div class="filtres" role="group" aria-label="Catégorie">
+    @for (o of onglets; track o.cle) {
+      <button type="button" class="filtre" [attr.aria-pressed]="filtre() === o.cle" (click)="choisirFiltre(o.cle)">{{ o.libelle }}</button>
+    }
+  </div>
+
+  <div class="resultats" aria-live="polite" [attr.aria-busy]="recherche()">
+    @if (erreur(); as message) {
+      <p class="info info--erreur">{{ message }}</p>
+    } @else if (recherche() && groupes().length === 0) {
+      <p class="info">Recherche…</p>
+    } @else if (groupes().length === 0) {
+      <p class="info">{{ suggestions() ? 'Personne à proposer pour le moment.' : 'Aucune personne trouvée.' }}</p>
+    } @else {
+      @if (suggestions()) {
+        <p class="info">Suggestions : tapez au moins 2 lettres pour chercher.</p>
+      }
+      @for (g of groupes(); track g.role) {
+        <h2 class="categorie">{{ g.titre }}</h2>
+        <ul class="liste" [attr.aria-label]="g.titre">
+          @for (c of g.contacts; track c.userId) {
+            <li>
+              <app-bouton class="personne" variante="discret" [pleineLargeur]="true" [libelleAria]="'Écrire à ' + c.nom" (clic)="choisi.emit(c)">
+                <app-avatar [nom]="c.nom" />
+                <span class="texte"><strong>{{ c.nom }}</strong>@if (c.detail) {<small>{{ c.detail }}</small>}</span>
+              </app-bouton>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</section>
