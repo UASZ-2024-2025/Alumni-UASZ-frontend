@@ -78,6 +78,8 @@ export class ConversationsStore {
       lastMessage: message.content,
       lastMessageSenderId: message.senderId,
       lastMessageDeleted: false,
+      lastMessageType: message.type ?? 'TEXT',
+      lastMessageAttachmentKind: message.attachment?.kind,
       lastMessageTime: message.createdAt,
       unreadCount: 0,
     };
@@ -88,6 +90,10 @@ export class ConversationsStore {
   apresChangement(recipientId: string, message: PrivateMessage): void {
     const c = this.trouver(recipientId);
     if (!c || c.lastMessageTime !== message.createdAt) return;
-    this.maj(recipientId, { lastMessage: message.deleted ? undefined : message.content, lastMessageDeleted: !!message.deleted });
+    this.maj(recipientId, {
+      lastMessage: message.deleted ? undefined : message.content,
+      lastMessageDeleted: !!message.deleted,
+      lastMessageAttachmentKind: message.deleted ? undefined : message.attachment?.kind,
+    });
   }
 }

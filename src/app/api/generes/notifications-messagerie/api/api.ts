@@ -1,7 +1,9 @@
 export * from './groupMessaging.service';
 import { GroupMessagingService } from './groupMessaging.service';
+export * from './messageAttachments.service';
+import { MessageAttachmentsService } from './messageAttachments.service';
 export * from './notifications.service';
 import { NotificationsService } from './notifications.service';
 export * from './privateMessaging.service';
 import { PrivateMessagingService } from './privateMessaging.service';
-export const APIS = [GroupMessagingService, NotificationsService, PrivateMessagingService];
+export const APIS = [GroupMessagingService, MessageAttachmentsService, NotificationsService, PrivateMessagingService];

@@ -730,7 +730,7 @@ export class GroupMessagingService extends BaseService {
 
     /**
      * Envoyer un message dans un groupe
-     * Membres uniquement ; si &#x60;settings.onlyAdminsCanSend&#x60; vaut true, seuls OWNER et ADMIN peuvent écrire (403 sinon). Le contenu ne peut pas être vide et fait au plus 4000 caractères (400). 
+     * Membres uniquement ; si &#x60;settings.onlyAdminsCanSend&#x60; vaut true, seuls OWNER et ADMIN peuvent écrire (403 sinon). Texte (au plus 4000 caractères), sticker ou pièce jointe avec légende facultative (voir &#x60;SendMessageRequest&#x60;). 503 &#x60;ATTACHMENTS_DISABLED&#x60; pour une pièce jointe quand le stockage n\&#39;est pas configuré. 
      * @endpoint post /messages/groups/{groupId}/messages
      * @param groupId 
      * @param sendMessageRequest 

@@ -383,6 +383,7 @@ export class PrivateMessagingService extends BaseService {
 
     /**
      * Envoyer un message privé à un utilisateur
+     * Texte, sticker ou pièce jointe (voir &#x60;SendMessageRequest&#x60;). 503 &#x60;ATTACHMENTS_DISABLED&#x60; pour une pièce jointe quand le stockage n\&#39;est pas configuré. 
      * @endpoint post /messages/conversations/{recipientId}
      * @param recipientId 
      * @param sendMessageRequest 

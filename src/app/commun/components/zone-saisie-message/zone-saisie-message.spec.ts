@@ -10,7 +10,7 @@ describe('ZoneSaisieMessage', () => {
     f.componentInstance.envoyer.subscribe(() => envoyes.push(1));
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
-    return { f, el, envoyes, bouton: () => el.querySelector('button') as HTMLButtonElement, zone: () => el.querySelector('textarea') as HTMLTextAreaElement };
+    return { f, el, envoyes, bouton: () => el.querySelector('button[type="submit"]') as HTMLButtonElement, zone: () => el.querySelector('textarea') as HTMLTextAreaElement };
   };
 
   it('désactive le bouton tant que le texte est vide ou pendant l’envoi', async () => {
@@ -43,5 +43,81 @@ describe('ZoneSaisieMessage', () => {
     zone().value = 'Bonjour';
     zone().dispatchEvent(new Event('input'));
     expect(f.componentInstance.texte()).toBe('Bonjour');
+  });
+
+  describe('émojis (ALUM-260)', () => {
+    const boutonEmojis = (el: HTMLElement) => el.querySelector<HTMLButtonElement>('button[aria-label="Émojis"]')!;
+    const choisir = (el: HTMLElement, emoji: string) =>
+      [...el.querySelectorAll<HTMLButtonElement>('app-selecteur-emoji .emoji')].find((b) => b.textContent?.trim() === emoji)!.click();
+
+    beforeEach(() => localStorage.clear());
+
+    it('ouvre et referme le panneau', () => {
+      const { f, el } = monter();
+      expect(el.querySelector('app-selecteur-emoji')).toBeNull();
+      boutonEmojis(el).click();
+      f.detectChanges();
+      expect(boutonEmojis(el).getAttribute('aria-expanded')).toBe('true');
+      expect(el.querySelector('app-selecteur-emoji')).not.toBeNull();
+      boutonEmojis(el).click();
+      f.detectChanges();
+      expect(el.querySelector('app-selecteur-emoji')).toBeNull();
+    });
+
+    it("insère l'émoji à la position du curseur", async () => {
+      const { f, el, zone } = monter('Bonjour à tous');
+      await f.whenStable();
+      f.detectChanges();
+      expect(zone().value.length).toBeGreaterThan(0);
+      zone().setSelectionRange(7, 7);
+      zone().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+      boutonEmojis(el).click();
+      f.detectChanges();
+      choisir(el, '😀');
+      expect(f.componentInstance.texte()).toBe('Bonjour😀 à tous');
+      choisir(el, '😂'); // le suivant se place juste après
+      expect(f.componentInstance.texte()).toBe('Bonjour😀😂 à tous');
+    });
+
+    it('remplace le texte sélectionné', async () => {
+      const { f, el, zone } = monter('Merci beaucoup');
+      await f.whenStable();
+      f.detectChanges();
+      expect(zone().value.length).toBeGreaterThan(0);
+      zone().setSelectionRange(6, 14);
+      zone().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+      boutonEmojis(el).click();
+      f.detectChanges();
+      choisir(el, '😀');
+      expect(f.componentInstance.texte()).toBe('Merci 😀');
+    });
+
+    it('ne dépasse pas la longueur maximale', () => {
+      const f = TestBed.createComponent(ZoneSaisieMessage);
+      f.componentRef.setInput('texte', 'abc');
+      f.componentRef.setInput('longueurMax', 4);
+      f.detectChanges();
+      const el = f.nativeElement as HTMLElement;
+      boutonEmojis(el).click();
+      f.detectChanges();
+      choisir(el, '😀'); // 2 unités UTF-16 : 5 > 4
+      expect(f.componentInstance.texte()).toBe('abc');
+    });
+
+    it('ferme le panneau au clic en dehors et à l’envoi', () => {
+      const { f, el, envoyes } = monter('Salut');
+      boutonEmojis(el).click();
+      f.detectChanges();
+      document.body.click();
+      f.detectChanges();
+      expect(el.querySelector('app-selecteur-emoji')).toBeNull();
+
+      boutonEmojis(el).click();
+      f.detectChanges();
+      el.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+      f.detectChanges();
+      expect(envoyes.length).toBe(1);
+      expect(el.querySelector('app-selecteur-emoji')).toBeNull();
+    });
   });
 });

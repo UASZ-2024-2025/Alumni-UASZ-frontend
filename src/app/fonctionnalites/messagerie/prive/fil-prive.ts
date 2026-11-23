@@ -1,6 +1,7 @@
 import { ConversationSummary } from '../../../api/generes/notifications-messagerie/model/conversationSummary';
 import { PrivateMessage } from '../../../api/generes/notifications-messagerie/model/privateMessage';
 import { libelleJour } from '../groupes/fil';
+import { texteDernierMessage } from '../pieces-jointes/format';
 
 export { heure, horodatageListe, libelleJour, libelleSourdine } from '../groupes/fil';
 
@@ -51,7 +52,7 @@ export function construireFil(messages: PrivateMessage[], moiId: string | undefi
 export function apercuConversation(c: ConversationSummary, moiId?: string): string {
   const deMoi = !!moiId && c.lastMessageSenderId === moiId;
   if (c.lastMessageDeleted) return deMoi ? 'Vous avez supprimé ce message' : 'Ce message a été supprimé';
-  const texte = c.lastMessage ?? '';
+  const texte = texteDernierMessage(c.lastMessageType, c.lastMessageAttachmentKind, c.lastMessage);
   return deMoi && texte ? `Vous : ${texte}` : texte;
 }
 
