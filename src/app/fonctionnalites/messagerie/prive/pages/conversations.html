@@ -1,5 +1,8 @@
 <div class="messagerie" [class.fil-ouvert]="filOuvert()">
   <aside class="colonne-liste" aria-label="Mes discussions">
+    @if (nouvelle()) {
+      <app-nouvelle-discussion [exclus]="moiId ? [moiId] : []" (choisi)="ecrireA($event)" (fermer)="nouvelle.set(false)" />
+    } @else {
     @if (vueArchives()) {
       <header class="entete-liste">
         <app-bouton variante="discret" [petit]="true" libelleAria="Retour aux discussions" (clic)="vueArchives.set(false)">
@@ -11,6 +14,9 @@
     } @else {
       <header class="entete-liste">
         <h1>Discussions</h1>
+        <app-bouton variante="discret" [petit]="true" libelleAria="Nouvelle discussion" (clic)="nouvelle.set(true)">
+          <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h12v9H6l-3 3v-3H2zM8 4.5v4M6 6.5h4" /></svg>
+        </app-bouton>
       </header>
     }
 
@@ -34,8 +40,8 @@
       } @else if (store.liste().length === 0) {
         <div class="message-liste vide">
           <strong>Aucune discussion pour l'instant</strong>
-          <span>Écrivez à un étudiant, un Alumni ou un enseignant depuis sa fiche dans l'annuaire.</span>
-          <app-bouton [petit]="true" lien="/annuaire">Ouvrir l'annuaire</app-bouton>
+          <span>Écrivez à un étudiant, un Alumni ou une entreprise.</span>
+          <app-bouton [petit]="true" (clic)="nouvelle.set(true)">Nouvelle discussion</app-bouton>
         </div>
       } @else {
         @if (!vueArchives() && !recherche() && store.archives().length) {
@@ -97,6 +103,7 @@
         }
       }
     </div>
+    }
   </aside>
 
   <section class="colonne-fil">

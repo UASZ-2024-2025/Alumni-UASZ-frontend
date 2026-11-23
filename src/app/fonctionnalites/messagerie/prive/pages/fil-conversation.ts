@@ -95,7 +95,8 @@ export class FilConversation {
     const resume = this.store.liste().find((c) => c.recipientId === id);
     const message = this.messages().find((m) => m.senderId === id || m.recipientId === id);
     const nomMessage = message?.senderId === id ? message?.senderName : message?.recipientName;
-    return { nom: resume?.recipientName ?? nomMessage ?? 'Discussion', role: resume?.recipientRole };
+    const choisi = this.store.contact(id); // ALUM-263 : personne choisie, pas encore de message
+    return { nom: resume?.recipientName ?? nomMessage ?? choisi?.nom ?? 'Discussion', role: resume?.recipientRole ?? choisi?.role };
   });
 
   private marquageEnCours = false;

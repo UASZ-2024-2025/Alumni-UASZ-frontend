@@ -1,0 +1,25 @@
+:host { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.nouvelle { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+
+.entete { display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; }
+h1 { margin: 0; font: 700 var(--t-l)/1.2 var(--police-titre); }
+.icone { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.recherche { margin: 0 12px 8px; }
+.filtres { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 12px 10px; }
+.filtre { padding: 4px 10px; border: 1px solid var(--bd); border-radius: var(--rayon-pilule); background: none; color: var(--mu); font: inherit; font-size: var(--t-s); font-weight: 600; cursor: pointer; }
+.filtre:hover { border-color: var(--g8); color: var(--g8); }
+.filtre[aria-pressed='true'] { border-color: var(--g8); background: var(--g1); color: var(--g8); }
+.filtre:focus-visible { outline: 2px solid var(--g8); outline-offset: 2px; }
+
+.resultats { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 12px; }
+.info { margin: 4px 4px 10px; color: var(--mu); font-size: var(--t-s); }
+.info--erreur { color: var(--dg); }
+
+.categorie { margin: 12px 4px 6px; color: var(--mu); font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.liste { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border: 1px solid var(--bd); border-radius: var(--rayon); overflow: hidden; }
+.liste li + li { border-top: 1px solid var(--bd); }
+.personne { display: block; }
+.personne app-avatar { width: 2.1rem; font-size: var(--t-xs); }
+.texte { display: flex; flex: 1; flex-direction: column; min-width: 0; text-align: left; }
+.texte small { overflow: hidden; color: var(--mu); text-overflow: ellipsis; white-space: nowrap; }

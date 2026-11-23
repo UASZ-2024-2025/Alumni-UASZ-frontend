@@ -1,6 +1,7 @@
 import { Provider } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AlumniService } from '../../api/generes/alumni/api/alumni.service';
+import { CompaniesService } from '../../api/generes/alumni/api/companies.service';
 import { StudentsService } from '../../api/generes/alumni/api/students.service';
 import { BASE_PATH as BASE_PATH_ALUMNI } from '../../api/generes/alumni/variables';
 import { GroupMessagingService } from '../../api/generes/notifications-messagerie/api/groupMessaging.service';
@@ -15,7 +16,12 @@ const enConstruction = () =>
 // Provisoire : à retirer quand les BASE_PATH messagerie et alumni seront déclarés dans app.config.ts
 const fournisseursPrive: Provider[] = [
   { provide: BASE_PATH_MESSAGERIE, useValue: environment.urlsApi.messagerie },
+  { provide: BASE_PATH_ALUMNI, useValue: environment.urlsApi.alumni },
   PrivateMessagingService,
+  // ALUM-263 : choix du destinataire dans les annuaires
+  StudentsService,
+  AlumniService,
+  CompaniesService,
 ];
 
 const fournisseursGroupes: Provider[] = [

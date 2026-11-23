@@ -38,7 +38,7 @@ describe('FilConversation', () => {
     editPrivateMessage: ReturnType<typeof vi.fn>;
     updateConversationPreferences: ReturnType<typeof vi.fn>;
   };
-  let store: Record<'liste' | 'maj' | 'apresEnvoi' | 'apresChangement', ReturnType<typeof vi.fn>>;
+  let store: Record<'liste' | 'maj' | 'apresEnvoi' | 'apresChangement' | 'contact', ReturnType<typeof vi.fn>>;
   let confirmation: { demander: ReturnType<typeof vi.fn> };
   let params: BehaviorSubject<ParamMap>;
   let fixture: ComponentFixture<FilConversation>;
@@ -83,7 +83,7 @@ describe('FilConversation', () => {
       ),
       updateConversationPreferences: vi.fn(() => of({ pinned: false, archived: false, muted: true })),
     };
-    store = { liste: vi.fn(() => []), maj: vi.fn(), apresEnvoi: vi.fn(), apresChangement: vi.fn() };
+    store = { liste: vi.fn(() => []), maj: vi.fn(), apresEnvoi: vi.fn(), apresChangement: vi.fn(), contact: vi.fn(() => undefined) };
     confirmation = { demander: vi.fn(() => Promise.resolve(true)) };
     params = new BehaviorSubject(convertToParamMap({ recipientId: AUTRE }));
     TestBed.configureTestingModule({
@@ -144,6 +144,14 @@ describe('FilConversation', () => {
     api.getConversationMessages.mockReturnValue(of(page([])));
     await ouvrir();
     expect(el.querySelector('.fil .jour')?.textContent).toContain('Aucun message');
+  });
+
+  it('nouvelle discussion (ALUM-263) : nom et catégorie de la personne choisie en en-tête, avant tout message', async () => {
+    api.getConversationMessages.mockReturnValue(of(page([])));
+    store.contact.mockReturnValue({ userId: AUTRE, nom: 'Sonatel', role: 'ENTREPRISE' });
+    await ouvrir();
+    expect(el.querySelector('.identite strong')?.textContent).toContain('Sonatel');
+    expect(el.querySelector('.identite small')?.textContent).toContain('Entreprise');
   });
 
   it('affiche une erreur si le chargement échoue, sans spinner', async () => {
