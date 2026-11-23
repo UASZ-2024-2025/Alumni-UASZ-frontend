@@ -11,7 +11,7 @@ import { AttachmentKind } from './attachmentKind';
 
 
 /**
- * Réponse de Cloudinary à l\'envoi du fichier, recopiée dans le message.
+ * Réponse de Cloudinary à l\'envoi du fichier, recopiée dans le message. Seuls `publicId` et `version` sont signés : taille, format, durée et dimensions sont relus auprès du stockage par le service, les valeurs envoyées ici sont indicatives.
  */
 export interface AttachmentUpload { 
     kind: AttachmentKind;
