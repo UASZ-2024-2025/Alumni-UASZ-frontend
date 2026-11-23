@@ -3,14 +3,17 @@ import { of, throwError } from 'rxjs';
 import { StudentsService } from '../../../api/generes/alumni/api/students.service';
 import { ApplicationsService } from '../../../api/generes/offres-emploi/api/applications.service';
 import { Application } from '../../../api/generes/offres-emploi/model/application';
+import { provideRouter } from '@angular/router';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
+import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { FormulaireCandidature, LETTRE_MAX } from './formulaire-candidature';
 
-const cv = { id: 'cv-1', studentId: 'etu-1', title: 'Développeur Java' };
+const cv = { id: 'cv-1', studentId: 'etu-1', title: 'Développeur Java', skills: ['Spring Boot'] };
+const profil = { firstName: 'Awa', lastName: 'Diallo', email: 'awa@exemple.sn' };
 const creee: Application = { id: 'a1', offerId: 'o1', studentId: 'etu-1', status: 'SUBMITTED' };
 
-describe('FormulaireCandidature (ALUM-204)', () => {
-  let etudiantsApi: { getStudentCv: ReturnType<typeof vi.fn> };
+describe('FormulaireCandidature (ALUM-204, ALUM-259)', () => {
+  let etudiantsApi: { getStudentCv: ReturnType<typeof vi.fn>; getStudentById: ReturnType<typeof vi.fn> };
   let candidaturesApi: { submitApplication: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<FormulaireCandidature>;
   let el: HTMLElement;
@@ -20,6 +23,8 @@ describe('FormulaireCandidature (ALUM-204)', () => {
   function creer(): void {
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
+        { provide: AuthentificationService, useValue: { utilisateur: () => ({ firstName: 'Awa', lastName: 'Diallo', phone: '770000000' }) } },
         { provide: StudentsService, useValue: etudiantsApi },
         { provide: ApplicationsService, useValue: candidaturesApi },
       ],
@@ -48,16 +53,39 @@ describe('FormulaireCandidature (ALUM-204)', () => {
   };
 
   beforeEach(() => {
-    etudiantsApi = { getStudentCv: vi.fn(() => of(cv)) };
+    etudiantsApi = { getStudentCv: vi.fn(() => of(cv)), getStudentById: vi.fn(() => of(profil)) };
     candidaturesApi = { submitApplication: vi.fn(() => of(creee)) };
   });
 
-  it("charge le CV de l'étudiant et le présélectionne", () => {
+  it("joint automatiquement le CV de l'étudiant connecté, sans liste à choisir", () => {
     creer();
     expect(etudiantsApi.getStudentCv).toHaveBeenCalledWith('etu-1');
-    const choix = el.querySelector<HTMLSelectElement>('select')!;
-    expect(choix.textContent).toContain('Développeur Java');
-    expect(choix.value).toBe('cv-1');
+    expect(el.querySelector('select')).toBeNull();
+    expect(el.querySelector('.cv-titre')!.textContent).toContain('Développeur Java');
+    expect(el.querySelector('.cv-etat')!.textContent).toContain('Joint automatiquement');
+    expect(el.querySelector('a[href="/mon-espace/cv"]')).not.toBeNull();
+  });
+
+  it("déplie et replie l'aperçu du CV", () => {
+    creer();
+    expect(el.querySelector('app-apercu-cv')).toBeNull();
+    const bouton = () => [...el.querySelectorAll('button')].find((b) => /aperçu/.test(b.textContent ?? ''))!;
+    bouton().click();
+    fixture.detectChanges();
+    const apercu = el.querySelector('app-apercu-cv')!;
+    expect(apercu.textContent).toContain('Awa Diallo');
+    expect(apercu.textContent).toContain('Spring Boot');
+    expect(bouton().textContent).toContain("Masquer l'aperçu");
+    bouton().click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-apercu-cv')).toBeNull();
+  });
+
+  it("garde l'aperçu même si le profil ne se charge pas", () => {
+    etudiantsApi.getStudentById.mockReturnValue(throwError(() => new ErreurApi(500, 'ERREUR', 'Panne')));
+    creer();
+    expect(el.querySelector('form')).not.toBeNull();
+    expect(el.querySelector('app-alerte')).toBeNull();
   });
 
   it('signale la lettre obligatoire et ne contacte pas le serveur', () => {
@@ -72,18 +100,6 @@ describe('FormulaireCandidature (ALUM-204)', () => {
     saisirLettre('   ');
     envoyer();
     expect(el.textContent).toContain('La lettre de motivation est obligatoire.');
-    expect(candidaturesApi.submitApplication).not.toHaveBeenCalled();
-  });
-
-  it('signale le CV obligatoire quand aucun CV n’est choisi', () => {
-    creer();
-    const choix = el.querySelector<HTMLSelectElement>('select')!;
-    choix.value = '';
-    choix.dispatchEvent(new Event('change'));
-    choix.dispatchEvent(new Event('blur'));
-    saisirLettre('Je suis motivé.');
-    envoyer();
-    expect(el.textContent).toContain('Choisissez le CV à joindre.');
     expect(candidaturesApi.submitApplication).not.toHaveBeenCalled();
   });
 
@@ -125,7 +141,7 @@ describe('FormulaireCandidature (ALUM-204)', () => {
     creer();
     saisirLettre('Motivé.');
     envoyer();
-    expect(el.textContent).toContain('La candidature est incomplète. Vérifiez le CV et la lettre.');
+    expect(el.textContent).toContain('La candidature est incomplète. Vérifiez votre CV et votre lettre.');
     expect(lettre().value).toBe('Motivé.');
   });
 
@@ -134,6 +150,7 @@ describe('FormulaireCandidature (ALUM-204)', () => {
     creer();
     expect(el.textContent).toContain("Vous n'avez pas encore de CV sur la plateforme.");
     expect(el.querySelector('form')).toBeNull();
+    expect(el.querySelector('a[href="/mon-espace/cv"]')!.textContent).toContain('Créer mon CV');
   });
 
   it('propose de réessayer quand le CV ne peut pas être chargé', () => {

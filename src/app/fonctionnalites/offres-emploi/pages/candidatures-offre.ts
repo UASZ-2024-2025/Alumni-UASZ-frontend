@@ -10,6 +10,7 @@ import { Bouton } from '../../../commun/components/bouton/bouton';
 import { Carte } from '../../../commun/components/carte/carte';
 import { EtatVide } from '../../../commun/components/etat-vide/etat-vide';
 import { Champ, OptionChamp } from '../../../commun/components/champ/champ';
+import { Modale } from '../../../commun/components/modale/modale';
 import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ColonneTableau, Tableau } from '../../../commun/components/tableau/tableau';
 import { ConfirmationService } from '../../../commun/services/confirmation.service';
@@ -22,6 +23,7 @@ import {
 } from '../libelles';
 import { OffresEntrepriseService } from '../services/offres-entreprise.service';
 import { EntetePage } from '../../../commun/components/entete-page/entete-page';
+import { DossierCandidature } from '../composants/dossier-candidature';
 
 const ERREURS_LISTE: Record<number, string> = {
   401: 'Votre session a expiré. Reconnectez-vous.',
@@ -38,10 +40,11 @@ const ERREURS_STATUT: Record<number, string> = {
 /**
  * ALUM-208 : le recruteur voit les candidatures reçues sur une de ses offres et en change le statut.
  * L'étudiant retrouve le nouveau statut dans « Mes candidatures » (ALUM-175).
+ * ALUM-259 : « Voir le dossier » ouvre la lettre de motivation et l'aperçu du CV du candidat.
  */
 @Component({
   selector: 'app-candidatures-offre',
-  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, EtatVide, Spinner, Tableau, EntetePage],
+  imports: [DatePipe, FormsModule, Alerte, Badge, Bouton, Carte, Champ, DossierCandidature, EtatVide, Modale, Spinner, Tableau, EntetePage],
   templateUrl: './candidatures-offre.html',
   styleUrl: '../offres-emploi.scss',
 })
@@ -57,8 +60,7 @@ export class CandidaturesOffre implements OnInit {
   protected readonly colonnes: ColonneTableau[] = [
     { cle: 'etudiant', libelle: 'Étudiant' },
     { cle: 'date', libelle: 'Reçue le' },
-    { cle: 'cv', libelle: 'CV' },
-    { cle: 'lettre', libelle: 'Lettre' },
+    { cle: 'dossier', libelle: 'Dossier' },
     { cle: 'statut', libelle: 'Statut' },
     { cle: 'action', libelle: 'Changer le statut' },
   ];
@@ -73,6 +75,8 @@ export class CandidaturesOffre implements OnInit {
   /** Erreur d'un changement de statut : la liste reste affichée. */
   protected readonly erreurStatut = signal<string | null>(null);
   protected readonly enCours = signal<string | null>(null);
+  /** Candidature dont le dossier (lettre et CV) est ouvert. */
+  protected readonly dossier = signal<Application | null>(null);
 
   ngOnInit(): void {
     this.charger();
@@ -133,6 +137,7 @@ export class CandidaturesOffre implements OnInit {
       next: (maj) => {
         this.enCours.set(null);
         this.candidatures.update((l) => l.map((x) => (x.id === maj.id ? maj : x)));
+        if (this.dossier()?.id === maj.id) this.dossier.set(maj);
         this.toast.succes(`Candidature de ${etudiant} : ${libelleCandidature(maj.status).toLowerCase()}.`);
       },
       error: (e) => {

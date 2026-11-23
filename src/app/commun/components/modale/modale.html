@@ -1,6 +1,6 @@
 @if (ouvert()) {
   <div class="fond" (click)="clicFond($event)" (keydown.escape)="fermer.emit(); $event.stopPropagation()">
-    <dialog class="boite" open aria-modal="true" aria-labelledby="modale-titre">
+    <dialog class="boite" [class.large]="large()" open aria-modal="true" aria-labelledby="modale-titre">
       <header>
         <h2 id="modale-titre">{{ titre() }}</h2>
         <button type="button" class="croix" aria-label="Fermer" (click)="fermer.emit()">×</button>

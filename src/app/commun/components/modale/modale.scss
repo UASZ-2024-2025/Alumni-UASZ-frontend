@@ -14,6 +14,7 @@
   background: var(--sf);
   box-shadow: var(--ombre-carte);
 }
+.boite.large { width: min(960px, 100%); }
 header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--bd); }
 h2 { margin: 0; font: 700 1.25rem/1.2 var(--police-titre); }
 .croix { width: 32px; height: 32px; border: 0; border-radius: var(--rayon-s); background: none; color: var(--mu); font-size: var(--t-xl); line-height: 1; cursor: pointer; }
