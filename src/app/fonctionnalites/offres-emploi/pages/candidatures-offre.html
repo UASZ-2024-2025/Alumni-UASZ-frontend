@@ -2,6 +2,7 @@
   @if (titreOffre(); as titre) {
     <p class="meta">Offre : <strong>{{ titre }}</strong></p>
   }
+  <app-bouton actions variante="secondaire" [lien]="['/offres-emploi', offreId, 'candidats-suggeres']">Candidats suggérés</app-bouton>
   <app-bouton actions variante="secondaire" [lien]="'/offres-emploi/mes-offres'">Retour à mes offres</app-bouton>
 </app-entete-page>
 

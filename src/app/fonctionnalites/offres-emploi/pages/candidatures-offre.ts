@@ -52,7 +52,7 @@ export class CandidaturesOffre implements OnInit {
   private readonly service = inject(OffresEntrepriseService);
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(ToastService);
-  private readonly offreId = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  protected readonly offreId = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
 
   protected readonly libelleCandidature = libelleCandidature;
   protected readonly tonCandidature = tonCandidature;

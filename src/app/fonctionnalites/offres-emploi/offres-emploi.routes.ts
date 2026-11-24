@@ -3,16 +3,14 @@ import { CanMatchFn, Routes } from '@angular/router';
 import { StudentsService } from '../../api/generes/alumni/api/students.service';
 import { BASE_PATH as BASE_PATH_ALUMNI } from '../../api/generes/alumni/variables';
 import { ApplicationsService } from '../../api/generes/offres-emploi/api/applications.service';
+import { MatchingsService } from '../../api/generes/analyses-correspondances/api/matchings.service';
+import { BASE_PATH as BASE_PATH_ANALYSES } from '../../api/generes/analyses-correspondances/variables';
 import { OffersService } from '../../api/generes/offres-emploi/api/offers.service';
 import { ProposalsService } from '../../api/generes/offres-emploi/api/proposals.service';
 import { BASE_PATH as BASE_PATH_OFFRES } from '../../api/generes/offres-emploi/variables';
 import { AuthentificationService } from '../../socle/authentification/services/authentification.service';
 import { roleGuard } from '../../socle/gardes-routes/role.guard';
 import { environment } from '../../../environments/environment';
-
-const enConstruction = () =>
-  import('../../commun/components/page-en-construction/page-en-construction')
-    .then((m) => m.PageEnConstruction);
 
 const ROLES_OFFRES = ['ALUMNI', 'ETUDIANT', 'ENTREPRISE', 'ADMINISTRATEUR'];
 
@@ -24,6 +22,12 @@ const fournisseursOffres: Provider[] = [
   ApplicationsService,
   ProposalsService,
   StudentsService, // CV de l'étudiant pour le formulaire de candidature (ALUM-204)
+];
+
+// Matching (ALUM-186) : service analytics-matching
+const fournisseursMatching: Provider[] = [
+  { provide: BASE_PATH_ANALYSES, useValue: environment.urlsApi.analyses },
+  MatchingsService,
 ];
 
 const estEtudiant: CanMatchFn = () =>
@@ -68,6 +72,14 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     loadComponent: () => import('./pages/publier-offre').then((m) => m.PublierOffre),
   },
   {
+    path: 'offres-emploi/:id/candidats-suggeres',
+    title: 'Candidats suggérés',
+    canActivate: [roleGuard],
+    data: { roles: ['ENTREPRISE', 'ALUMNI'], titre: 'Candidats suggérés', ticket: 'ALUM-186' },
+    providers: fournisseursMatching,
+    loadComponent: () => import('./pages/candidats-suggeres').then((m) => m.CandidatsSuggeres),
+  },
+  {
     // Après les routes fixes (mes-offres, publier), sinon :id les capte
     path: 'offres-emploi/:id',
     title: "Détail de l'offre",
@@ -94,7 +106,8 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     path: 'correspondances',
     title: 'Correspondances',
     canActivate: [roleGuard],
-    data: { roles: ['ETUDIANT'], titre: 'Correspondances', ticket: 'AL-49' },
-    loadComponent: enConstruction,
+    data: { roles: ['ETUDIANT'], titre: 'Correspondances', ticket: 'ALUM-186' },
+    providers: fournisseursMatching,
+    loadComponent: () => import('./pages/offres-recommandees').then((m) => m.OffresRecommandees),
   },
 ];
