@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AlumniHomeSummary } from '../model/alumniHomeSummary';
+// @ts-ignore
 import { AlumniPagedResponse } from '../model/alumniPagedResponse';
 // @ts-ignore
 import { AlumniProfile } from '../model/alumniProfile';
@@ -228,6 +230,62 @@ export class AlumniService extends BaseService {
         let localVarPath = `/alumni/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/experiences`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Array<WorkExperience>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Synthèse de la page d\&#39;accueil de l\&#39;Alumni connecté
+     * Réservé au rôle ALUMNI. Renvoie en un seul appel les compteurs de la page d\&#39;accueil de l\&#39;Alumni connecté. L\&#39;Alumni est identifié uniquement par son jeton (aucun identifiant en paramètre) : chacun ne voit que ses propres chiffres. Aucune donnée n\&#39;est dupliquée : les compteurs sont calculés à chaque appel à partir des services qui détiennent les données. 
+     * @endpoint get /alumni/me/home-summary
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getMyAlumniHomeSummary(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<AlumniHomeSummary>;
+    public getMyAlumniHomeSummary(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AlumniHomeSummary>>;
+    public getMyAlumniHomeSummary(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AlumniHomeSummary>>;
+    public getMyAlumniHomeSummary(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/alumni/me/home-summary`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<AlumniHomeSummary>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

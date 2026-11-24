@@ -1,3 +1,4 @@
+export * from './alumniHomeSummary';
 export * from './alumniPagedResponse';
 export * from './alumniProfile';
 export * from './alumniProfileUpdateRequest';

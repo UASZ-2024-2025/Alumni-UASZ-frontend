@@ -2,7 +2,7 @@
 
 Microservice responsable de la gestion des profils étudiants, des CV, du parcours professionnel des Alumni, des entreprises partenaires et des promotions académiques pour la plateforme Alumni UASZ. 
 
-The version of the OpenAPI document: 1.8.0
+The version of the OpenAPI document: 1.16.0
 
 ## Building
 

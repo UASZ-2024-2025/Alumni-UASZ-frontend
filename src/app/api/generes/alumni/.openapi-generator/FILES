@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 README.md
 api.base.service.ts
 api.module.ts
@@ -13,6 +12,7 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/alumniHomeSummary.ts
 model/alumniPagedResponse.ts
 model/alumniProfile.ts
 model/alumniProfileUpdateRequest.ts
