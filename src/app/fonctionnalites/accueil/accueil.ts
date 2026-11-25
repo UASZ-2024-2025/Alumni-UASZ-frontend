@@ -70,8 +70,8 @@ export class Accueil implements OnInit {
   protected readonly chiffres = signal<{ libelle: string; valeur?: number }[]>([]);
 
   protected readonly intro = computed(() => INTRO[this.auth.role() ?? ''] ?? '');
-    ngOnInit(): void {
-    // L'enseignant a sa propre page (AccueilEnseignant), qui charge déjà les notifications.
+  
+  ngOnInit(): void {
     if (this.auth.role() !== 'ENSEIGNANT') {
       this.charger();
     }

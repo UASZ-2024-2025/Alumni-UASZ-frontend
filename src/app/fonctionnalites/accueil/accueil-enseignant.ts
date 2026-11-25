@@ -17,7 +17,7 @@ import { AuthentificationService } from '../../socle/authentification/services/a
   imports: [RouterLink, Alerte, Bouton, Carte, CarteStat, EntetePage, Spinner, TableauDeBord],
   template: `
     <app-entete-page [titre]="salutation()">
-      <p class="intro">Consultez l'annuaire et échangez avec les étudiants et les Alumni.</p>
+      <p class="intro">Consultez l’annuaire et échangez avec les étudiants et les Alumni.</p>
     </app-entete-page>
 
     @if (chargement()) {
@@ -36,7 +36,7 @@ import { AuthentificationService } from '../../socle/authentification/services/a
 
       <app-carte titre="Raccourcis">
         <ul class="raccourcis">
-          <li><a routerLink="/annuaire">Consulter l'annuaire</a></li>
+          <li><a routerLink="/annuaire">Consulter l’annuaire</a></li>
         </ul>
       </app-carte>
 
@@ -51,7 +51,7 @@ import { AuthentificationService } from '../../socle/authentification/services/a
     app-alerte, app-carte { display: block; margin-bottom: 14px; }
     .raccourcis { margin: 0; padding-left: 1.2rem; }
     
-    /* On cache l'en-tête du composant commun TableauDeBord pour éviter le 2ème h1 */
+    /* Masque l'en-tête du composant commun TableauDeBord pour éviter le 2ème h1 (à remplacer par un input dédié plus tard) */
     .tableau-de-bord-wrapper ::ng-deep app-entete-page { display: none !important; }
   `,
 })
