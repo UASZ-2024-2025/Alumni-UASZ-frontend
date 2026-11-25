@@ -5,7 +5,6 @@ import { Alerte } from '../../commun/components/alerte/alerte';
 import { Bouton } from '../../commun/components/bouton/bouton';
 import { Carte } from '../../commun/components/carte/carte';
 import { CarteStat } from '../../commun/components/carte-stat/carte-stat';
-import { EntetePage } from '../../commun/components/entete-page/entete-page';
 import { Spinner } from '../../commun/components/spinner/spinner';
 import { TableauDeBord } from '../../commun/components/tableau-de-bord/tableau-de-bord';
 import { messageErreur } from '../../commun/utilitaires/messages-erreur';
@@ -14,11 +13,10 @@ import { AuthentificationService } from '../../socle/authentification/services/a
 /** Page d'accueil de l'enseignant (ALUM-240) : salutation, notifications, raccourcis et statistiques. */
 @Component({
   selector: 'app-accueil-enseignant',
-  imports: [RouterLink, Alerte, Bouton, Carte, CarteStat, EntetePage, Spinner, TableauDeBord],
+  imports: [RouterLink, Alerte, Bouton, Carte, CarteStat, Spinner, TableauDeBord],
   template: `
-    <app-entete-page [titre]="salutation()">
-      <p class="intro">Consultez l’annuaire et échangez avec les étudiants et les Alumni.</p>
-    </app-entete-page>
+    <p class="salutation">{{ salutation() }}</p>
+    <p class="intro">Consultez l'annuaire et échangez avec les étudiants et les Alumni.</p>
 
     @if (chargement()) {
       <app-spinner libelle="Chargement de votre activité…" />
@@ -44,6 +42,7 @@ import { AuthentificationService } from '../../socle/authentification/services/a
     }
   `,
   styles: `
+    .salutation { margin: 0; font: 700 1.625rem/1.2 var(--police-titre); }
     .intro { margin: .25rem 0 0; color: var(--mu); }
     .chiffres { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 10px; margin-bottom: 14px; }
     app-alerte, app-carte { display: block; margin-bottom: 14px; }

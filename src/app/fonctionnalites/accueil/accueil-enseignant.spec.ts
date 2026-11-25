@@ -36,7 +36,7 @@ describe('AccueilEnseignant', () => {
 
   it('salue l’enseignant, affiche les notifications et un raccourci', () => {
     const el = monter(of({ unreadCount: 5 }));
-    expect(el.querySelector('h1')!.textContent).toContain('Moussa');
+    expect(el.querySelector('.salutation')!.textContent).toContain('Moussa');
     expect(el.querySelector('app-carte-stat')!.textContent).toContain('5');
     expect(el.textContent).toContain('Consulter l’annuaire');
   });
@@ -85,3 +85,4 @@ describe('Accueil : affichage selon le rôle', () => {
     expect(monter('ETUDIANT').querySelector('app-accueil-enseignant')).toBeNull();
   });
 });
+
