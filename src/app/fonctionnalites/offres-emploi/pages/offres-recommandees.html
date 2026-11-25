@@ -1,5 +1,7 @@
 <app-entete-page titre="Offres recommandées pour vous">
-  <p aria-live="polite">{{ offres().length }} offre(s) recommandée(s)</p>
+  @if (!chargement() && !erreur()) {
+    <p aria-live="polite">{{ offres().length }} offre(s) recommandée(s)</p>
+  }
 </app-entete-page>
 
 <form class="filtres" (submit)="$event.preventDefault()">

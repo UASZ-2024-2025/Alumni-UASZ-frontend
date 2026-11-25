@@ -39,7 +39,7 @@ describe('CandidatsSuggeres', () => {
 
   it("demande les candidats de l'offre ouverte et affiche son titre", async () => {
     const el = await monter(of(CANDIDATS));
-    expect(api.getMatchingCandidatesForOffer).toHaveBeenCalledWith('o1', 60);
+    expect(api.getMatchingCandidatesForOffer).toHaveBeenCalledWith('o1', 50);
     expect(el.querySelector('.meta')!.textContent).toContain('Développeur Java');
   });
 

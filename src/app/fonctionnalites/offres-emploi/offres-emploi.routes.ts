@@ -75,7 +75,7 @@ export const OFFRES_EMPLOI_ROUTES: Routes = [
     path: 'offres-emploi/:id/candidats-suggeres',
     title: 'Candidats suggérés',
     canActivate: [roleGuard],
-    data: { roles: ['ENTREPRISE', 'ALUMNI'], titre: 'Candidats suggérés', ticket: 'ALUM-186' },
+    data: { roles: ['ENTREPRISE'], titre: 'Candidats suggérés', ticket: 'ALUM-186' },
     providers: fournisseursMatching,
     loadComponent: () => import('./pages/candidats-suggeres').then((m) => m.CandidatsSuggeres),
   },
