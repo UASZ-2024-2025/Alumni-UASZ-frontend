@@ -5,6 +5,7 @@ import { Alerte } from '../../commun/components/alerte/alerte';
 import { Bouton } from '../../commun/components/bouton/bouton';
 import { Carte } from '../../commun/components/carte/carte';
 import { CarteStat } from '../../commun/components/carte-stat/carte-stat';
+import { EntetePage } from '../../commun/components/entete-page/entete-page';
 import { Spinner } from '../../commun/components/spinner/spinner';
 import { TableauDeBord } from '../../commun/components/tableau-de-bord/tableau-de-bord';
 import { messageErreur } from '../../commun/utilitaires/messages-erreur';
@@ -13,10 +14,11 @@ import { AuthentificationService } from '../../socle/authentification/services/a
 /** Page d'accueil de l'enseignant (ALUM-240) : salutation, notifications, raccourcis et statistiques. */
 @Component({
   selector: 'app-accueil-enseignant',
-  imports: [RouterLink, Alerte, Bouton, Carte, CarteStat, Spinner, TableauDeBord],
+  imports: [RouterLink, Alerte, Bouton, Carte, CarteStat, EntetePage, Spinner, TableauDeBord],
   template: `
-    <p class="salutation">{{ salutation() }}</p>
-    <p class="intro">Consultez l'annuaire et échangez avec les étudiants et les Alumni.</p>
+    <app-entete-page [titre]="salutation()">
+      <p class="intro">Consultez l'annuaire et échangez avec les étudiants et les Alumni.</p>
+    </app-entete-page>
 
     @if (chargement()) {
       <app-spinner libelle="Chargement de votre activité…" />
@@ -34,19 +36,23 @@ import { AuthentificationService } from '../../socle/authentification/services/a
 
       <app-carte titre="Raccourcis">
         <ul class="raccourcis">
-          <li><a routerLink="/annuaire">Consulter l’annuaire</a></li>
+          <li><a routerLink="/annuaire">Consulter l'annuaire</a></li>
         </ul>
       </app-carte>
 
-      <app-tableau-de-bord titre="Statistiques" [admin]="statistiquesOuvertes" />
+      <div class="tableau-de-bord-wrapper">
+        <app-tableau-de-bord titre="Statistiques" [admin]="statistiquesOuvertes" />
+      </div>
     }
   `,
   styles: `
-    .salutation { margin: 0; font: 700 1.625rem/1.2 var(--police-titre); }
     .intro { margin: .25rem 0 0; color: var(--mu); }
     .chiffres { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 10px; margin-bottom: 14px; }
     app-alerte, app-carte { display: block; margin-bottom: 14px; }
     .raccourcis { margin: 0; padding-left: 1.2rem; }
+    
+    /* On cache l'en-tête du composant commun TableauDeBord pour éviter le 2ème h1 */
+    .tableau-de-bord-wrapper ::ng-deep app-entete-page { display: none !important; }
   `,
 })
 export class AccueilEnseignant implements OnInit {

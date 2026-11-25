@@ -12,7 +12,6 @@ import { AuthentificationService } from '../../socle/authentification/services/a
 import { Accueil } from './accueil';
 import { AccueilEnseignant } from './accueil-enseignant';
 
-/** Faux services : le tableau de bord commun les injecte, mais ne les appelle pas tant que ALUM-182 n'est pas livré. */
 const fauxServices = [
   { provide: DashboardService, useValue: {} },
   { provide: AnalyticsReportsService, useValue: {} },
@@ -34,11 +33,11 @@ describe('AccueilEnseignant', () => {
     return fixture.nativeElement as HTMLElement;
   };
 
-  it('salue l’enseignant, affiche les notifications et un raccourci', () => {
+ it("salue l'enseignant, affiche les notifications et un raccourci", () => {
     const el = monter(of({ unreadCount: 5 }));
-    expect(el.querySelector('.salutation')!.textContent).toContain('Moussa');
+    expect(el.querySelector('h1')!.textContent).toContain('Moussa');
     expect(el.querySelector('app-carte-stat')!.textContent).toContain('5');
-    expect(el.textContent).toContain('Consulter l’annuaire');
+   expect(el.textContent).toContain("Consulter l'annuaire");
   });
 
   it('affiche un état vide tant que les statistiques ne sont pas ouvertes aux enseignants', () => {
@@ -52,7 +51,7 @@ describe('AccueilEnseignant', () => {
     expect(el.querySelector('app-spinner')).not.toBeNull();
   });
 
-  it('signale l’erreur de chargement avec un bouton Réessayer', () => {
+  it("signale l'erreur de chargement avec un bouton Réessayer", () => {
     const el = monter(throwError(() => new ErreurApi(500, 'X', 'Service indisponible')));
     expect(el.querySelector('[role="alert"]')!.textContent).toContain('Service indisponible');
     expect(el.textContent).toContain('Réessayer');
@@ -85,4 +84,3 @@ describe('Accueil : affichage selon le rôle', () => {
     expect(monter('ETUDIANT').querySelector('app-accueil-enseignant')).toBeNull();
   });
 });
-
