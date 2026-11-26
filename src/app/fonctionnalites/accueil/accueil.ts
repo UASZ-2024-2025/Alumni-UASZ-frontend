@@ -11,6 +11,7 @@ import { EntetePage } from '../../commun/components/entete-page/entete-page';
 import { CarteStat } from '../../commun/components/carte-stat/carte-stat';
 import { messageErreur } from '../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../socle/authentification/services/authentification.service';
+import { AccueilEnseignant } from './accueil-enseignant';
 
 /** Phrase d'accueil propre à chaque rôle (ALUM-231 étudiant, ALUM-234 Alumni, ALUM-237 entreprise). */
 const INTRO: Record<string, string> = {
@@ -24,24 +25,28 @@ const INTRO: Record<string, string> = {
 /** Page d'accueil : bonjour, notifications non lues et chiffres clés du rôle (la navigation est dans le menu). */
 @Component({
   selector: 'app-accueil',
-  imports: [Alerte, Bouton, CarteStat, EntetePage],
+  imports: [AccueilEnseignant, Alerte, Bouton, CarteStat, EntetePage],
   template: `
-    <app-entete-page [titre]="salutation()">
-      <p class="intro">{{ intro() }}</p>
-    </app-entete-page>
+    @if (auth.role() === 'ENSEIGNANT') {
+      <app-accueil-enseignant />
+    } @else {
+      <app-entete-page [titre]="salutation()">
+        <p class="intro">{{ intro() }}</p>
+      </app-entete-page>
 
-    @if (erreur(); as message) {
-      <app-alerte>
-        {{ message }}
-        <app-bouton variante="secondaire" [petit]="true" (clic)="charger()">Réessayer</app-bouton>
-      </app-alerte>
-    }
-    <div class="chiffres">
-      <app-carte-stat libelle="Notifications non lues" [valeur]="nonLues()" />
-      @for (c of chiffres(); track c.libelle) {
-        <app-carte-stat [libelle]="c.libelle" [valeur]="c.valeur" />
+      @if (erreur(); as message) {
+        <app-alerte>
+          {{ message }}
+          <app-bouton variante="secondaire" [petit]="true" (clic)="charger()">Réessayer</app-bouton>
+        </app-alerte>
       }
-    </div>
+      <div class="chiffres">
+        <app-carte-stat libelle="Notifications non lues" [valeur]="nonLues()" />
+        @for (c of chiffres(); track c.libelle) {
+          <app-carte-stat [libelle]="c.libelle" [valeur]="c.valeur" />
+        }
+      </div>
+    }
   `,
   styles: `
     .intro { margin: .25rem 0 0; color: var(--mu); }
@@ -65,8 +70,11 @@ export class Accueil implements OnInit {
   protected readonly chiffres = signal<{ libelle: string; valeur?: number }[]>([]);
 
   protected readonly intro = computed(() => INTRO[this.auth.role() ?? ''] ?? '');
+  
   ngOnInit(): void {
-    this.charger();
+    if (this.auth.role() !== 'ENSEIGNANT') {
+      this.charger();
+    }
   }
 
   protected charger(): void {
