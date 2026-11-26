@@ -48,6 +48,16 @@ aside {
     color: var(--fond-colonne);
     font: 700 1.4em var(--police-cv);
   }
+  // Photo (ALUM-256) : même cercle que les initiales, recadrée sans déformation.
+  .photo {
+    display: block;
+    width: 4.2rem;
+    height: 4.2rem;
+    margin: 0 auto 0.8rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--texte-colonne);
+  }
   h3 { color: inherit; border-bottom-color: currentColor; }
   ul { margin: 0; padding: 0; list-style: none; }
   li::before { content: '•  '; }

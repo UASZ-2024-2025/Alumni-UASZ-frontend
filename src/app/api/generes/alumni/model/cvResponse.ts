@@ -27,5 +27,9 @@ export interface CvResponse {
      * Lien vers le fichier PDF du CV publié
      */
     fileUrl?: string;
+    /**
+     * Vrai si l\'étudiant a une photo que l\'appelant peut lire (lui-même ou un administrateur) ; elle se lit avec `GET /students/{id}/cv/photo`. 
+     */
+    hasPhoto?: boolean;
 }
 

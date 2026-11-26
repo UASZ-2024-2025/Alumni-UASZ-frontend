@@ -1,6 +1,6 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, map, of, startWith, switchMap, throwError } from 'rxjs';
 import { StudentsService } from '../../../api/generes/alumni/api/students.service';
 import { Alerte } from '../../../commun/components/alerte/alerte';
@@ -8,6 +8,7 @@ import { Bouton } from '../../../commun/components/bouton/bouton';
 import { EntetePage } from '../../../commun/components/entete-page/entete-page';
 import { Carte } from '../../../commun/components/carte/carte';
 import { Champ } from '../../../commun/components/champ/champ';
+import { ChampFichier } from '../../../commun/components/champ-fichier/champ-fichier';
 import { PucesCompetences } from '../../../commun/components/puces-competences/puces-competences';
 import { Spinner } from '../../../commun/components/spinner/spinner';
 import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
@@ -25,10 +26,11 @@ import {
   versRequeteCv,
 } from '../modeles/cv.modele';
 import { CvPdfService } from '../services/cv-pdf.service';
+import { PhotoCvService, TAILLE_MAX_PHOTO_MO, verifierPhoto } from '../services/photo-cv.service';
 
 @Component({
   selector: 'app-editeur-cv',
-  imports: [ReactiveFormsModule, Alerte, ApercuCv, Bouton, EntetePage, Carte, Champ, PucesCompetences, Spinner],
+  imports: [ReactiveFormsModule, Alerte, ApercuCv, Bouton, EntetePage, Carte, Champ, ChampFichier, PucesCompetences, Spinner],
   templateUrl: './editeur-cv.html',
   styleUrls: ['./profil-etudiant.scss', './editeur-cv.scss'],
 })
@@ -37,6 +39,8 @@ export class EditeurCv implements OnInit {
   private readonly api = inject(StudentsService);
   private readonly auth = inject(AuthentificationService);
   private readonly pdf = inject(CvPdfService);
+  private readonly photos = inject(PhotoCvService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly modeles = MODELES_CV.map((m) => ({ valeur: m.code, libelle: m.libelle }));
   protected readonly languesCv = LANGUES_CV.map((l) => ({ valeur: l, libelle: l }));
@@ -53,6 +57,14 @@ export class EditeurCv implements OnInit {
     langues: this.fb.array<FormGroup>([]),
   });
   private readonly identite = signal<DonneesCv>(cvInitial(null, null));
+
+  // ----- Photo du CV (ALUM-256) : enregistrée dès qu'elle est choisie, à part du reste du CV -----
+  protected readonly taillePhotoMo = TAILLE_MAX_PHOTO_MO;
+  protected readonly champPhoto = new FormControl<File | null>(null);
+  protected readonly photo = signal<string | null>(null);
+  protected readonly photoEnCours = signal(false);
+  protected readonly erreurPhoto = signal<string | null>(null);
+  protected readonly succesPhoto = signal<string | null>(null);
 
   private readonly valeurs = toSignal(
     this.formulaire.valueChanges.pipe(
@@ -75,6 +87,7 @@ export class EditeurCv implements OnInit {
       experiences: v.experiences as DonneesCv['experiences'],
       formations: v.formations as DonneesCv['formations'],
       langues: v.langues as DonneesCv['langues'],
+      photo: this.photo(),
     });
   });
 
@@ -116,12 +129,98 @@ export class EditeurCv implements OnInit {
           this.nouveau.set(!cv);
           this.appliquer(cv ? depuisCvEnregistre(cv, base) : base);
           this.chargement.set(false);
+          if (cv?.hasPhoto) this.chargerPhoto(id);
         },
         error: (e) => {
           this.erreur.set(messageErreur(e, { 404: 'Profil introuvable.', 403: 'Accès refusé.' }));
           this.chargement.set(false);
         },
       });
+  }
+
+  constructor() {
+    this.champPhoto.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((fichier) => {
+        if (fichier) void this.envoyerPhoto(fichier);
+      });
+  }
+
+  /** Photo déjà enregistrée : en cas d'échec, le CV garde simplement les initiales. */
+  private chargerPhoto(id: string): void {
+    this.api.getStudentCvPhoto(id).subscribe({
+      next: async (image) => {
+        try {
+          this.photo.set(await this.photos.carree(image));
+        } catch {
+          this.erreurPhoto.set("Votre photo n'a pas pu être affichée.");
+        }
+      },
+      error: () => this.erreurPhoto.set("Votre photo n'a pas pu être chargée."),
+    });
+  }
+
+  /** Aperçu immédiat, puis enregistrement ; en cas de refus, l'ancienne photo revient. */
+  private async envoyerPhoto(fichier: File): Promise<void> {
+    const id = this.auth.utilisateur()?.id;
+    this.erreurPhoto.set(null);
+    this.succesPhoto.set(null);
+    const refus = verifierPhoto(fichier);
+    if (refus) {
+      this.erreurPhoto.set(refus);
+      this.champPhoto.reset(null, { emitEvent: false });
+      return;
+    }
+    if (!id) return;
+
+    let apercu: string;
+    try {
+      apercu = await this.photos.carree(fichier);
+    } catch {
+      this.erreurPhoto.set("Cette image n'a pas pu être lue. Essayez avec une autre photo.");
+      this.champPhoto.reset(null, { emitEvent: false });
+      return;
+    }
+    const precedente = this.photo();
+    this.photo.set(apercu);
+    this.photoEnCours.set(true);
+    this.api.updateStudentCvPhoto(id, fichier).subscribe({
+      next: () => {
+        this.photoEnCours.set(false);
+        this.succesPhoto.set(precedente ? 'Photo remplacée.' : 'Photo ajoutée.');
+        this.champPhoto.reset(null, { emitEvent: false });
+      },
+      error: (e) => {
+        this.photoEnCours.set(false);
+        this.photo.set(precedente);
+        this.champPhoto.reset(null, { emitEvent: false });
+        this.erreurPhoto.set(
+          messageErreur(e, {
+            400: `Photo refusée : choisissez une image JPEG ou PNG de ${TAILLE_MAX_PHOTO_MO} Mo maximum.`,
+            403: 'Vous ne pouvez modifier que votre propre photo.',
+          }),
+        );
+      },
+    });
+  }
+
+  protected supprimerPhoto(): void {
+    const id = this.auth.utilisateur()?.id;
+    if (!id) return;
+    this.erreurPhoto.set(null);
+    this.succesPhoto.set(null);
+    this.photoEnCours.set(true);
+    this.api.deleteStudentCvPhoto(id).subscribe({
+      next: () => {
+        this.photoEnCours.set(false);
+        this.photo.set(null);
+        this.succesPhoto.set('Photo supprimée.');
+      },
+      error: (e) => {
+        this.photoEnCours.set(false);
+        this.erreurPhoto.set(messageErreur(e, { 403: 'Vous ne pouvez supprimer que votre propre photo.' }));
+      },
+    });
   }
 
   private appliquer(d: DonneesCv): void {

@@ -145,3 +145,30 @@ describe('modèles du CV', () => {
     expect(r.educations[0].endDate).toBeUndefined();
   });
 });
+
+/** Petite photo JPEG réelle (8 x 8 px), comme celles que produit PhotoCvService. */
+const PHOTO_JPEG =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAAIAAgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDCooorzj7E/9k=';
+
+describe('CvPdfService : photo du CV (ALUM-256)', () => {
+  const service = TestBed.inject(CvPdfService);
+
+  it('place la photo, découpée en cercle, à la place des initiales', async () => {
+    const contenu = await texte(await service.generer({ ...donnees(), photo: PHOTO_JPEG }));
+
+    expect(contenu).toMatch(/\/Subtype\s*\/Image/);
+    expect(contenu).toMatch(/\bW\s+n\b/); // chemin de découpe (cercle)
+    expect(contenu).not.toContain('(AD) Tj');
+  });
+
+  it('garde les initiales sans photo', async () => {
+    const contenu = await texte(await service.generer(donnees()));
+
+    expect(contenu).not.toMatch(/\/Subtype\s*\/Image/);
+    expect(contenu).toContain('(AD) Tj');
+  });
+
+  it("n'envoie jamais la photo avec le CV", () => {
+    expect(JSON.stringify(versRequeteCv({ ...donnees(), photo: PHOTO_JPEG }))).not.toContain('base64');
+  });
+});

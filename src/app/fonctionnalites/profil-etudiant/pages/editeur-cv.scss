@@ -22,3 +22,36 @@
 
 .titre-ligne { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .lecture-seule { margin: 0; color: var(--mu); font-size: var(--t-s); }
+
+// Photo du CV (ALUM-256) : vignette ronde comme dans l'aperçu et le PDF.
+.zone-photo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.vignette-photo {
+  width: 5.5rem;
+  height: 5.5rem;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--bd);
+  &.vide {
+    display: grid;
+    place-items: center;
+    padding: 0.5rem;
+    color: var(--mu);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+}
+.actions-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 14rem;
+}
+
