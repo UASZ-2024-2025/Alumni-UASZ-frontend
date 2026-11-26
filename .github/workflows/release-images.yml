@@ -1,3 +1,4 @@
+# Attention : l'image est construite avec la configuration Angular « demo » (URL d'API de la démo) ; ce n'est pas une image neutre.
 # Image versionnée du frontend (ALUM-190) : un tag git vX.Y.Z publie l'image avec les tags X.Y.Z et sha.
 name: Release - Image du frontend
 
@@ -28,6 +29,7 @@ jobs:
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: ${{ env.IMAGE }}
+          flavor: latest=false
           tags: |
             type=semver,pattern={{version}}
             type=sha
