@@ -58,6 +58,11 @@ export interface DonneesCv {
   langues: LangueCv[];
   /** Centres d'intérêt : repris du profil, non enregistrés avec le CV. */
   interets: string[];
+  /**
+   * Photo du CV (ALUM-256) déjà recadrée en carré, en data URL JPEG, ou `null` : les initiales s'affichent alors.
+   * Enregistrée à part (PUT /students/{id}/cv/photo), jamais envoyée avec le CV.
+   */
+  photo: string | null;
 }
 
 export interface TitresSections {
@@ -123,6 +128,7 @@ export function cvInitial(utilisateur: User | null, profil: StudentProfile | nul
     formations: [],
     langues: [{ language: 'Français', proficiency: 'Langue maternelle' }],
     interets: [...(profil?.interests ?? [])],
+    photo: null,
   };
 }
 

@@ -7,7 +7,11 @@ import { DonneesCv, initialesCv, periode, titresSections } from '../modeles/cv.m
   template: `
     <article class="feuille" [attr.data-modele]="donnees().modele" aria-label="Aperçu du CV">
       <aside>
-        <span class="initiales" aria-hidden="true">{{ initiales() }}</span>
+        @if (donnees().photo; as photo) {
+          <img class="photo" [src]="photo" [alt]="'Photo de ' + nomComplet()" />
+        } @else {
+          <span class="initiales" aria-hidden="true">{{ initiales() }}</span>
+        }
         @if (contacts().length) {
           <h3>{{ t().contact }}</h3>
           @for (c of contacts(); track c) { <p class="texte">{{ c }}</p> }

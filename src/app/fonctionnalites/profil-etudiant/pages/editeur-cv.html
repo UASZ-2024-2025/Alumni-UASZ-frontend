@@ -31,6 +31,30 @@
 
         <app-carte class="fiche">
 <div class="corps">
+          <h2>Photo</h2>
+          <p class="lecture-seule">Facultative. Elle apparaît dans l'aperçu et dans le PDF, recadrée en cercle.</p>
+          @if (erreurPhoto()) { <app-alerte>{{ erreurPhoto() }}</app-alerte> }
+          @if (succesPhoto()) { <app-alerte type="succes">{{ succesPhoto() }}</app-alerte> }
+          <div class="zone-photo">
+            @if (photo()) {
+              <img class="vignette-photo" [src]="photo()" alt="Votre photo de CV" />
+            } @else {
+              <span class="vignette-photo vide" aria-hidden="true">Aucune photo</span>
+            }
+            <div class="actions-photo">
+              <app-champ-fichier [libelle]="photo() ? 'Remplacer la photo (JPEG ou PNG, ' + taillePhotoMo + ' Mo max.)' : 'Ajouter une photo (JPEG ou PNG, ' + taillePhotoMo + ' Mo max.)'"
+                accept="image/jpeg,image/png" [tailleMaxMo]="taillePhotoMo" [formControl]="champPhoto" />
+              @if (photoEnCours()) { <app-spinner libelle="Enregistrement de la photo…" /> }
+              @if (photo() && !photoEnCours()) {
+                <app-bouton variante="danger" [petit]="true" (clic)="supprimerPhoto()">Supprimer la photo</app-bouton>
+              }
+            </div>
+          </div>
+        </div>
+</app-carte>
+
+        <app-carte class="fiche">
+<div class="corps">
           <h2>Compétences</h2>
           <app-puces-competences libelle="Compétences" formControlName="competences" placeholder="Java, Spring Boot, Docker…" />
         </div>

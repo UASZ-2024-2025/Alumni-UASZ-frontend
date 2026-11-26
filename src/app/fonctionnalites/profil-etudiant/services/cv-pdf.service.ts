@@ -168,11 +168,25 @@ export class CvPdfService {
     let pageG = 1;
     doc.setPage(1);
     let yg = MARGE + 6;
-    doc.setFillColor(...(theme.colonnePleine ? BLANC : theme.accent));
-    doc.circle(COL_G / 2, yg + 11, 11, 'F');
-    police('bold', 17);
-    doc.setTextColor(...(theme.colonnePleine ? theme.accent : BLANC));
-    doc.text(versLatin(initialesCv(d)), COL_G / 2, yg + 14, { align: 'center' });
+    if (d.photo) {
+      // Photo (ALUM-256) : déjà recadrée en carré, découpée en cercle à la place des initiales.
+      const [cx, cy, r] = [COL_G / 2, yg + 11, 11];
+      doc.saveGraphicsState();
+      doc.circle(cx, cy, r, null);
+      doc.clip();
+      doc.discardPath();
+      doc.addImage(d.photo, 'JPEG', cx - r, cy - r, 2 * r, 2 * r);
+      doc.restoreGraphicsState();
+      doc.setDrawColor(...(theme.colonnePleine ? BLANC : theme.accent));
+      doc.setLineWidth(0.6);
+      doc.circle(cx, cy, r, 'S');
+    } else {
+      doc.setFillColor(...(theme.colonnePleine ? BLANC : theme.accent));
+      doc.circle(COL_G / 2, yg + 11, 11, 'F');
+      police('bold', 17);
+      doc.setTextColor(...(theme.colonnePleine ? theme.accent : BLANC));
+      doc.text(versLatin(initialesCv(d)), COL_G / 2, yg + 14, { align: 'center' });
+    }
     yg += 34;
     const limiteGauche = HAUTEUR - MARGE;
     /** Passe en haut de la page suivante (créée au besoin) si `hauteur` ne tient plus. */

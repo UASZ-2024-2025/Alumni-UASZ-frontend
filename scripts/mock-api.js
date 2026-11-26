@@ -288,11 +288,11 @@ function routesAnnuaire(req, res, chemin, corps) {
       Object.assign(profil, { specialty: corps.specialty, academicYear: corps.academicYear, bio: corps.bio, interests: corps.interests ?? [], skills: corps.skills ?? [], availabilityStatus: corps.availabilityStatus ?? 'NOT_AVAILABLE', availabilityDate: corps.availabilityDate });
       return ok(profil);
     }
-    if (sous === 'cv' && req.method === 'GET') return cvsEtudiants[id] ? ok(cvsEtudiants[id]) : absent("Cet étudiant n'a pas encore de CV.");
+    if (sous === 'cv' && req.method === 'GET') return cvsEtudiants[id] ? ok({ ...cvsEtudiants[id], hasPhoto: photosCv.has(id) }) : absent("Cet étudiant n'a pas encore de CV.");
     if (sous === 'cv' && req.method === 'PUT') {
       if (!corps.title || !corps.template || !corps.language) return invalide('Le titre, le modèle et la langue du CV sont obligatoires.');
       cvsEtudiants[id] = { id: `cv-${id}`, studentId: id, ...corps };
-      return ok(cvsEtudiants[id]);
+      return ok({ ...cvsEtudiants[id], hasPhoto: photosCv.has(id) });
     }
   }
 
@@ -562,7 +562,46 @@ function routesCv(req, res, chemin) {
   if (req.method !== 'GET' || !m) return false;
   if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
   const cv = cvs[m[1]];
-  return (cv ? envoyer(res, 200, cv) : erreur(res, 404, 'CV_NOT_FOUND', 'CV introuvable.')) ?? true;
+  return (cv ? envoyer(res, 200, { ...cv, hasPhoto: photosCv.has(m[1]) }) : erreur(res, 404, 'CV_NOT_FOUND', 'CV introuvable.')) ?? true;
+}
+
+// --- Photo du CV (ALUM-255/256) : PUT multipart (champ file), GET l'image, DELETE ; gardée en mémoire ---
+// Corps binaire : traité avant la lecture JSON commune. Mêmes contrôles que le serveur (JPEG/PNG, 2 Mo).
+const photosCv = new Map(); // id étudiant (compte) -> { type, contenu }
+function routesPhotoCv(req, res, chemin) {
+  const m = chemin.match(/^\/v1\/students\/([^/]+)\/cv\/photo$/);
+  if (!m || !['GET', 'PUT', 'DELETE'].includes(req.method)) return false;
+  if (!jetonValide(req)) return erreur(res, 401, 'TOKEN_EXPIRED', 'Token expiré ou invalide.') ?? true;
+  const id = decodeURIComponent(m[1]);
+  if (req.method === 'GET') {
+    const photo = photosCv.get(id);
+    if (!photo) return erreur(res, 404, 'PHOTO_NOT_FOUND', "Cet étudiant n'a pas de photo") ?? true;
+    res.writeHead(200, { 'Content-Type': photo.type, 'Cache-Control': 'no-store', ...CORS });
+    return res.end(photo.contenu) ?? true;
+  }
+  if (req.method === 'DELETE') {
+    photosCv.delete(id);
+    return envoyer(res, 204) ?? true;
+  }
+  const morceaux = [];
+  req.on('data', (c) => morceaux.push(c));
+  req.on('end', () => {
+    const brut = Buffer.concat(morceaux);
+    const limite = Buffer.from(`--${(req.headers['content-type'] || '').split('boundary=')[1]}`);
+    const debut = brut.indexOf(limite);
+    const suivant = debut === -1 ? -1 : brut.indexOf(limite, debut + limite.length);
+    const partie = suivant === -1 ? Buffer.alloc(0) : brut.subarray(debut + limite.length + 2, suivant - 2);
+    const finEntete = partie.indexOf('\r\n\r\n');
+    const contenu = finEntete === -1 ? Buffer.alloc(0) : partie.subarray(finEntete + 4);
+    if (contenu.length > 2 * 1024 * 1024) return erreur(res, 400, 'PHOTO_TOO_LARGE', 'La photo dépasse 2 Mo');
+    const type = contenu.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? 'image/png'
+      : contenu.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ? 'image/jpeg' : null;
+    if (!type) return erreur(res, 400, 'INVALID_PHOTO_FORMAT', 'Format non accepté : la photo doit être une image JPEG ou PNG');
+    photosCv.set(id, { type, contenu });
+    console.log(`[photo CV] ${id} : ${type}, ${contenu.length} octets`);
+    envoyer(res, 204);
+  });
+  return true;
 }
 
 // --- Annuaires étudiants et Alumni (recherche de participants) : profils construits depuis l'annuaire des comptes ---
@@ -1044,6 +1083,7 @@ function routesMessagerie(req, res, chemin, corps) {
 const traiter = (req, res) => {
     if (req.method === 'OPTIONS') return envoyer(res, 204);
     if (routesStockageMock(req, res, req.url.split('?')[0])) return;
+    if (routesPhotoCv(req, res, req.url.split('?')[0])) return;
     let brut = '';
     req.on('data', (c) => (brut += c));
     req.on('end', () => {
