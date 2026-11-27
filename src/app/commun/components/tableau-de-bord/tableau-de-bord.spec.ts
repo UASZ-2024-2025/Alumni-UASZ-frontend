@@ -19,6 +19,14 @@ const competences = {
   skillsGapAnalysis: [{ skillName: 'Angular', demandPercentage: 80, supplyPercentage: 45, gap: 35 }],
 };
 
+const insertionAvecDelais = {
+  overallInsertionRate: 60,
+  reportData: [
+    { graduationYear: 2024, specialty: 'Génie Logiciel', totalGraduates: 4, employedCount: 3, insertionRate: 75, averageMonthsToFirstJob: 3.7 },
+    { graduationYear: 2023, specialty: 'Cybersécurité', totalGraduates: 1, employedCount: 0, insertionRate: 0, averageMonthsToFirstJob: null },
+  ],
+};
+
 describe('TableauDeBord', () => {
   let dashboard: { getDashboardStats: ReturnType<typeof vi.fn> };
   let utilisateurs: { listUsers: ReturnType<typeof vi.fn> };
@@ -129,5 +137,44 @@ describe('TableauDeBord', () => {
 
   it("pour l'administrateur : titre Tableau de bord administrateur", () => {
     expect(monter().querySelector('h1')!.textContent).toBe('Tableau de bord administrateur');
+  });
+
+  it("affiche le délai moyen d'accès au premier emploi, ou « inconnu » quand il est null", () => {
+    rapports.getInsertionReport.mockReturnValue(of(insertionAvecDelais));
+    const texte = monter().textContent!;
+    expect(texte).toContain('3/4 insérés · délai moyen 3.7 mois');
+    expect(texte).toContain('0/1 insérés · délai moyen inconnu');
+  });
+
+  it('affiche les effectifs derrière le taux global', () => {
+    rapports.getInsertionReport.mockReturnValue(of(insertionAvecDelais));
+    const texte = monter().textContent!;
+    expect(texte).toContain('Taux global : 60 %');
+    expect(texte).toContain('3 en emploi sur 5 diplômés');
+  });
+
+  it("affiche le message du back quand les données des diplômés sont indisponibles (503)", () => {
+    rapports.getInsertionReport.mockReturnValue(
+      throwError(() => new ErreurApi(503, 'ALUMNI_SERVICE_UNAVAILABLE', 'Les données des diplômés sont momentanément indisponibles : réessayez plus tard')),
+    );
+    const el = monter();
+    expect(el.querySelector('[role="alert"]')!.textContent).toContain('momentanément indisponibles');
+  });
+
+  it("refuse une année de promotion hors bornes sans appeler le back", async () => {
+    const fixture = TestBed.createComponent(TableauDeBord);
+    fixture.componentRef.setInput('admin', true);
+    fixture.detectChanges();
+    await Promise.resolve(); // ngModel branche ses contrôles en microtâche
+    const el = fixture.nativeElement as HTMLElement;
+
+    const annee = el.querySelector('input[type="number"]') as HTMLInputElement;
+    annee.value = '1800';
+    annee.dispatchEvent(new Event('input'));
+    el.querySelector('form')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(rapports.getInsertionReport).toHaveBeenCalledTimes(1); // le chargement initial seulement
+    expect(el.textContent).toContain('comprise entre 1990 et 2100');
   });
 });

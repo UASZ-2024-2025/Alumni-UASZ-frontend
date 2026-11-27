@@ -10,14 +10,17 @@
 
 
 export interface InsertionReportItem { 
-    graduationYear?: number;
-    specialty?: string;
-    totalGraduates?: number;
-    employedCount?: number;
-    insertionRate?: number;
+    graduationYear: number;
+    specialty: string;
+    totalGraduates: number;
+    employedCount: number;
     /**
-     * Délai moyen d\'accès au 1er emploi (en mois)
+     * Taux d\'insertion en pourcentage, arrondi à une décimale
      */
-    averageMonthsToFirstJob?: number;
+    insertionRate: number;
+    /**
+     * Délai moyen d\'accès au 1er emploi, en mois entiers à partir du 1er juillet de l\'année de diplôme. `null` quand aucun diplômé de la ligne n\'a de délai connu. 
+     */
+    averageMonthsToFirstJob?: number | null;
 }
 

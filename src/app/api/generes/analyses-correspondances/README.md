@@ -2,7 +2,7 @@
 
 Microservice responsable des algorithmes d\'analyse de données, du matching automatique entre profils étudiants et offres d\'emploi/stage, ainsi que de la génération des métriques statistiques pour le tableau de bord de l\'administrateur. 
 
-The version of the OpenAPI document: 1.0.0
+The version of the OpenAPI document: 1.20.0
 
 ## Building
 

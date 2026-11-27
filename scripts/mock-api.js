@@ -79,6 +79,7 @@ const rapportInsertion = [
   { graduationYear: 2023, specialty: 'Réseaux', totalGraduates: 30, employedCount: 18, insertionRate: 60, averageMonthsToFirstJob: 6 },
   { graduationYear: 2024, specialty: 'Génie Logiciel', totalGraduates: 45, employedCount: 36, insertionRate: 80, averageMonthsToFirstJob: 3 },
   { graduationYear: 2024, specialty: 'Réseaux', totalGraduates: 28, employedCount: 17, insertionRate: 60.7, averageMonthsToFirstJob: 5 },
+  { graduationYear: 2022, specialty: 'Cybersécurité', totalGraduates: 12, employedCount: 0, insertionRate: 0, averageMonthsToFirstJob: null },
 ];
 const parPage = (liste, url) => {
   const q = new URL(url, 'http://mock').searchParams;
@@ -130,10 +131,20 @@ function routesAdmin(req, res, chemin, corps) {
   if (req.method === 'GET' && chemin === '/v1/analytics/reports/insertion') {
     const annee = q.get('graduationYear');
     const spec = q.get('specialty');
+    if (annee && (!Number.isInteger(Number(annee)) || Number(annee) < 1990 || Number(annee) > 2100)) {
+      return envoyer(res, 400, {
+        code: 'INVALID_GRADUATION_YEAR',
+        message: "L'année de diplôme doit être comprise entre 1990 et 2100.",
+        timestamp: new Date().toISOString(),
+      }) ?? true;
+    }
     const reportData = rapportInsertion.filter(
       (r) => (!annee || r.graduationYear === Number(annee)) && (!spec || r.specialty === spec),
     );
-    return envoyer(res, 200, { overallInsertionRate: 68.4, reportData }) ?? true;
+    const diplomes = reportData.reduce((s, r) => s + r.totalGraduates, 0);
+    const emplois = reportData.reduce((s, r) => s + r.employedCount, 0);
+    // taux global = total des en emploi / total des diplômés (règle du contrat 1.20.0)
+    return envoyer(res, 200, { overallInsertionRate: diplomes ? Math.round((emplois * 1000) / diplomes) / 10 : 0, reportData }) ?? true;
   }
   if (req.method === 'GET' && chemin === '/v1/analytics/reports/skills-gap') {
     return envoyer(res, 200, {

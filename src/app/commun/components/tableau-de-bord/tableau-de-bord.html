@@ -85,7 +85,10 @@
         @if (lignesInsertion().length === 0) {
           <p class="vide">Aucune donnée d'insertion pour ces critères.</p>
         } @else {
-          <p>Taux global : <strong>{{ insertion().donnees?.overallInsertionRate }} %</strong></p>
+          <p>
+            Taux global : <strong>{{ insertion().donnees?.overallInsertionRate }} %</strong>
+            ({{ totauxInsertion().emplois }} en emploi sur {{ totauxInsertion().diplomes }} diplômés)
+          </p>
           @if (colonnesInsertion().length > 1) {
             <h3 class="sous-titre">Par promotion</h3>
             <app-graphique-colonnes [colonnes]="colonnesInsertion()" />

@@ -1,5 +1,53 @@
 # Journal des modifications des contrats OpenAPI
 
+## 1.20.0 (rapport du taux d'insertion professionnelle, ALUM-183)
+
+Évolution compatible : une opération interne et des réponses sont ajoutées ; aucune opération ni aucun champ retiré.
+
+### analytics-matching-service
+- `GET /analytics/reports/insertion` (`getInsertionReport`) est implémenté (il renvoyait 501). Les règles de calcul
+  (diplômés, en emploi, taux, taux global, délai moyen) sont décrites dans le contrat.
+- **Ajout** des réponses `400` (`INVALID_GRADUATION_YEAR`, `INVALID_SPECIALTY`) et `503`
+  (`ALUMNI_SERVICE_UNAVAILABLE`, nouvelle réponse `ServiceUnavailable`).
+- `InsertionReportItem.averageMonthsToFirstJob` devient `nullable` (aucun délai connu). `graduationYear`, `specialty`,
+  `totalGraduates`, `employedCount`, `insertionRate`, `overallInsertionRate` et `reportData` sont déclarés `required` :
+  le service les renvoyait déjà toujours.
+
+### alumni-student-company-service
+- **Ajout** de `GET /internal/alumni/employment` (`listAlumniEmploymentForService`, `AlumniEmploymentRecord`) :
+  situation d'emploi des diplômés, sans donnée personnelle, lue par analytics-matching-service avec un jeton de
+  service (ADR-0010).
+
+### Version
+- `info.version` passe de 1.0.0 à **1.20.0** (analytics) et de 1.19.0 à **1.20.0** (alumni-student-company-service).
+
+SPI `analytics-matching-service-spi` et `alumni-student-company-service-spi` publiés en **1.20.0** (pom parent
+`alumni-spis` 1.20.0) ; analytics-matching-service et alumni-student-company-service passent à `alumni.spi.version`
+1.20.0. job-offer-service et user-service, clients d'anciennes opérations, restent sur leur SPI.
+
+## 1.19.0 (recommandation d'un étudiant par un Alumni, ALUM-119)
+
+Évolution compatible : aucune opération ni aucun champ retiré ; seule une réponse est ajoutée.
+
+### alumni-student-company-service
+- `POST /alumni/recommendations` (`recommendCandidate`) est implémenté (il renvoyait 501) : réservé au rôle ALUMNI,
+  l'étudiant recommandé est notifié (type `SYSTEM_ALERT`, canal `IN_APP`) sans que la réponse l'attende.
+- **Précision** : `recommendCandidate` déclare la réponse 403 (appelant qui n'a pas le rôle ALUMNI).
+- `info.version` passe de 1.16.0 à **1.19.0**.
+
+SPI `alumni-student-company-service-spi` publié en **1.19.0** (pom parent `alumni-spis` 1.19.0).
+
+## 1.16.0 (synthèse d'accueil Alumni, ALUM-246)
+
+Évolution compatible : une opération et un schéma ajoutés, rien de retiré.
+
+### alumni-student-company-service
+- **Ajout** de `GET /alumni/me/home-summary` (`getMyAlumniHomeSummary`, rôle ALUMNI) : compteurs de la page d'accueil
+  de l'Alumni connecté, identifié par son jeton uniquement. Réponses 200, 401 et 403.
+- Nouveau schéma `AlumniHomeSummary` : `recommendationsGiven`, `pendingRequests`, `unreadMessages` (entiers >= 0,
+  obligatoires).
+- `info.version` passe de 1.9.0 à **1.16.0** (alignée sur la version du SPI).
+
 ## 1.15.0 (pièces jointes : envoi sans remplacement, ALUM-261)
 
 Évolution compatible : un champ ajouté en réponse.
@@ -10,6 +58,10 @@
 - `AttachmentUpload` : seuls `publicId` et `version` sont signés ; taille, format, durée et dimensions sont relus auprès
   du stockage (fichier refusé = effacé ; version différente = 400 `INVALID_ATTACHMENT`).
 - `ServiceUnavailable` couvre aussi un stockage momentanément injoignable (503 `STORAGE_UNAVAILABLE`).
+- Un fichier n'est joint qu'à un seul message (sinon 400 `INVALID_ATTACHMENT`) ; `MessageAttachment.fileName` prend
+  l'extension du fichier stocké.
+- Modification : refusée pour un sticker ou un message vocal (400 `INVALID_MESSAGE`) ; un texte vide retire la légende
+  d'une pièce jointe.
 
 ### Version
 - `info.version` passe de 1.14.0 à **1.15.0**.

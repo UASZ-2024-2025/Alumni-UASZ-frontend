@@ -5,6 +5,7 @@ import { forkJoin, Observable } from 'rxjs';
 import { AnalyticsReportsService } from '../../../api/generes/analyses-correspondances/api/analyticsReports.service';
 import { DashboardService } from '../../../api/generes/analyses-correspondances/api/dashboard.service';
 import { DashboardStats } from '../../../api/generes/analyses-correspondances/model/dashboardStats';
+import { InsertionReportItem } from '../../../api/generes/analyses-correspondances/model/insertionReportItem';
 import { InsertionReportResponse } from '../../../api/generes/analyses-correspondances/model/insertionReportResponse';
 import { SkillsGapResponse } from '../../../api/generes/analyses-correspondances/model/skillsGapResponse';
 import { UsersService } from '../../../api/generes/utilisateurs/api/users.service';
@@ -31,6 +32,24 @@ interface Etat<T> {
 }
 
 const enChargement = <T>(): Etat<T> => ({ statut: 'chargement' });
+
+/** Bornes de l'année de promotion acceptées par le back (contrat 1.20.0 : sinon 400 INVALID_GRADUATION_YEAR). */
+export const ANNEE_PROMOTION_MIN = 1990;
+export const ANNEE_PROMOTION_MAX = 2100;
+
+/**
+ * Détail d'une ligne du rapport d'insertion : « 36/45 insérés · délai moyen 3 mois ».
+ * Le délai est `null` (ou absent) quand aucun diplômé de la ligne n'a de délai connu (contrat 1.20.0).
+ */
+export function detailInsertion(r: InsertionReportItem): string {
+  const base = `${r.employedCount ?? 0}/${r.totalGraduates ?? 0} insérés`;
+  return r.averageMonthsToFirstJob == null ? `${base} · délai moyen inconnu` : `${base} · délai moyen ${r.averageMonthsToFirstJob} mois`;
+}
+
+function anneeValide(valeur: string): boolean {
+  const n = Number(valeur);
+  return Number.isInteger(n) && n >= ANNEE_PROMOTION_MIN && n <= ANNEE_PROMOTION_MAX;
+}
 
 @Component({
   selector: 'app-tableau-de-bord',
@@ -88,6 +107,15 @@ export class TableauDeBord implements OnInit {
       .map(([annee, c]) => ({ libelle: String(annee), valeur: c.diplomes ? Math.round((c.inseres / c.diplomes) * 100) : 0 }));
   });
 
+  /** Effectifs du rapport affiché (le taux global du back est calculé sur ces mêmes totaux). */
+  protected readonly totauxInsertion = computed(() => {
+    const lignes = this.insertion().donnees?.reportData ?? [];
+    return {
+      diplomes: lignes.reduce((somme, r) => somme + (r.totalGraduates ?? 0), 0),
+      emplois: lignes.reduce((somme, r) => somme + (r.employedCount ?? 0), 0),
+    };
+  });
+
   protected readonly kpis = computed(() => {
     const s = this.stats().donnees;
     const kpis: { libelle: string; valeur?: number; suffixe?: string }[] = [
@@ -105,7 +133,7 @@ export class TableauDeBord implements OnInit {
     (this.insertion().donnees?.reportData ?? []).map((r) => ({
       libelle: `${r.graduationYear ?? '?'} · ${r.specialty ?? '?'}`,
       valeur: r.insertionRate ?? 0,
-      detail: `${r.employedCount ?? 0}/${r.totalGraduates ?? 0} insérés`,
+      detail: detailInsertion(r),
     })),
   );
 
@@ -155,12 +183,22 @@ export class TableauDeBord implements OnInit {
   }
 
   protected filtrer(): void {
-    this.chargerInsertion(this.annee(), this.specialite());
+    const annee = this.annee();
+    // même règle que le back (400 sinon) : on évite l'aller-retour et on explique tout de suite
+    if (annee && !anneeValide(annee)) {
+      this.insertion.set({
+        statut: 'erreur',
+        message: `L'année de promotion doit être comprise entre ${ANNEE_PROMOTION_MIN} et ${ANNEE_PROMOTION_MAX}.`,
+      });
+      return;
+    }
+    this.chargerInsertion(annee, this.specialite());
   }
 
   protected chargerInsertion(annee?: string, specialite?: string): void {
     const filtre = !!annee || !!specialite;
     this.insertion.set(enChargement());
+    // 400 et 503 : le message du back est précis (année invalide, données des diplômés indisponibles)
     this.rapports.getInsertionReport(annee ? Number(annee) : undefined, specialite === '' ? undefined : specialite).subscribe({
       next: (donnees) => {
         this.insertion.set({ statut: 'ok', donnees });

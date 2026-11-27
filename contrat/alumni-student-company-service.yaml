@@ -6,7 +6,7 @@ info:
     des entreprises partenaires et des promotions académiques pour la plateforme Alumni UASZ.
   contact:
     name: Équipe Projet Intégrateur - M2 GL - UASZ
-  version: 1.9.0
+  version: 1.20.0
 servers:
   - url: https://api.alumni-uasz.sn/alumni-student-company-service/v1
     description: Serveur de production
@@ -375,6 +375,33 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+
+  /alumni/me/home-summary:
+    get:
+      tags:
+        - Alumni
+      summary: Synthèse de la page d'accueil de l'Alumni connecté
+      description: |
+        Réservé au rôle ALUMNI. Renvoie en un seul appel les compteurs de la page d'accueil de l'Alumni connecté.
+        L'Alumni est identifié uniquement par son jeton (aucun identifiant en paramètre) : chacun ne voit que
+        ses propres chiffres. Aucune donnée n'est dupliquée : les compteurs sont calculés à chaque appel à partir
+        des services qui détiennent les données.
+      operationId: getMyAlumniHomeSummary
+      responses:
+        "200":
+          description: Compteurs de la page d'accueil de l'Alumni connecté
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlumniHomeSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
       security:
         - bearerAuth: []
 
@@ -744,6 +771,54 @@ paths:
       security:
         - bearerAuth: []
 
+  /internal/alumni/employment:
+    get:
+      tags:
+        - Internal
+      summary: Situation d'emploi des diplômés (usage interne)
+      description: |
+        Appelé par analytics-matching-service pour le rapport du taux d'insertion professionnelle (ALUM-183).
+        Réservé aux jetons de service (rôle SERVICE, audience `alumni-student-company-service`) :
+        un JWT utilisateur reçoit 403.
+
+        Renvoie un élément par Alumni dont l'année de diplôme **et** la spécialité sont renseignées, **sans donnée
+        personnelle** (ni nom, ni email, ni identifiant). Les deux filtres sont facultatifs et se cumulent :
+        `graduationYear` est exact ; `specialty` est comparée sans tenir compte de la casse ni des espaces en début
+        et fin. Résultat trié par année de diplôme décroissante, puis par spécialité. Sans filtre, tous les diplômés
+        sont renvoyés (liste non paginée).
+
+        - `employed` : vrai si l'Alumni a une expérience professionnelle en cours (`isCurrent`).
+        - `experienceStartDates` : dates de début de toutes ses expériences, de la plus ancienne à la plus récente.
+      operationId: listAlumniEmploymentForService
+      parameters:
+        - name: graduationYear
+          in: query
+          description: Année de diplôme exacte
+          required: false
+          schema:
+            type: integer
+        - name: specialty
+          in: query
+          description: Spécialité (sans tenir compte de la casse ni des espaces en début et fin)
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Situation d'emploi des diplômés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlumniEmploymentRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: []
+
 components:
   parameters:
     EntityId:
@@ -1070,6 +1145,33 @@ components:
           type: string
           format: date-time
 
+    AlumniHomeSummary:
+      type: object
+      description: Compteurs de la page d'accueil de l'Alumni connecté.
+      required:
+        - recommendationsGiven
+        - pendingRequests
+        - unreadMessages
+      properties:
+        recommendationsGiven:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 3
+          description: Nombre de recommandations faites par l'Alumni (`POST /alumni/recommendations`)
+        pendingRequests:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 2
+          description: Nombre de demandes adressées à l'Alumni et en attente de sa réponse
+        unreadMessages:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 5
+          description: Nombre de messages non lus de l'Alumni (conversations privées et groupes)
+
     Company:
       type: object
       properties:
@@ -1284,6 +1386,32 @@ components:
           format: uuid
         profileType:
           $ref: "#/components/schemas/ProvisionedProfileType"
+
+    AlumniEmploymentRecord:
+      type: object
+      description: Situation d'emploi d'un diplômé, sans donnée personnelle (usage interne).
+      required:
+        - graduationYear
+        - specialty
+        - employed
+        - experienceStartDates
+      properties:
+        graduationYear:
+          type: integer
+          example: 2024
+        specialty:
+          type: string
+          example: "Génie Logiciel"
+        employed:
+          type: boolean
+          description: Vrai si l'Alumni a une expérience professionnelle en cours (isCurrent)
+        experienceStartDates:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Dates de début de toutes ses expériences professionnelles, de la plus ancienne à la plus récente
+          example: ["2024-09-15"]
 
     ErrorResponse:
       type: object
