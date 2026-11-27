@@ -1,0 +1,54 @@
+<app-entete-page titre="Offres recommandées pour vous">
+  @if (!chargement() && !erreur()) {
+    <p aria-live="polite">{{ offres().length }} offre(s) recommandée(s)</p>
+  }
+</app-entete-page>
+
+<form class="filtres" (submit)="$event.preventDefault()">
+  <app-champ libelle="Score minimum" type="select" name="scoreMin" [options]="optionsScore"
+    [(ngModel)]="scoreMin" (ngModelChange)="charger()" />
+</form>
+
+@if (erreur(); as message) {
+  <app-alerte>{{ message }}</app-alerte>
+}
+
+<div [attr.aria-busy]="chargement()">
+  @if (chargement()) {
+    <app-spinner libelle="Chargement des recommandations…" />
+  } @else if (!erreur() && offres().length === 0) {
+    <app-etat-vide titre="Aucune offre recommandée">
+      Complétez vos compétences dans votre CV ou baissez le score minimum pour voir plus d'offres.
+    </app-etat-vide>
+  } @else if (offres().length > 0) {
+    <ul class="propositions">
+      @for (o of offres(); track o.offerId) {
+        <li>
+          <app-carte>
+            <div class="proposition">
+              <div class="proposition-entete">
+                <div>
+                  <h2>
+                    @if (o.offerId) {
+                      <a [routerLink]="['/offres-emploi', o.offerId]">{{ o.offerTitle || 'Offre' }}</a>
+                    } @else {
+                      {{ o.offerTitle || 'Offre' }}
+                    }
+                  </h2>
+                  <p class="meta">{{ o.companyName || 'Entreprise non renseignée' }}</p>
+                </div>
+              </div>
+              <app-barre-score [valeur]="o.matchScore ?? 0" libelle="Compatibilité" />
+              <app-puces-competences libelle="Compétences que vous avez" [lectureSeule]="true"
+                [ngModel]="o.matchingSkills ?? []" [ngModelOptions]="{ standalone: true }"
+                texteVide="Aucune compétence en commun" />
+              <app-puces-competences libelle="Compétences manquantes" [lectureSeule]="true"
+                [ngModel]="o.missingSkills ?? []" [ngModelOptions]="{ standalone: true }"
+                texteVide="Aucune compétence manquante" />
+            </div>
+          </app-carte>
+        </li>
+      }
+    </ul>
+  }
+</div>
