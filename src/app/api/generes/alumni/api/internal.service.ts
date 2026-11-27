@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AlumniEmploymentRecord } from '../model/alumniEmploymentRecord';
+// @ts-ignore
 import { Company } from '../model/company';
 // @ts-ignore
 import { ErrorResponse } from '../model/errorResponse';
@@ -91,6 +93,85 @@ export class InternalService extends BaseService {
         return this.httpClient.request<Company>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Situation d\&#39;emploi des diplômés (usage interne)
+     * Appelé par analytics-matching-service pour le rapport du taux d\&#39;insertion professionnelle (ALUM-183). Réservé aux jetons de service (rôle SERVICE, audience &#x60;alumni-student-company-service&#x60;) : un JWT utilisateur reçoit 403.  Renvoie un élément par Alumni dont l\&#39;année de diplôme **et** la spécialité sont renseignées, **sans donnée personnelle** (ni nom, ni email, ni identifiant). Les deux filtres sont facultatifs et se cumulent : &#x60;graduationYear&#x60; est exact ; &#x60;specialty&#x60; est comparée sans tenir compte de la casse ni des espaces en début et fin. Résultat trié par année de diplôme décroissante, puis par spécialité. Sans filtre, tous les diplômés sont renvoyés (liste non paginée).  - &#x60;employed&#x60; : vrai si l\&#39;Alumni a une expérience professionnelle en cours (&#x60;isCurrent&#x60;). - &#x60;experienceStartDates&#x60; : dates de début de toutes ses expériences, de la plus ancienne à la plus récente. 
+     * @endpoint get /internal/alumni/employment
+     * @param graduationYear Année de diplôme exacte
+     * @param specialty Spécialité (sans tenir compte de la casse ni des espaces en début et fin)
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listAlumniEmploymentForService(graduationYear?: number, specialty?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<AlumniEmploymentRecord>>;
+    public listAlumniEmploymentForService(graduationYear?: number, specialty?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<AlumniEmploymentRecord>>>;
+    public listAlumniEmploymentForService(graduationYear?: number, specialty?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<AlumniEmploymentRecord>>>;
+    public listAlumniEmploymentForService(graduationYear?: number, specialty?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'graduationYear',
+            <any>graduationYear,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'specialty',
+            <any>specialty,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/internal/alumni/employment`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<AlumniEmploymentRecord>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

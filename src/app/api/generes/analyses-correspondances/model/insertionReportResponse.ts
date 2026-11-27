@@ -11,7 +11,10 @@ import { InsertionReportItem } from './insertionReportItem';
 
 
 export interface InsertionReportResponse { 
-    overallInsertionRate?: number;
-    reportData?: Array<InsertionReportItem>;
+    /**
+     * Total des diplômés en emploi / total des diplômés, en pourcentage (une décimale)
+     */
+    overallInsertionRate: number;
+    reportData: Array<InsertionReportItem>;
 }
 

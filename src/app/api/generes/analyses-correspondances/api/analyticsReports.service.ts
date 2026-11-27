@@ -41,9 +41,10 @@ export class AnalyticsReportsService extends BaseService {
 
     /**
      * Générer un rapport sur le taux d\&#39;insertion professionnelle
+     * Réservé à l\&#39;ADMINISTRATEUR. Une ligne par promotion (année de diplôme) et spécialité, de la promotion la plus récente à la plus ancienne, puis par spécialité. Les deux filtres sont facultatifs et se cumulent.  Règles de calcul : - **diplômés** (&#x60;totalGraduates&#x60;) : Alumni dont l\&#39;année de diplôme et la spécialité sont renseignées ;   les spécialités sont regroupées sans tenir compte de la casse ni des espaces en début et fin ; - **en emploi** (&#x60;employedCount&#x60;) : diplômés ayant une expérience professionnelle en cours (&#x60;isCurrent&#x60;) ; - **taux** (&#x60;insertionRate&#x60;) &#x3D; &#x60;employedCount&#x60; / &#x60;totalGraduates&#x60; x 100, arrondi à une décimale ; - **taux global** (&#x60;overallInsertionRate&#x60;) &#x3D; total des diplômés en emploi / total des diplômés de toutes les   lignes (et non la moyenne des taux), arrondi à une décimale ; 0 s\&#39;il n\&#39;y a aucun diplômé ; - **délai moyen** (&#x60;averageMonthsToFirstJob&#x60;) : moyenne, en mois entiers, entre le 1er juillet de l\&#39;année de   diplôme et le début de la première expérience débutée à cette date ou après ; les diplômés sans telle   expérience sont ignorés ; &#x60;null&#x60; si aucun diplômé de la ligne n\&#39;en a. 
      * @endpoint get /analytics/reports/insertion
-     * @param graduationYear Filtrer par année de promotion
-     * @param specialty Filtrer par spécialité (ex. Génie Logiciel)
+     * @param graduationYear Filtrer par année de promotion (entre 1990 et 2100, sinon 400 &#x60;INVALID_GRADUATION_YEAR&#x60;)
+     * @param specialty Filtrer par spécialité (ex. Génie Logiciel ; 150 caractères au plus, sinon 400 &#x60;INVALID_SPECIALTY&#x60;)
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
