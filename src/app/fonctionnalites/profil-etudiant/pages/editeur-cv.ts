@@ -14,12 +14,13 @@ import { ErreurApi } from '../../../commun/modeles/erreur-api.model';
 import { messageErreur } from '../../../commun/utilitaires/messages-erreur';
 import { AuthentificationService } from '../../../socle/authentification/services/authentification.service';
 import { ApercuCv } from '../composants/apercu-cv';
+import { SelecteurModeleCv } from '../composants/selecteur-modele-cv';
 import {
   cvInitial,
   depuisCvEnregistre,
   DonneesCv,
   LANGUES_CV,
-  MODELES_CV,
+  MODELE_PAR_DEFAUT,
   NIVEAUX_LANGUE,
   ignorerLignesVides,
   versRequeteCv,
@@ -28,7 +29,7 @@ import { CvPdfService } from '../services/cv-pdf.service';
 
 @Component({
   selector: 'app-editeur-cv',
-  imports: [ReactiveFormsModule, Alerte, ApercuCv, Bouton, EntetePage, Carte, Champ, PucesCompetences, Spinner],
+  imports: [ReactiveFormsModule, Alerte, ApercuCv, Bouton, EntetePage, Carte, Champ, PucesCompetences, SelecteurModeleCv, Spinner],
   templateUrl: './editeur-cv.html',
   styleUrls: ['./profil-etudiant.scss', './editeur-cv.scss'],
 })
@@ -38,13 +39,12 @@ export class EditeurCv implements OnInit {
   private readonly auth = inject(AuthentificationService);
   private readonly pdf = inject(CvPdfService);
 
-  protected readonly modeles = MODELES_CV.map((m) => ({ valeur: m.code, libelle: m.libelle }));
   protected readonly languesCv = LANGUES_CV.map((l) => ({ valeur: l, libelle: l }));
   protected readonly niveaux = NIVEAUX_LANGUE.map((n) => ({ valeur: n, libelle: n }));
 
   protected readonly formulaire = this.fb.group({
     titre: ['', [Validators.required, Validators.maxLength(150)]],
-    modele: ['MODERN_BLUE', Validators.required],
+    modele: [MODELE_PAR_DEFAUT as string, Validators.required],
     langue: ['Français', Validators.required],
     resume: ['', Validators.maxLength(2000)],
     competences: [[] as string[]],
@@ -84,6 +84,10 @@ export class EditeurCv implements OnInit {
   protected readonly erreur = signal<string | null>(null);
   protected readonly succes = signal(false);
   protected readonly nouveau = signal(false);
+  /** Modèle enregistré avec le CV (celui qu'on retrouvera à la prochaine visite) ; le modèle par défaut tant que rien n'est enregistré. */
+  private readonly modeleEnregistre = signal<string>(MODELE_PAR_DEFAUT);
+  /** Vrai quand le modèle choisi n'est pas encore celui qui sera retrouvé à la prochaine visite. */
+  protected readonly modeleAEnregistrer = computed(() => this.donnees().modele !== this.modeleEnregistre());
 
   get experiences(): FormArray<FormGroup> { return this.formulaire.controls.experiences; }
   get formations(): FormArray<FormGroup> { return this.formulaire.controls.formations; }
@@ -114,7 +118,9 @@ export class EditeurCv implements OnInit {
           const base = cvInitial(utilisateur, profil);
           this.identite.set(base);
           this.nouveau.set(!cv);
-          this.appliquer(cv ? depuisCvEnregistre(cv, base) : base);
+          const charge = cv ? depuisCvEnregistre(cv, base) : base;
+          this.modeleEnregistre.set(charge.modele);
+          this.appliquer(charge);
           this.chargement.set(false);
         },
         error: (e) => {
@@ -194,6 +200,7 @@ export class EditeurCv implements OnInit {
       next: () => {
         this.enregistrement.set(false);
         this.nouveau.set(false);
+        this.modeleEnregistre.set(this.donnees().modele);
         this.succes.set(true);
       },
       error: (e) => {

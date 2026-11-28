@@ -1,7 +1,30 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
-import { cvInitial, DonneesCv, ignorerLignesVides, nomFichierPdf, versRequeteCv } from '../modeles/cv.modele';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { cvInitial, DonneesCv, ignorerLignesVides, MODELES_CV, nomFichierPdf, versRequeteCv } from '../modeles/cv.modele';
 import { CvPdfService, versLatin } from './cv-pdf.service';
+import { Rvb, versRvb } from './couleurs-charte';
+
+/** Variables de la charte (src/styles/_variables.scss) : les tests n'ont pas la feuille de styles de l'application. */
+const CHARTE: Record<string, string> = {
+  '--g0': '#f3f8f5',
+  '--g8': '#0b5d3b',
+  '--sf': '#ffffff',
+  '--tx': '#14231b',
+  '--mu': '#5b6b62',
+  '--cv-bleu': '#1d4f91',
+};
+beforeAll(() => Object.entries(CHARTE).forEach(([nom, valeur]) => document.documentElement.style.setProperty(nom, valeur)));
+afterAll(() => Object.keys(CHARTE).forEach((nom) => document.documentElement.style.removeProperty(nom)));
+
+/** Couleurs de remplissage et de trait écrites dans le PDF (opérateurs rg/RG), en 0-255. jsPDF les arrondit à 2 ou 3 décimales. */
+function couleursPdf(contenu: string): Rvb[] {
+  const nombre = '(\\d+\\.?\\d*|\\.\\d+)';
+  const motif = new RegExp(`${nombre} ${nombre} ${nombre} (?:rg|RG)\\b`, 'g');
+  return [...contenu.matchAll(motif)].map((m) => [1, 2, 3].map((i) => Math.round(Number(m[i]) * 255)) as Rvb);
+}
+
+/** Le PDF utilise-t-il cette couleur (à 2 près par canal, à cause de l'arrondi de jsPDF) ? */
+const utilise = (couleurs: Rvb[], [r, g, b]: Rvb) => couleurs.some((c) => Math.abs(c[0] - r) <= 2 && Math.abs(c[1] - g) <= 2 && Math.abs(c[2] - b) <= 2);
 
 async function texte(blob: Blob): Promise<string> {
   const buf = await new Promise<ArrayBuffer>((ok, ko) => {
@@ -70,7 +93,51 @@ describe('CvPdfService', () => {
     expect(blob.size).toBeGreaterThan(500);
   });
 
-  describe('longueurs de CV (ALUM-228)', () => {
+  describe('le PDF reprend le modèle choisi', () => {
+    const charte = (variable: string) => versRvb(CHARTE[variable])!;
+    const BLEU = charte('--cv-bleu');
+    const VERT = charte('--g8');
+    const COLONNE_CLAIRE = charte('--g0'); // propre au modèle classique
+    const couleurs = async (modele: string) => couleursPdf(await texte(await service.generer(donnees(modele))));
+
+    it('Moderne : accent bleu, colonne pleine', async () => {
+      const c = await couleurs('MODERN_BLUE');
+      expect(utilise(c, BLEU)).toBe(true);
+      expect(utilise(c, VERT)).toBe(false);
+      expect(utilise(c, COLONNE_CLAIRE)).toBe(false);
+    });
+
+    it('UASZ : accent vert, colonne pleine', async () => {
+      const c = await couleurs('UASZ_VERT');
+      expect(utilise(c, VERT)).toBe(true);
+      expect(utilise(c, BLEU)).toBe(false);
+      expect(utilise(c, COLONNE_CLAIRE)).toBe(false);
+    });
+
+    it('Classique : colonne claire, ni bleu ni vert', async () => {
+      const c = await couleurs('CLASSIC');
+      expect(utilise(c, COLONNE_CLAIRE)).toBe(true);
+      expect(utilise(c, BLEU)).toBe(false);
+      expect(utilise(c, VERT)).toBe(false);
+    });
+
+    it('un modèle inconnu retombe sur le modèle par défaut', async () => {
+      expect(utilise(await couleurs('INCONNU'), BLEU)).toBe(true);
+    });
+
+    it('prend les couleurs dans la charte, pas dans le code', async () => {
+      document.documentElement.style.setProperty('--cv-bleu', '#ff0000');
+      try {
+        const c = await couleurs('MODERN_BLUE');
+        expect(utilise(c, [255, 0, 0])).toBe(true);
+        expect(utilise(c, BLEU)).toBe(false);
+      } finally {
+        document.documentElement.style.setProperty('--cv-bleu', CHARTE['--cv-bleu']);
+      }
+    });
+  });
+
+  describe.each(MODELES_CV.map((m) => m.code))('longueurs de CV, modèle %s (ALUM-228)', (modele) => {
     const pages = async (d: DonneesCv) => (await texte(await service.generer(d))).match(/\/Type\s*\/Page\b(?!s)/g)?.length ?? 0;
     const experiences = (n: number) =>
       Array.from({ length: n }, (_, i) => ({
@@ -82,15 +149,15 @@ describe('CvPdfService', () => {
       }));
 
     it('un CV court tient sur 1 page', async () => {
-      expect(await pages({ ...donnees(), interets: ['Football', 'Lecture'] })).toBe(1);
+      expect(await pages({ ...donnees(modele), interets: ['Football', 'Lecture'] })).toBe(1);
     });
 
     it('un CV moyen tient sur 2 pages au plus', async () => {
-      expect(await pages({ ...donnees(), experiences: experiences(5) })).toBeLessThanOrEqual(2);
+      expect(await pages({ ...donnees(modele), experiences: experiences(5) })).toBeLessThanOrEqual(2);
     });
 
     it('un CV long est réduit pour rester sur 2 pages et garde tout son contenu', async () => {
-      const d = { ...donnees(), experiences: experiences(9) };
+      const d = { ...donnees(modele), experiences: experiences(9) };
       expect(await pages(d)).toBeLessThanOrEqual(2);
       const contenu = await texte(await service.generer(d));
       expect(contenu).toContain('Entreprise 9');
@@ -98,7 +165,7 @@ describe('CvPdfService', () => {
 
     it('garde toute la colonne gauche (30 compétences et 30 centres d’intérêt) sur 2 pages au plus', async () => {
       const d = {
-        ...donnees(),
+        ...donnees(modele),
         competences: Array.from({ length: 30 }, (_, i) => `Compétence${i + 1}`),
         interets: Array.from({ length: 30 }, (_, i) => `Intérêt${i + 1}`),
       };
@@ -109,7 +176,7 @@ describe('CvPdfService', () => {
     });
 
     it('affiche les centres d’intérêt', async () => {
-      expect(await texte(await service.generer({ ...donnees(), interets: ['Échecs'] }))).toContain('CENTRES D');
+      expect(await texte(await service.generer({ ...donnees(modele), interets: ['Échecs'] }))).toContain('CENTRES D');
     });
   });
 });

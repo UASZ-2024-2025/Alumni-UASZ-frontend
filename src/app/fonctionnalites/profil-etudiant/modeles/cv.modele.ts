@@ -3,11 +3,25 @@ import { CvResponse } from '../../../api/generes/alumni/model/cvResponse';
 import { StudentProfile } from '../../../api/generes/alumni/model/studentProfile';
 import { User } from '../../../api/generes/utilisateurs/model/user';
 
+/**
+ * Modèles de CV. Le `code` est enregistré avec le CV (champ `template` du back) : ne jamais le renommer.
+ * `accent` est le nom d'une variable de la charte (src/styles/_variables.scss) : aucune couleur en dur ici.
+ * `colonnePleine` : colonne de gauche à l'accent plein (texte clair) ou fond clair (texte foncé).
+ */
 export const MODELES_CV = [
-  { code: 'MODERN_BLUE', libelle: 'Moderne (bleu)' },
-  { code: 'UASZ_VERT', libelle: 'UASZ (vert)' },
-  { code: 'CLASSIC', libelle: 'Classique (noir et blanc)' },
+  { code: 'MODERN_BLUE', libelle: 'Moderne (bleu)', description: 'Colonne bleue, caractères sans empattement', accent: '--cv-bleu', colonnePleine: true, police: 'sans' },
+  { code: 'UASZ_VERT', libelle: 'UASZ (vert)', description: 'Colonne verte aux couleurs de l’université', accent: '--g8', colonnePleine: true, police: 'sans' },
+  { code: 'CLASSIC', libelle: 'Classique (noir et blanc)', description: 'Colonne claire, caractères à empattement', accent: '--tx', colonnePleine: false, police: 'serif' },
 ] as const;
+
+export type ModeleCv = (typeof MODELES_CV)[number];
+
+export const MODELE_PAR_DEFAUT: ModeleCv['code'] = 'MODERN_BLUE';
+
+/** Modèle correspondant au code enregistré ; un code inconnu (ancien CV, autre version du back) retombe sur le modèle par défaut. */
+export function modeleCv(code: string | null | undefined): ModeleCv {
+  return MODELES_CV.find((m) => m.code === code) ?? MODELES_CV.find((m) => m.code === MODELE_PAR_DEFAUT) ?? MODELES_CV[0];
+}
 
 export const LANGUES_CV = ['Français', 'Anglais'] as const;
 
@@ -116,7 +130,7 @@ export function cvInitial(utilisateur: User | null, profil: StudentProfile | nul
     specialite: profil?.specialty ?? '',
     titre: profil?.specialty ? `Étudiant en ${profil.specialty}` : '',
     langue: 'Français',
-    modele: 'MODERN_BLUE',
+    modele: MODELE_PAR_DEFAUT,
     resume: profil?.bio ?? '',
     competences: [...(profil?.skills ?? [])],
     experiences: [],
@@ -132,7 +146,7 @@ export function depuisCvEnregistre(cv: CvResponse, base: DonneesCv): DonneesCv {
     ...base,
     titre: cv.title ?? base.titre,
     langue: cv.language ?? base.langue,
-    modele: cv.template ?? base.modele,
+    modele: modeleCv(cv.template ?? base.modele).code,
     resume: cv.summary ?? '',
     competences: [...(cv.skills ?? [])],
     experiences: (cv.experiences ?? []).map((e) => ({
