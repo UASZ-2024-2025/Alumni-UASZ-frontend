@@ -21,8 +21,11 @@
           <p class="lecture-seule">Nom, email et téléphone proviennent de votre compte.</p>
           <app-champ libelle="Titre du CV" formControlName="titre" [requis]="true" placeholder="Ex. Développeur Fullstack Java/React"
             [erreur]="formulaire.controls.titre.touched && formulaire.controls.titre.invalid ? 'Le titre est obligatoire.' : null" />
+          <app-selecteur-modele-cv libelle="Modèle" formControlName="modele" />
+          @if (modeleAEnregistrer()) {
+            <p class="lecture-seule" role="status">Enregistrez le CV pour retrouver ce modèle à votre prochaine visite.</p>
+          }
           <div class="grille">
-            <app-champ libelle="Modèle" type="select" formControlName="modele" [options]="modeles" />
             <app-champ libelle="Langue du CV" type="select" formControlName="langue" [options]="languesCv" />
           </div>
           <app-champ libelle="Résumé" type="textarea" formControlName="resume" [lignes]="4" placeholder="Présentez-vous en quelques lignes." />

@@ -2,10 +2,9 @@
 
 // Feuille A4 en proportion (210 x 297) : colonne gauche 64/210, comme le PDF (MISE_EN_PAGE_CV).
 .feuille {
-  --bleu-cv: rgb(29, 79, 145); // seule couleur du CV absente de la charte
   --papier: var(--sf);
   --encre: var(--tx);
-  --accent: var(--bleu-cv);
+  --accent: var(--cv-bleu);
   --fond-colonne: var(--accent);
   --texte-colonne: var(--papier);
   --police-cv: Helvetica, Arial, sans-serif;
@@ -18,7 +17,7 @@
   color: var(--encre);
   border: 1px solid var(--bd);
   border-radius: 6px;
-  box-shadow: 0 8px 24px -12px rgba(7, 61, 39, 0.35);
+  box-shadow: var(--ombre-carte);
   font: 400 0.8125rem/1.45 var(--police-cv);
   container-type: inline-size;
 }

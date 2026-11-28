@@ -1,25 +1,19 @@
 import { Injectable } from '@angular/core';
-import { DonneesCv, ignorerLignesVides, initialesCv, MISE_EN_PAGE_CV, nomFichierPdf, periode, titresSections } from '../modeles/cv.modele';
-
-type Rvb = [number, number, number];
+import { DonneesCv, ignorerLignesVides, initialesCv, MISE_EN_PAGE_CV, modeleCv, nomFichierPdf, periode, titresSections } from '../modeles/cv.modele';
+import { couleurCharte, Rvb } from './couleurs-charte';
 
 interface Theme {
   accent: Rvb;
-  /** Colonne gauche pleine (texte blanc) ou grise (texte encre). */
+  /** Colonne gauche pleine (texte blanc) ou claire (texte encre). */
   colonnePleine: boolean;
   police: 'helvetica' | 'times';
 }
 
-const THEMES: Record<string, Theme> = {
-  MODERN_BLUE: { accent: [29, 79, 145], colonnePleine: true, police: 'helvetica' },
-  UASZ_VERT: { accent: [11, 93, 59], colonnePleine: true, police: 'helvetica' },
-  CLASSIC: { accent: [30, 30, 30], colonnePleine: false, police: 'times' },
-};
-
-const ENCRE: Rvb = [30, 30, 30];
-const GRIS: Rvb = [95, 95, 95];
-const BLANC: Rvb = [255, 255, 255];
-const FOND_CLASSIQUE: Rvb = [238, 238, 238];
+/** Thème PDF d'un modèle (registre MODELES_CV) ; les couleurs viennent de la charte, lues à chaque génération. */
+function themePdf(code: string): Theme {
+  const m = modeleCv(code);
+  return { accent: couleurCharte(m.accent), colonnePleine: m.colonnePleine, police: m.police === 'serif' ? 'times' : 'helvetica' };
+}
 const { largeur: LARGEUR, hauteur: HAUTEUR, colonneGauche: COL_G, marge: MARGE } = MISE_EN_PAGE_CV;
 const X_PRINCIPAL = COL_G + MARGE + 2;
 const LARGEUR_PRINCIPALE = LARGEUR - X_PRINCIPAL - MARGE;
@@ -52,7 +46,11 @@ export class CvPdfService {
   }
 
   private dessiner(doc: import('jspdf').jsPDF, d: DonneesCv, e: number): import('jspdf').jsPDF {
-    const theme = THEMES[d.modele] ?? THEMES['MODERN_BLUE'];
+    const theme = themePdf(d.modele);
+    const ENCRE = couleurCharte('--tx');
+    const GRIS = couleurCharte('--mu');
+    const BLANC = couleurCharte('--sf');
+    const FOND_CLASSIQUE = couleurCharte('--g0');
     const t = titresSections(d.langue);
     const texteGauche = theme.colonnePleine ? BLANC : ENCRE;
     const nomComplet = `${d.prenom} ${d.nom}`.trim() || 'Nom Prénom';
